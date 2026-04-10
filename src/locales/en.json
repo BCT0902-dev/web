@@ -1,0 +1,38 @@
+{
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "skills": "Expertise",
+    "projects": "Projects",
+    "contact": "Contact",
+    "theme_light": "Light",
+    "theme_dark": "Dark"
+  },
+  "hero": {
+    "greeting": "HELLO VISITOR_ // THIS IS",
+    "title": "BCT0902",
+    "subtitle": "Software Engineer & Creative Developer",
+    "description": "I build digital experiences with modern web technologies, focusing on cutting-edge design and seamless functionality.",
+    "cta_projects": "View My Work",
+    "cta_contact": "Initialize Contact"
+  },
+  "about": {
+    "title": "< About />",
+    "content1": "I am BCT0902, a passionate developer obsessed with crafting robust and stunning digital solutions.",
+    "content2": "With a strong foundation in modern IT architecture and interactive design, I strive to build applications that are not only high-performing but also visually spectacular."
+  },
+  "skills": {
+    "title": "< Tech_Stack />",
+    "frontend": "Frontend Development",
+    "backend": "Backend Systems",
+    "tools": "DevOps & Tools"
+  },
+  "projects": {
+    "title": "< Projects />",
+    "view_source": "Source Code",
+    "live_demo": "Live Demo"
+  },
+  "footer": {
+    "rights": "All systems operational. All rights reserved."
+  }
+}

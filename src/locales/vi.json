@@ -1,0 +1,38 @@
+{
+  "nav": {
+    "home": "Trang chủ",
+    "about": "Giới thiệu",
+    "skills": "Kỹ năng",
+    "projects": "Dự án",
+    "contact": "Liên hệ",
+    "theme_light": "Sáng",
+    "theme_dark": "Tối"
+  },
+  "hero": {
+    "greeting": "XIN CHÀO_ // ĐÂY LÀ",
+    "title": "BCT0902",
+    "subtitle": "Kỹ sư Phần mềm & Lập trình viên Sáng tạo",
+    "description": "Tôi xây dựng các trải nghiệm kỹ thuật số với công nghệ web hiện đại, tập trung vào thiết kế đột phá và tính năng hoàn hảo.",
+    "cta_projects": "Xem Dự Án",
+    "cta_contact": "Liên hệ Ngay"
+  },
+  "about": {
+    "title": "< Giới_thiệu />",
+    "content1": "Tôi là BCT0902, một nhà phát triển đam mê tạo ra các giải pháp kỹ thuật số mạnh mẽ và ấn tượng.",
+    "content2": "Với nền tảng kiến trúc IT vững chắc và tư duy thiết kế tương tác, tôi luôn nỗ lực phát triển những ứng dụng hiệu năng cao và có giao diện đẹp mắt."
+  },
+  "skills": {
+    "title": "< Công_Nghệ />",
+    "frontend": "Frontend",
+    "backend": "Backend",
+    "tools": "Công cụ & DevOps"
+  },
+  "projects": {
+    "title": "< Dự_án />",
+    "view_source": "Mã Nguồn",
+    "live_demo": "Xem Trực tiếp"
+  },
+  "footer": {
+    "rights": "Hệ thống đang hoạt động. Đã đăng ký bản quyền."
+  }
+}
