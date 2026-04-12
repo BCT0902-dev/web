@@ -18,9 +18,12 @@ import {
   Activity,
   Edit,
   X,
-  Upload,
   Image as ImageIcon,
-  Zap
+  Zap,
+  MessageSquare,
+  ChevronDown,
+  Brain,
+  Sparkles
 } from 'lucide-react';
 import { db } from '../../firebase';
 import { doc, setDoc, updateDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
@@ -234,14 +237,28 @@ const AdminDashboard = () => {
       const sanitize = (obj) => {
         return JSON.parse(JSON.stringify(obj, (key, value) => {
           if (value === undefined) return null;
-          // Strip potential React elements or complex objects that shouldn't be in config
           if (value && typeof value === 'object' && value.$$typeof) return null;
           return value;
         }));
       };
 
       const cleanConfig = sanitize(localConfig);
-      await setDoc(doc(db, 'system', 'config'), cleanConfig);
+      
+      // Split into 3 documents to avoid 1MB limit
+      const { content, ...rest } = cleanConfig;
+      const { quotes, filmStripImages, ...contentRest } = content || {};
+
+      // Doc 1: General Config
+      await setDoc(doc(db, 'system', 'config'), rest);
+      
+      // Doc 2: Specific Content (Quotes etc)
+      await setDoc(doc(db, 'system', 'content'), { ...contentRest, quotes });
+      
+      // Doc 3: Memories (The largest part)
+      if (filmStripImages) {
+        await setDoc(doc(db, 'system', 'memories'), { filmStripImages });
+      }
+
       setStatus('CONFIG_UPDATED_SUCCESSFULLY');
       setTimeout(() => setStatus(''), 3000);
     } catch (err) {

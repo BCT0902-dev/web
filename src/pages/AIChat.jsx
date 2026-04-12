@@ -43,7 +43,7 @@ const AIChat = () => {
   const [isDeepThink, setIsDeepThink] = useState(false);
   const [isImageMode, setIsImageMode] = useState(false);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('gemini');
+  const [selectedModel, setSelectedModel] = useState('groq');
   const [chatHistory, setChatHistory] = useState([]);
   const [activeChatId, setActiveChatId] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);

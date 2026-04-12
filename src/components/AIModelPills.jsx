@@ -4,11 +4,11 @@ import { Sparkles, Brain, Zap } from 'lucide-react';
 const AIModelPills = ({ selectedModel, onModelChange }) => {
   const models = [
     { 
-      id: 'gemini', 
-      name: 'Gemini', 
-      icon: <Sparkles size={16} />, 
-      color: '#4285F4',
-      branding: 'linear-gradient(135deg, #4285F4 0%, #34A853 100%)'
+      id: 'groq', 
+      name: 'Groq', 
+      icon: <Zap size={16} />, 
+      color: '#F4511E',
+      branding: 'linear-gradient(135deg, #F4511E 0%, #FFB300 100%)'
     },
     { 
       id: 'deepseek', 
@@ -18,11 +18,11 @@ const AIModelPills = ({ selectedModel, onModelChange }) => {
       branding: 'linear-gradient(135deg, #673AB7 0%, #2196F3 100%)'
     },
     { 
-      id: 'groq', 
-      name: 'Groq', 
-      icon: <Zap size={16} />, 
-      color: '#F4511E',
-      branding: 'linear-gradient(135deg, #F4511E 0%, #FFB300 100%)'
+      id: 'gemini', 
+      name: 'Gemini', 
+      icon: <Sparkles size={16} />, 
+      color: '#4285F4',
+      branding: 'linear-gradient(135deg, #4285F4 0%, #34A853 100%)'
     }
   ];
 

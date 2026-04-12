@@ -86,53 +86,53 @@ export const ConfigProvider = ({ children }) => {
 
     useEffect(() => {
         const configDocRef = doc(db, 'system', 'config');
+        const contentDocRef = doc(db, 'system', 'content');
+        const memoriesDocRef = doc(db, 'system', 'memories');
+
         // Initialize styles once with defaults
         updateDynamicStyles(defaultConfig.appearance);
 
+        const loadConfig = async () => {
+            try {
+                // Fetch all docs
+                const [configSnap, contentSnap, memoriesSnap] = await Promise.all([
+                    getDoc(configDocRef),
+                    getDoc(contentDocRef),
+                    getDoc(memoriesDocRef)
+                ]);
+
+                let mergedData = { ...defaultConfig };
+
+                if (configSnap.exists()) mergedData = { ...mergedData, ...configSnap.data() };
+                if (contentSnap.exists()) mergedData.content = { ...mergedData.content, ...contentSnap.data() };
+                if (memoriesSnap.exists()) {
+                    const memData = memoriesSnap.data();
+                    if (memData.filmStripImages) mergedData.content.filmStripImages = memData.filmStripImages;
+                }
+
+                // If doc doesn't exist, we might need to initialize it
+                // but for now just use the merged data
+                setConfig(mergedData);
+                updateDynamicStyles(mergedData.appearance);
+                setLoading(false);
+            } catch (err) {
+                console.error("Config Loading Error:", err);
+                setLoading(false);
+            }
+        };
+
+        // For real-time updates, we listen to the main config
         const unsubscribe = onSnapshot(configDocRef, (doc) => {
             if (doc.exists()) {
                 const data = doc.data();
-                
-                // Merge with defaults to prevent array wipeout
-                if (!data.social_links || data.social_links.length === 0) {
-                    data.social_links = defaultConfig.social_links;
-                }
-
-                // Migrate old film images to new ones or if missing
-                const hasOldImages = data.content?.filmStripImages?.some(url => url.includes('film_male_1'));
-                const isMissingNewImages = !data.content?.filmStripImages || data.content.filmStripImages.length < 5;
-                
-                if (hasOldImages || isMissingNewImages) {
-                    if (!data.content) data.content = {};
-                    data.content.filmStripImages = defaultConfig.content.filmStripImages;
-                    // Force update to DB
-                    setDoc(configDocRef, data, { merge: true }).catch(console.error);
-                }
-                
-                setConfig(data);
+                setConfig(prev => ({ ...prev, ...data }));
                 updateDynamicStyles(data.appearance);
-            } else {
-                // If doc doesn't exist, use default
-                setConfig(defaultConfig);
-                updateDynamicStyles(defaultConfig.appearance);
             }
-            setLoading(false);
-        }, (error) => {
-            console.error("Firestore loading error:", error);
-            setLoading(false);
         });
 
-        // Fallback for hang
-        const timeout = setTimeout(() => {
-            if (loading) {
-                setLoading(false);
-            }
-        }, 3000);
+        loadConfig();
 
-        return () => {
-            unsubscribe();
-            clearTimeout(timeout);
-        };
+        return () => unsubscribe();
     }, []);
 
     const updateDynamicStyles = (appearance) => {

@@ -17,7 +17,7 @@ const YoutubeAnalyzer = () => {
   const [result, setResult] = useState('');
   const [activeTask, setActiveTask] = useState(null); // 'summary', 'translate', 'vocab'
   const [targetLang, setTargetLang] = useState('vi');
-  const [selectedModel, setSelectedModel] = useState('gemini');
+  const [selectedModel, setSelectedModel] = useState('groq');
 
   const geminiKey = config?.integrations?.geminiKey || import.meta.env.VITE_GEMINI_API_KEY;
   const deepseekKey = config?.integrations?.deepseekKey || import.meta.env.VITE_DEEPSEEK_API_KEY;
@@ -112,12 +112,13 @@ const YoutubeAnalyzer = () => {
 
       let prompt = '';
       if (task === 'summary') {
-        prompt = `Hãy tóm tắt nội dung chính của video/phụ đề sau đây một cách súc tích và mạch lạc bằng tiếng Việt: \n\n ${finalTranscript}`;
+        prompt = `Hãy tóm tắt nội dung chính của video/phụ đề sau đây một cách chuyên nghiệp, súc tích và mạch lạc bằng tiếng Việt. Sử dụng các gạch đầu dòng để làm nổi bật các ý chính: \n\n ${finalTranscript}`;
       } else if (task === 'translate') {
         const langMap = { 'vi': 'Tiếng Việt', 'en': 'Tiếng Anh', 'jp': 'Tiếng Nhật', 'kr': 'Tiếng Hàn' };
-        prompt = `Hãy dịch nội dung sau đây sang ${langMap[lang]}. Hãy đảm bảo bản dịch tự nhiên và chính xác: \n\n ${finalTranscript}`;
+        prompt = `Bạn là một chuyên gia biên dịch. Hãy tự nhận diện ngôn ngữ gốc của nội dung sau đây và dịch toàn bộ sang ${langMap[lang]}. Đảm bảo văn phong tự nhiên, trôi chảy và giữ nguyên ý nghĩa chuyên môn: \n\n ${finalTranscript}`;
       } else if (task === 'vocab') {
-        prompt = `Hãy liệt kê khoảng 10-15 từ vựng/cụm từ quan trọng trong đoạn nội dung sau. Với mỗi từ, hãy ghi rõ nghĩa (tiếng Việt), cách phát âm và ví dụ đặt câu: \n\n ${finalTranscript}`;
+        const langMap = { 'vi': 'Tiếng Việt', 'en': 'Tiếng Anh', 'jp': 'Tiếng Nhật', 'kr': 'Tiếng Hàn' };
+        prompt = `Bạn là một giáo viên ngôn ngữ. Hãy lọc ra khoảng 10-15 từ vựng hoặc cụm từ quan trọng nhất bằng ${langMap[lang]} có trong đoạn nội dung sau. Với mỗi từ, hãy cung cấp: \n1. Từ/Cụm từ \n2. Nghĩa tiếng Việt \n3. Cách phát âm \n4. Ví dụ câu thực tế từ video kèm bản dịch. \n\nNội dung video: \n\n ${finalTranscript}`;
       }
 
       let resultText = '';
@@ -239,13 +240,29 @@ const YoutubeAnalyzer = () => {
                 <AIModelPills selectedModel={selectedModel} onModelChange={setSelectedModel} />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <button className="btn-secondary" style={{ width: '100%', justifyContent: 'center', padding: '1rem 0', gap: '0.5rem', fontSize: '0.95rem' }} onClick={() => handleProcess('summary')} disabled={isProcessing}>
-                  <Sparkles size={18} /> TÓM TẮT CORE
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                <button className="btn-secondary" style={{ width: '100%', justifyContent: 'center', padding: '0.8rem 0', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--accent-main)' }} onClick={() => handleProcess('summary')} disabled={isProcessing}>
+                  <Sparkles size={16} /> TÓM TẮT CORE
                 </button>
-                <button className="btn-secondary" style={{ width: '100%', justifyContent: 'center', padding: '1rem 0', gap: '0.5rem', fontSize: '0.95rem' }} onClick={() => handleProcess('vocab')} disabled={isProcessing}>
-                  <BookOpen size={18} /> HỌC TỪ VỰNG
-                </button>
+                
+                <div style={{ marginTop: '0.5rem' }}>
+                   <p style={{ fontSize: '0.7rem', color: '#999', marginBottom: '0.5rem', fontWeight: 600 }}>DỊCH TOÀN BỘ</p>
+                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
+                      {['vi', 'en', 'jp', 'kr'].map(lang => (
+                        <button key={lang} onClick={() => handleProcess('translate', lang)} style={{ padding: '0.5rem 0', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: '#fff', fontSize: '0.75rem', cursor: 'pointer' }}>
+                          {lang.toUpperCase()}
+                        </button>
+                      ))}
+                   </div>
+                </div>
+
+                <div style={{ marginTop: '0.5rem' }}>
+                   <p style={{ fontSize: '0.7rem', color: '#999', marginBottom: '0.5rem', fontWeight: 600 }}>HỌC TỪ VỰNG</p>
+                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
+                      <button onClick={() => handleProcess('vocab', 'en')} style={{ padding: '0.5rem 0', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: '#fff', fontSize: '0.75rem', cursor: 'pointer' }}>🇺🇸 TIẾNG ANH</button>
+                      <button onClick={() => handleProcess('vocab', 'jp')} style={{ padding: '0.5rem 0', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: '#fff', fontSize: '0.75rem', cursor: 'pointer' }}>🇯🇵 TIẾNG NHẬT</button>
+                   </div>
+                </div>
               </div>
 
               <div style={{ marginTop: '2.5rem' }}>
@@ -266,12 +283,17 @@ const YoutubeAnalyzer = () => {
             </div>
 
             {/* RIGHT: RESULTS */}
-            <div className="glass-panel" style={{ padding: '2.5rem', minHeight: '400px', background: 'var(--bg-glass)', backdropFilter: 'blur(10px)', border: '1px inset var(--bg-glass-border)', position: 'relative', overflowY: 'auto', boxShadow: 'inset 0 0 20px rgba(0,0,0,0.05)' }}>
-              <AnimatePresence mode="wait">
+             <div className="glass-panel" style={{ padding: '2.5rem', minHeight: '400px', background: 'var(--bg-glass)', backdropFilter: 'blur(10px)', border: '1px inset var(--bg-glass-border)', position: 'relative', overflowY: 'auto', boxShadow: 'inset 0 0 20px rgba(0,0,0,0.05)' }}>
+               {/* Model pills moved to top of result area */}
+               <div style={{ position: 'sticky', top: '-1rem', zIndex: 100, background: 'var(--bg-glass)', padding: '0.5rem', borderRadius: '12px', marginBottom: '1.5rem', border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(20px)' }}>
+                  <AIModelPills selectedModel={selectedModel} onModelChange={setSelectedModel} />
+               </div>
+
+               <AnimatePresence mode="wait">
                 {isProcessing ? (
-                  <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+                  <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem', paddingTop: '4rem' }}>
                     <Loader2 size={48} className="spin" style={{ color: 'var(--accent-main)' }} />
-                    <p style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-main)', fontSize: '0.9rem', letterSpacing: '2px' }}>ANALYZING DATA STREAM...</p>
+                    <p style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-main)', fontSize: '0.9rem', letterSpacing: '2px' }}>AI IS ANALYZING DATA STREAM...</p>
                   </motion.div>
                 ) : result ? (
                   <motion.div key="result" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="markdown-content" style={{ fontSize: '1.05rem', lineHeight: '1.8', color: 'var(--text-primary)' }}>
