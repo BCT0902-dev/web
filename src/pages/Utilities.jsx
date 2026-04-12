@@ -5,6 +5,7 @@ import AIChat from './AIChat';
 import UtilityHub from './UtilityHub';
 import YoutubeAnalyzer from './YoutubeAnalyzer';
 import ChefAssistant from './ChefAssistant';
+import { useConfig } from '../context/ConfigContext';
 import './Utilities.css';
 
 const Utilities = () => {
