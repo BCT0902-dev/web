@@ -18,6 +18,7 @@ import {
   Activity,
   Edit,
   X,
+  Upload,
   Image as ImageIcon,
   Zap,
   MessageSquare,
