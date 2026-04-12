@@ -168,7 +168,7 @@ const Login = () => {
           });
         }
         localStorage.setItem('bct_admin_session', 'true');
-        navigate('/');
+        navigate('/admin');
       } else {
         setError('Mã xác thực không đúng. Vui lòng kiểm tra lại!');
       }
