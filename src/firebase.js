@@ -3,7 +3,7 @@
 
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, GithubAuthProvider } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore } from "firebase/firestore";
 
 // TODO: Thay thế các giá trị bên dưới bằng cấu hình từ dự án Firebase của bạn
 const firebaseConfig = {
@@ -24,5 +24,8 @@ export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export const githubProvider = new GithubAuthProvider();
 
-// Khởi tạo Firestore
-export const db = getFirestore(app);
+// Khởi tạo Firestore với cấu hình cưỡng ép Long Polling để vượt qua rào cản mạng/WebSockets
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+  useFetchStreams: false // Giảm thiểu tối đa việc sử dụng các luồng giao thức phức tạp bị tường lửa chặn
+});

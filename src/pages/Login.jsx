@@ -34,8 +34,12 @@ const Login = () => {
     const errorStr = err.toString().toLowerCase();
     console.error("Auth Error Object:", err);
     
-    // Check for explicit "blocked" or "offline" markers
-    if (errorStr.includes('blocked') || err?.code === 'unavailable') {
+    // Check for explicit "blocked" markers
+    if (errorStr.includes('blocked')) {
+      setShowAdblockModal(true);
+    } else if (err?.code === 'unavailable') {
+      // Offline but maybe temporary
+      setError("Hệ thống hiện đang ngoại tuyến. Vui lòng kiểm tra lại kết nối mạng của ngài.");
       setShowAdblockModal(true);
     } else if (err?.code === 'auth/unauthorized-domain') {
       setError("Domain này chưa được cấp phép trong Firebase Console. Vui lòng liên hệ Admin!");
@@ -343,14 +347,20 @@ const Login = () => {
                  Để chiêm ngưỡng và tham gia giao tiếp với toàn bộ không gian nghệ thuật tại đây, hệ thống xin ngài vui lòng <b style={{ color: '#fff' }}>hạ khiên bảo vệ</b> hoặc kiểm tra lại kết nối mạng.
                </p>
 
-               <button 
-                 onClick={() => { setShowAdblockModal(false); window.location.reload(); }} 
-                 style={{ background: 'transparent', padding: '1rem 2rem', border: '1px solid var(--accent-gold)', color: 'var(--accent-gold)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '0.9rem', letterSpacing: '2px', transition: 'all 0.3s' }}
-                 onMouseOver={(e) => { e.currentTarget.style.background = 'var(--accent-gold)'; e.currentTarget.style.color = '#000'; }}
-                 onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--accent-gold)'; }}
-               >
-                 TÔI ĐÃ HIỂU VÀ ĐÃ TẮT
-               </button>
+               <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                 <button 
+                   onClick={() => { setShowAdblockModal(false); window.location.reload(); }} 
+                   style={{ background: 'var(--accent-gold)', padding: '1rem 2rem', border: '1px solid var(--accent-gold)', color: '#000', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', fontWeight: 'bold', letterSpacing: '1px', transition: 'all 0.3s' }}
+                 >
+                   TÔI ĐÃ TẮT & TẢI LẠI
+                 </button>
+                 <button 
+                   onClick={() => setShowAdblockModal(false)}
+                   style={{ background: 'transparent', padding: '1rem 2rem', border: '1px solid rgba(255,255,255,0.2)', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', letterSpacing: '1px', transition: 'all 0.3s' }}
+                 >
+                   THỬ LẠI NGAY
+                 </button>
+               </div>
             </motion.div>
           </motion.div>
         )}
