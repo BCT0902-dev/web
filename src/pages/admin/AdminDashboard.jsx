@@ -121,8 +121,8 @@ const AdminDashboard = () => {
       const payload = {
         contents: [{ parts: [{ text: "Say 'TEST_OK'" }] }]
       };
-      // Fixed: Using v1 instead of v1beta and ensuring model name is correct
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${key}`, {
+      // High compatibility: Using v1 and gemini-1.5-flash
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`, {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify(payload)
@@ -178,7 +178,7 @@ const AdminDashboard = () => {
     setApiTestStatus(prev => ({ ...prev, groq: 'Đang kiểm tra bằng REST...' }));
     try {
       const payload = {
-        model: "llama3-70b-8192",
+        model: "llama-3.3-70b-versatile",
         messages: [{ role: "user", content: "Say 'TEST_OK'" }]
       };
       const response = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
@@ -518,25 +518,32 @@ const AdminDashboard = () => {
               </motion.div>
             )}
 
-            {activeTab === 'appearance' && (
-              <motion.div key="appearance" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="config-section">
-                <div className="color-config-card">
-                  <h3>THEME COLOR ENGINE</h3>
-                  <div className="color-picker-grid">
-                    <div className="input-group">
-                      <label>MÀU CHỦ ĐẠO</label>
-                      <div className="color-input-wrapper">
-                        <input type="color" value={localConfig.appearance.primaryColor} onChange={(e) => updateNested('appearance', 'primaryColor', e.target.value)} />
-                        <code>{localConfig.appearance.primaryColor}</code>
-                      </div>
+                  </div>
+                </div>
+
+                <div className="color-config-card" style={{ marginTop: '2rem' }}>
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <ImageIcon size={18} /> CẤU HÌNH NỀN TIỆN ÍCH (AI CHAT / CHEF / YT)
+                  </h3>
+                  <div className="input-group">
+                    <label>HÌNH NỀN CHỦ ĐẠO (PNG / GIF)</label>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                       <input type="text" value={localConfig.appearance.utilityBackground || ''} onChange={(e) => updateNested('appearance', 'utilityBackground', e.target.value)} placeholder="Dán URL hoặc Upload..." style={{ flex: 1 }} />
+                       <label className="add-btn" style={{ cursor: 'pointer' }}>
+                          <Upload size={16} /> UPLOAD
+                          <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, (res) => updateNested('appearance', 'utilityBackground', res))} />
+                       </label>
                     </div>
-                    <div className="input-group">
-                      <label>MÀU NHẤN MẠNH</label>
-                      <div className="color-input-wrapper">
-                        <input type="color" value={localConfig.appearance.accentColor} onChange={(e) => updateNested('appearance', 'accentColor', e.target.value)} />
-                        <code>{localConfig.appearance.accentColor}</code>
-                      </div>
-                    </div>
+                  </div>
+                  <div className="input-group" style={{ marginTop: '1.5rem' }}>
+                    <label>ĐỘ MỜ KÍNH (BLUR: {localConfig.appearance.utilityGlassBlur || 15}px)</label>
+                    <input 
+                      type="range" 
+                      min="0" max="40" 
+                      value={localConfig.appearance.utilityGlassBlur || 15} 
+                      onChange={(e) => updateNested('appearance', 'utilityGlassBlur', Number(e.target.value))} 
+                      style={{ width: '100%', accentColor: 'var(--accent-main)' }}
+                    />
                   </div>
                 </div>
               </motion.div>

@@ -123,12 +123,12 @@ const YoutubeAnalyzer = () => {
       let resultText = '';
 
       if (selectedModel === 'gemini') {
-          const genModel = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+          const genModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
           const result = await genModel.generateContent(prompt);
           resultText = await result.response.text();
       } else if (selectedModel === 'groq') {
           if (!groq) throw new Error('Chưa cấu hình Groq Key!');
-          const completion = await groq.chat.completions.create({ model: "llama3-70b-8192", messages: [{ role: "user", content: prompt }] });
+          const completion = await groq.chat.completions.create({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }] });
           resultText = completion.choices[0].message.content;
       } else {
           const completion = await deepseek.chat.completions.create({ model: "deepseek-chat", messages: [{ role: "user", content: prompt }] });

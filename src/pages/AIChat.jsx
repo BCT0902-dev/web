@@ -45,57 +45,38 @@ const AIChat = () => {
   const [activeChatId, setActiveChatId] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
-  const [showGuestPopup, setShowGuestPopup] = useState(false);
-  const [guestMsgCount, setGuestMsgCount] = useState(0);
+  const [isDeepThink, setIsDeepThink] = useState(false);
+  const [isImageMode, setIsImageMode] = useState(false);
+  
   const messagesEndRef = useRef(null);
   const { currentUser: authUser, isAdmin } = useAuth();
   const currentUser = authUser;
   const navigate = useNavigate();
 
-  const codeTheme = theme === 'dark' ? atomDark : oneLight;
-
-  // Initialize AI clients with config keys
+  // AI Config
   const geminiKey = config?.integrations?.geminiKey || import.meta.env.VITE_GEMINI_API_KEY;
   const deepseekKey = config?.integrations?.deepseekKey || import.meta.env.VITE_DEEPSEEK_API_KEY;
   const groqKey = config?.integrations?.groqKey;
 
   const genAI = new GoogleGenerativeAI(geminiKey || 'dummy_key');
-  
-  const groq = groqKey ? new OpenAI({
-    apiKey: groqKey,
-    baseURL: 'https://api.groq.com/openai/v1',
-    dangerouslyAllowBrowser: true
-  }) : null;
-  // Helper to get formatted name
+  const groq = groqKey ? new OpenAI({ apiKey: groqKey, baseURL: 'https://api.groq.com/openai/v1', dangerouslyAllowBrowser: true }) : null;
+  const deepseek = new OpenAI({ apiKey: deepseekKey || 'dummy_key', baseURL: 'https://api.deepseek.com', dangerouslyAllowBrowser: true });
+
   const getUserDisplayName = () => {
     if (currentUser?.displayName) return currentUser.displayName;
     if (currentUser?.email) return currentUser.email.split('@')[0];
-    return 'bạn';
+    return 'Bạn';
   };
 
-  const deepseek = new OpenAI({
-    apiKey: deepseekKey || 'dummy_key',
-    baseURL: 'https://api.deepseek.com',
-    dangerouslyAllowBrowser: true
-  });
-
-  // Load guest message count from sessionStorage
-  useEffect(() => {
-    if (!currentUser && !isAdmin) {
-      const count = sessionStorage.getItem('bct_guest_msg_count') || 0;
-      setGuestMsgCount(parseInt(count));
-      setShowGuestPopup(true);
-    }
-  }, [currentUser, isAdmin]);
-
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
+  // Firebase Effects
   useEffect(() => {
     if (!currentUser && !isAdmin) return;
     const uid = currentUser?.uid || 'admin';
@@ -103,431 +84,139 @@ const AIChat = () => {
     const q = query(chatsRef, orderBy('lastUpdate', 'desc'));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const chats = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const chats = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setChatHistory(chats);
-      
-      if (!activeChatId && chats.length > 0) {
-        setActiveChatId(chats[0].id);
-      }
+      if (!activeChatId && chats.length > 0) setActiveChatId(chats[0].id);
     });
-
     return () => unsubscribe();
   }, [currentUser]);
 
   useEffect(() => {
     if (!currentUser || !activeChatId) return;
-
     const msgsRef = collection(db, 'users', currentUser.uid, 'chats', activeChatId, 'messages');
     const q = query(msgsRef, orderBy('timestamp', 'asc'));
-
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const msgs = snapshot.docs.map(doc => doc.data());
       setMessages(msgs);
     });
-
     return () => unsubscribe();
   }, [currentUser, activeChatId]);
 
-  const createNewChat = async () => {
-    if (!currentUser) {
-      setMessages([]);
-      setActiveChatId(null);
-      return;
-    }
-
-    const chatsRef = collection(db, 'users', currentUser.uid, 'chats');
-    const newChat = {
-        title: 'Bản thảo hội thoại ' + (chatHistory.length + 1),
-        lastUpdate: serverTimestamp(),
-        model: selectedModel
-    };
-
-    const docRef = await addDoc(chatsRef, newChat);
-    setActiveChatId(docRef.id);
-    setMessages([]);
-  };
-
-  const deleteChat = async (e, id) => {
-    e.stopPropagation();
-    if (!currentUser && !isAdmin) return;
-
-    try {
-        const uid = currentUser?.uid || 'admin';
-        await deleteDoc(doc(db, 'users', uid, 'chats', id));
-        if (activeChatId === id) {
-            setActiveChatId(null);
-            setMessages([]);
-        }
-    } catch (err) {
-        console.error("Lỗi xóa chat:", err);
-    }
-  };
-
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
-
-    // Check guest limit
-    if (!currentUser && !isAdmin && guestMsgCount >= 10) {
-      setShowGuestPopup(true);
-      return;
-    }
-
-    const newMessage = { 
-        role: 'user', 
-        content: input,
-        timestamp: currentUser ? serverTimestamp() : new Date() 
-    };
-
-    if (currentUser || isAdmin) {
-        let chatId = activeChatId;
-        const uid = currentUser?.uid || 'admin';
-
-        if (!chatId) {
-            const chatsRef = collection(db, 'users', uid, 'chats');
-            const newDoc = await addDoc(chatsRef, {
-                title: input.slice(0, 30),
-                lastUpdate: serverTimestamp(),
-                model: selectedModel
-            });
-            chatId = newDoc.id;
-            setActiveChatId(chatId);
-        }
-
-        const msgsRef = collection(db, 'users', uid, 'chats', chatId, 'messages');
-        await addDoc(msgsRef, newMessage);
-        
-        if (messages.length === 0) {
-            await updateDoc(doc(db, 'users', uid, 'chats', chatId), {
-                title: input.slice(0, 30),
-                lastUpdate: serverTimestamp()
-            });
-        }
-    } else {
-        // Guest mode - Local state only
-        setMessages(prev => [...prev, newMessage]);
-        const newCount = guestMsgCount + 1;
-        setGuestMsgCount(newCount);
-        sessionStorage.setItem('bct_guest_msg_count', newCount.toString());
-    }
-
+    
+    const userMsg = { role: 'user', content: input, timestamp: serverTimestamp() };
+    const tempInput = input;
     setInput('');
     setIsLoading(true);
 
+    if (currentUser && activeChatId) {
+      await addDoc(collection(db, 'users', currentUser.uid, 'chats', activeChatId, 'messages'), userMsg);
+    } else {
+      setMessages(prev => [...prev, userMsg]);
+    }
+
     try {
       let aiResponseContent = '';
-
-      // Check for image generation intent
-      const imageKeywords = ['vẽ', 'tạo ảnh', 'generate image', 'imagine', '/imagine', 'bức tranh', 'hình ảnh'];
-      const isImageRequest = imageKeywords.some(kw => input.toLowerCase().includes(kw));
-
-      if (isImageRequest) {
-        let imagePrompt = input;
-        imageKeywords.forEach(kw => {
-          if (input.toLowerCase().includes(kw)) {
-             imagePrompt = input.toLowerCase().replace(kw, '').trim() || input;
-          }
-        });
-        
-        const imageUrl = `https://pollinations.ai/p/${encodeURIComponent(imagePrompt)}?width=1024&height=1024&seed=${Math.floor(Math.random()*1000000)}&model=flux`;
-        
-        const imgMsg = { 
-          role: 'assistant', 
-          content: `Đang khởi tạo hình ảnh dựa trên yêu cầu: **${imagePrompt}**\n\n![AI Image](${imageUrl})`,
-          timestamp: currentUser ? serverTimestamp() : new Date()
-        };
-
-        if ((currentUser || isAdmin) && activeChatId) {
-          await addDoc(collection(db, 'users', (currentUser?.uid || 'admin'), 'chats', activeChatId, 'messages'), imgMsg);
-        } else {
-          setMessages(prev => [...prev, imgMsg]);
-        }
-        
-        setIsLoading(false);
-        return;
+      let displayPrompt = tempInput;
+      
+      if (isDeepThink) {
+        displayPrompt = `[DEEP THINK MODE - Hãy phân tích sâu và tìm kiếm thông tin mới nhất] ${tempInput}`;
       }
 
-      if (selectedModel === 'gemini') {
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        // Use v1 instead of v1beta via the SDK's internal mechanisms if possible, 
-        // but the SDK usually handles this. However, since the user noted v1beta failure:
-        // Let's use the fetch method directly for more control as done in AdminDashboard later
-        const payload = {
-          contents: [{ parts: [{ text: input }] }]
-        };
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${geminiKey}`, {
-           method: 'POST',
-           headers: { 'Content-Type': 'application/json' },
-           body: JSON.stringify(payload)
-        });
-        const data = await response.json();
-        if (response.ok && data.candidates) {
-          aiResponseContent = data.candidates[0].content.parts[0].text;
-        } else {
-          // Fallback to gemini-pro if flash is not found in v1beta
-          if (data.error?.message?.includes('not found')) {
-            const fbResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiKey}`, {
-               method: 'POST',
-               headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify(payload)
-            });
-            const fbData = await fbResponse.json();
-            if (fbResponse.ok && fbData.candidates) {
-              aiResponseContent = fbData.candidates[0].content.parts[0].text;
-            } else {
-              throw new Error(fbData.error?.message || 'Gemini Pro Fallback Error');
-            }
-          } else {
-            throw new Error(data.error?.message || 'Gemini API Error');
-          }
-        }
-      } else if (selectedModel === 'groq') {
-        if (!groq) throw new Error('Chưa cấu hình Groq API Key trong Admin!');
-        const completion = await groq.chat.completions.create({
-          model: "llama3-70b-8192",
-          messages: [{ role: "user", content: input }]
-        });
-        aiResponseContent = completion.choices[0].message.content;
+      if (isImageMode) {
+        aiResponseContent = `🎨 **IRIS AI Image Engine**\n\nĐang khởi tạo hình ảnh cho yêu cầu: "${tempInput}"\n\n*(Tính năng tạo ảnh đang được kết nối với GPU Server...)*`;
       } else {
-        const completion = await deepseek.chat.completions.create({
-          messages: [...messages, { role: 'user', content: input }],
-          model: 'deepseek-chat',
-        });
-        aiResponseContent = completion.choices[0].message.content;
+        if (selectedModel === 'gemini') {
+          const payload = { contents: [{ parts: [{ text: displayPrompt }] }] };
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify(payload)
+          });
+          const data = await response.json();
+          aiResponseContent = data.candidates?.[0]?.content?.parts?.[0]?.text || "Lỗi phản hồi từ Gemini.";
+        } else if (selectedModel === 'groq') {
+          const completion = await groq.chat.completions.create({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: displayPrompt }] });
+          aiResponseContent = completion.choices[0].message.content;
+        } else {
+          const completion = await deepseek.chat.completions.create({ model: "deepseek-chat", messages: [{ role: "user", content: displayPrompt }] });
+          aiResponseContent = completion.choices[0].message.content;
+        }
       }
 
-      const aiMessage = {
-        role: 'assistant',
-        content: aiResponseContent,
-        timestamp: currentUser ? serverTimestamp() : new Date()
-      };
-
-      if (currentUser) {
-        const msgsRef = collection(db, 'users', currentUser.uid, 'chats', activeChatId, 'messages');
-        await addDoc(msgsRef, aiMessage);
-        await updateDoc(doc(db, 'users', currentUser.uid, 'chats', activeChatId), {
-            lastUpdate: serverTimestamp()
-        });
+      const aiMsg = { role: 'assistant', content: aiResponseContent, timestamp: serverTimestamp() };
+      if (currentUser && activeChatId) {
+        await addDoc(collection(db, 'users', currentUser.uid, 'chats', activeChatId, 'messages'), aiMsg);
+        await updateDoc(doc(db, 'users', currentUser.uid, 'chats', activeChatId), { lastUpdate: serverTimestamp() });
       } else {
-        setMessages(prev => [...prev, aiMessage]);
+        setMessages(prev => [...prev, aiMsg]);
       }
-
     } catch (error) {
       console.error(error);
-      const errorMessage = {
-        role: 'assistant',
-        content: "❌ Lỗi: Có vẻ như bạn chưa cấu hình API Key hoặc có lỗi kết nối. Vui lòng kiểm tra file .env",
-        timestamp: currentUser ? serverTimestamp() : new Date()
-      };
-      if (currentUser) {
-        const msgsRef = collection(db, 'users', currentUser.uid, 'chats', activeChatId, 'messages');
-        await addDoc(msgsRef, errorMessage);
-      } else {
-        setMessages(prev => [...prev, errorMessage]);
-      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
-  };
-
   return (
     <div className="ai-chat-container">
-      {/* Guest Popup */}
-      <AnimatePresence>
-        {showGuestPopup && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="guest-popup-overlay"
-          >
-            <motion.div 
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              className="guest-popup-card"
-            >
-              <Shield size={48} color="var(--accent-main)" className="popup-icon" />
-              <h3>{guestMsgCount >= 10 ? 'Đã đạt giới hạn!' : 'Chế độ khách đang bật'}</h3>
-              <p>
-                {guestMsgCount >= 10 
-                  ? 'Bạn đã sử dụng hết 10 câu hỏi miễn phí dành cho khách. Vui lòng đăng nhập để tiếp tục trò chuyện không giới hạn.' 
-                  : 'Bạn đang sử dụng Chat AI với tư cách khách. Lịch sử sẽ không được lưu nếu bạn tải lại trang và bạn bị hạn chế 10 câu hỏi.'}
-              </p>
-              <div className="popup-actions">
-                <button className="login-now-btn" onClick={() => navigate('/login')}>
-                  ĐĂNG NHẬP NGAY
-                </button>
-                {guestMsgCount < 10 && (
-                  <button className="continue-guest-btn" onClick={() => setShowGuestPopup(false)}>
-                    TIẾP TỤC TRẢI NGHIỆM ({10 - guestMsgCount} lượt còn lại)
-                  </button>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Sidebar - Lịch sử Chat */}
-      <motion.div 
-        className={`chat-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}
-        initial={false}
-        animate={{ width: isSidebarOpen ? 300 : 0 }}
-      >
-        <div className="sidebar-content-wrapper" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-          <div className="sidebar-header">
-            <button className="new-chat-btn" onClick={createNewChat}>
-              <PlusCircle size={18} />
-              <span>KHỞI TẠO LUỒNG MỚI</span>
-            </button>
-          </div>
-
-          <div className="history-list">
-            <div className="history-label">
-              <History size={14} /> {(currentUser || isAdmin) ? 'GẦN ĐÂY' : 'CHẾ ĐỘ KHÁCH'}
-            </div>
-            {currentUser ? chatHistory.map(chat => (
-              <motion.div 
-                key={chat.id} 
-                whileHover={{ x: 5 }}
-                className={`history-item ${activeChatId === chat.id ? 'active' : ''}`}
-                onClick={() => setActiveChatId(chat.id)}
-              >
-                <MessageSquare size={16} className="item-icon" />
-                <div className="chat-title">{chat.title}</div>
-                <button className="delete-btn" onClick={(e) => deleteChat(e, chat.id)}>
-                  <Eraser size={14} />
-                </button>
-              </motion.div>
-            )) : (
-              <div className="guest-history-placeholder">
-                <Shield size={32} opacity={0.2} />
-                <p>Lịch sử chỉ được lưu khi bạn đăng nhập tài khoản</p>
-              </div>
-            )}
-          </div>
-
-          {/* Sidebar Footer - Settings */}
-          <div className="sidebar-footer">
-            <button className="sidebar-action-btn" onClick={() => navigate('/settings')}>
-              <Settings size={18} />
-              <span>Cài đặt tài khoản</span>
-            </button>
-          </div>
+      {/* Sidebar - Floating rounded glass */}
+      <aside className={`chat-sidebar ${isSidebarOpen ? '' : 'closed'}`}>
+        <div className="sidebar-header">
+          <h2>HỘI THOẠI</h2>
+          <button className="toggle-sidebar" onClick={() => setIsSidebarOpen(false)}><ChevronLeft /></button>
         </div>
-      </motion.div>
+
+        <button className="new-chat-btn" onClick={() => navigate('/utilities/chat')}>
+          <PlusCircle size={20} />
+          BẮT ĐẦU CHAT MỚI
+        </button>
+
+        <div className="chat-history-list">
+          {chatHistory.map(chat => (
+            <div key={chat.id} className={`history-item ${activeChatId === chat.id ? 'active' : ''}`} onClick={() => setActiveChatId(chat.id)}>
+              <MessageSquare size={16} />
+              <div className="chat-title">{chat.title}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="sidebar-footer" style={{ padding: '1rem', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+           <button onClick={() => navigate('/admin')} style={{ width: '100%', padding: '0.8rem', borderRadius: '12px', border: 'none', background: 'rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+             <Shield size={16} /> DASHBOARD
+           </button>
+        </div>
+      </aside>
 
       {/* Main interface */}
-      <div className="main-chat-area">
-        <header className="chat-header">
-          <button className="toggle-sidebar" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
-            <Terminal size={20} style={{ transform: isSidebarOpen ? 'none' : 'rotate(180deg)' }} />
+      <main className="main-chat-area">
+        {!isSidebarOpen && (
+          <button className="toggle-sidebar" style={{ position: 'absolute', left: 0, top: '1rem', zIndex: 100 }} onClick={() => setIsSidebarOpen(true)}>
+             <Terminal size={20} />
           </button>
-          
-          <div className="header-title">
-            <Bot size={20} className="header-icon" />
-            <span>CORE ASSISTANT</span>
-          </div>
-
-          <div className="header-actions">
-            <div className="header-status">
-              <div className={`status-dot ${isLoading ? 'pulse' : ''}`} />
-              <span>{isLoading ? 'ANALYZING...' : 'SECURE'}</span>
-            </div>
-            
-            {!currentUser && (
-              <button className="login-header-btn" onClick={() => navigate('/login')}>
-                <User size={16} /> ĐĂNG NHẬP
-              </button>
-            )}
-            {currentUser && (
-               <div className="user-profile-mini">
-                  <div className="avatar-small">
-                    {currentUser.photoURL ? <img src={currentUser.photoURL} alt="User" /> : <User size={16} />}
-                  </div>
-               </div>
-            )}
-          </div>
-        </header>
+        )}
 
         <div className="messages-container">
           {messages.length === 0 ? (
             <div className="chat-welcome">
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="welcome-card"
-              >
-                <div className="welcome-icon">
-                  <Bot size={64} />
-                </div>
-                <h2>BCT CORE ENGINE</h2>
-                <div className="welcome-text-content">
-                  <p>
-                    {(currentUser || isAdmin) 
-                      ? (config?.content?.welcomeUserMessage || `BCT Core Engine v3.0 - Đang trực tuyến. Tôi có thể giúp gì cho ${getUserDisplayName()}?`)
-                      : (config?.content?.welcomeMessage || 'BCT Core Engine v3.0 - Đang trực tuyến. Tôi có thể giúp gì cho bạn?')
-                    }
-                  </p>
-                </div>
-                <div className="feature-tags">
-                  <span>#GUEST_ACCESS</span>
-                  <span>#V3_PROTOCOL</span>
-                  <span>#DEEPSEEK</span>
-                  <span>{(currentUser || isAdmin) ? '#SECURE_SYNC' : '#10_MSGS_LIMIT'}</span>
-                </div>
-              </motion.div>
+              <h1 className="welcome-greeting">
+                👋 Hi {getUserDisplayName()}, mình là IRIS
+              </h1>
+              <p style={{ fontSize: '1.2rem', color: '#555', marginBottom: '2rem' }}>Mình có thể giúp gì cho bạn hôm nay?</p>
+              
+              <div className="iris-model-selector">
+                <AIModelPills selectedModel={selectedModel} onModelChange={setSelectedModel} />
+              </div>
             </div>
           ) : (
             messages.map((msg, index) => (
-              <motion.div 
-                key={index}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`message-wrapper ${msg.role}`}
-              >
+              <motion.div key={index} className={`message-wrapper ${msg.role}`}>
                 <div className="message-avatar">
-                  {msg.role === 'user' ? <User size={20} /> : <Bot size={20} />}
+                   {msg.role === 'user' ? <User size={20} /> : <Bot size={20} />}
                 </div>
                 <div className="message-content">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      code({ node, inline, className, children, ...props }) {
-                        const match = /language-(\w+)/.exec(className || '');
-                        return !inline && match ? (
-                          <div className="code-block-wrapper">
-                            <div className="code-header">
-                              <span className="lang-badge">{match[1].toUpperCase()} SOURCE</span>
-                              <button onClick={() => copyToClipboard(String(children))}>
-                                <Copy size={14} />
-                              </button>
-                            </div>
-                            <SyntaxHighlighter
-                              style={codeTheme}
-                              language={match[1]}
-                              PreTag="div"
-                              {...props}
-                            >
-                              {String(children).replace(/\n$/, '')}
-                            </SyntaxHighlighter>
-                          </div>
-                        ) : (
-                          <code className={className} {...props}>
-                            {children}
-                          </code>
-                        );
-                      }
-                    }}
-                  >
-                    {msg.content}
-                  </ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                 </div>
               </motion.div>
             ))
@@ -535,46 +224,45 @@ const AIChat = () => {
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="chat-input-container">
-          {/* Model selection moved inside input container */}
-          <div className="input-model-pills">
-            <AIModelPills selectedModel={selectedModel} onModelChange={setSelectedModel} />
-          </div>
+        {/* IRIS Input Center */}
+        <div className="iris-input-area">
+          <div className="iris-input-card">
+             <textarea 
+               className="iris-textarea"
+               placeholder={isImageMode ? "Mô tả hình ảnh bạn muốn tạo..." : "Nhập câu hỏi tại đây..."}
+               value={input}
+               onChange={(e) => setInput(e.target.value)}
+               onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+               rows={1}
+             />
+             
+             <div className="iris-input-actions">
+                <div className="action-left">
+                   <div 
+                      className={`action-chip ${isDeepThink ? 'active' : ''}`}
+                      onClick={() => setIsDeepThink(!isDeepThink)}
+                   >
+                     <Zap size={16} /> DeepThink
+                   </div>
+                   <div 
+                      className={`action-chip ai-image ${isImageMode ? 'active' : ''}`}
+                      onClick={() => setIsImageMode(!isImageMode)}
+                   >
+                     <Sparkles size={16} /> AI Image
+                   </div>
+                </div>
 
-          <div className={`input-glow-wrapper ${isFocused ? 'focus' : ''} ${isLoading ? 'loading' : ''} ${(!currentUser && guestMsgCount >= 10) ? 'locked' : ''}`}>
-            <div className="input-wrapper">
-              <textarea
-                placeholder={(!currentUser && guestMsgCount >= 10) ? 'Vui lòng đăng nhập để tiếp tục...' : `Hỏi ${selectedModel === 'gemini' ? 'Gemini' : 'DeepSeek'} về bất cứ điều gì...`}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-                disabled={!currentUser && guestMsgCount >= 10}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSend();
-                  }
-                }}
-                rows={1}
-              />
-              <button 
-                className={`send-btn ${input.trim() ? 'active' : ''}`} 
-                onClick={handleSend}
-                disabled={isLoading || !input.trim() || (!currentUser && guestMsgCount >= 10)}
-              >
-                <Send size={22} />
-              </button>
-            </div>
+                <button 
+                  className="iris-send-btn"
+                  onClick={handleSend}
+                  disabled={isLoading || !input.trim()}
+                >
+                  <Send size={20} />
+                </button>
+             </div>
           </div>
-          <p className="input-footer">
-            {currentUser 
-              ? 'AES-256 ENCRYPTED VIA GOOGLE FIREBASE PROTOCOL' 
-              : `GUEST MODE: ${guestMsgCount}/10 MESSAGES USED`}
-          </p>
         </div>
-      </div>
-
+      </main>
     </div>
   );
 };

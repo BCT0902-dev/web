@@ -8,9 +8,21 @@ import ChefAssistant from './ChefAssistant';
 import './Utilities.css';
 
 const Utilities = () => {
+  const { config } = useConfig();
+  const blurValue = config?.appearance?.utilityGlassBlur || 15;
+
   return (
     <div className="utilities-dashboard">
-      <main className="dashboard-content full-width">
+      <main 
+        className="dashboard-content full-width"
+        style={{ 
+          background: 'var(--utility-bg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backdropFilter: `blur(${blurValue}px)`,
+          WebkitBackdropFilter: `blur(${blurValue}px)`
+        }}
+      >
         <div className="utility-canvas">
           <Routes>
             <Route path="/" element={<UtilityHub />} />

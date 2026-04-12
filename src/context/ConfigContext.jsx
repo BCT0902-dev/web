@@ -12,7 +12,9 @@ export const ConfigProvider = ({ children }) => {
         logoUrl: '/logobct.png',
         primaryColor: '#ff9a3d',
         accentColor: '#ffb000',
-        pixelGlow: 'rgba(255, 154, 61, 0.4)'
+        pixelGlow: 'rgba(255, 154, 61, 0.4)',
+        utilityBackground: '',
+        utilityGlassBlur: 15
       },
       social_links: [
         { name: 'Facebook', icon: 'Facebook', url: 'https://facebook.com/bct0902', color: '#1877F2', isVisible: true },
@@ -45,21 +47,20 @@ export const ConfigProvider = ({ children }) => {
         ],
         filmStripSpeed: 45,
         filmStripImages: [
-          "/film/film_male_1_1775878373863.png",
-          "/film/film_male_2_1775878390678.png",
-          "/film/film_male_3_1775878409943.png",
-          "/film/film_strip_1_1775877564342.png",
-          "/film/film_strip_2_1775877579615.png",
-          "/film/film_male_4_1775878426078.png",
-          "/film/film_male_5_1775878458555.png",
-          "/film/film_strip_3_1775877597033.png",
-          "/film/film_strip_4_1775877615588.png",
-          "/film/film_male_1_1775878373863.png"
+          "/film/style_korean_1775962199527.png",
+          "/film/style_office_1775962215135.png",
+          "/film/style_classic_1775962232413.png",
+          "/film/style_landscape_1775962251170.png",
+          "/film/style_gentleman_1775962276045.png",
+          "/film/style_winter_1775962294966.png",
+          "/film/style_korean_1775962199527.png",
+          "/film/style_office_1775962215135.png"
         ]
       },
       integrations: {
         geminiKey: localStorage.getItem('GEMINI_API_KEY') || '',
-        deepseekKey: localStorage.getItem('DEEPSEEK_API_KEY') || ''
+        deepseekKey: localStorage.getItem('DEEPSEEK_API_KEY') || '',
+        groqKey: ''
       },
       apps: [
         { name: "Antigravity", color: "#00d2ff" },
@@ -96,6 +97,17 @@ export const ConfigProvider = ({ children }) => {
                 if (!data.social_links || data.social_links.length === 0) {
                     data.social_links = defaultConfig.social_links;
                 }
+
+                // Migrate old film images to new ones or if missing
+                const hasOldImages = data.content?.filmStripImages?.some(url => url.includes('film_male_1'));
+                const isMissingNewImages = !data.content?.filmStripImages || data.content.filmStripImages.length < 5;
+                
+                if (hasOldImages || isMissingNewImages) {
+                    if (!data.content) data.content = {};
+                    data.content.filmStripImages = defaultConfig.content.filmStripImages;
+                    // Force update to DB
+                    setDoc(configDocRef, data, { merge: true }).catch(console.error);
+                }
                 
                 setConfig(data);
                 updateDynamicStyles(data.appearance);
@@ -129,6 +141,12 @@ export const ConfigProvider = ({ children }) => {
         if (appearance.primaryColor) root.style.setProperty('--accent-main', appearance.primaryColor);
         if (appearance.accentColor) root.style.setProperty('--accent-secondary', appearance.accentColor);
         if (appearance.pixelGlow) root.style.setProperty('--accent-glow', appearance.pixelGlow);
+        if (appearance.utilityBackground) {
+            root.style.setProperty('--utility-bg', `url('${appearance.utilityBackground}')`);
+        } else {
+            root.style.setProperty('--utility-bg', "radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.9) 0%, rgba(245, 245, 240, 1) 100%)");
+        }
+        root.style.setProperty('--utility-blur', `${appearance.utilityGlassBlur || 15}px`);
     };
 
     return (
