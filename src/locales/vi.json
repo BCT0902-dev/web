@@ -135,8 +135,8 @@
     "m2": { "year": "2011", "title": "Cấp 2", "desc": "Theo học tại THCS Tân Thanh. Bắt đầu hình thành tư duy học tập độc lập." },
     "m3": { "year": "2015", "title": "Cấp 3", "desc": "Học tại THPT Huỳnh Thúc Kháng. Giai đoạn quan trọng chuẩn bị cho tương lai." },
     "m4": { "year": "2019", "title": "Đại học", "desc": "Sinh viên Đại học Lạc Hồng. Nơi kiến thức chuyên môn bắt đầu được tích lũy." },
-    "m5": { "year": "2023", "title": "Thực tập", "desc": "Thực tập tại tập đoàn FPT. Trải nghiệm môi trường làm việc chuyên nghiệp hàng đầu." },
-    "m6": { "year": "2023 - Nay", "title": "Công việc chính thức", "desc": "Làm việc tại Công ty Chính Nam Biên Hòa. Đã gắn bó được 1 năm 7 tháng trong môi trường thực tiễn." }
+    "m5": { "year": "2023", "title": "Kỹ thuật viên @ FPT", "desc": "Thực tập và làm việc tại tập đoàn FPT. Trải nghiệm môi trường làm việc chuyên nghiệp hàng đầu Việt Nam với vai trò kỹ thuật." },
+    "m6": { "year": "07/2023 - 01/2025", "title": "IT @ Chính Nam Biên Hòa", "desc": "Phụ trách mảng CNTT tại Công ty Chính Nam Biên Hòa trong 1 năm 7 tháng. Hiện tại tôi đang tự do và sẵn sàng cho những thử thách mới." }
   },
   "blog": {
     "title": "AI INSIGHTS",

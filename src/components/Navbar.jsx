@@ -100,12 +100,12 @@ const Navbar = () => {
           left: '0',
           right: '0',
           margin: '0 auto',
-          width: '95%',
-          maxWidth: '1300px',
+          width: '98%',
+          maxWidth: '1450px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '0.8rem 2rem',
+          padding: '0.8rem 1.5rem',
           zIndex: 1000,
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), 0 0 15px var(--accent-glow)'
         }}
@@ -119,7 +119,7 @@ const Navbar = () => {
           </Link>
         </div>
 
-        <ul style={{ flex: 2, display: 'flex', justifyContent: 'center', gap: '2rem', listStyle: 'none', alignItems: 'center' }}>
+        <ul style={{ flex: '0 1 auto', display: 'flex', justifyContent: 'center', gap: '1.5rem', listStyle: 'none', alignItems: 'center' }}>
             {['home', 'about', 'chronicles', 'skills', 'blog'].map((link) => (
               <li key={link}>
                 {(link === 'blog' || link === 'chronicles') ? (
@@ -131,7 +131,8 @@ const Navbar = () => {
                       textTransform: 'uppercase',
                       opacity: 0.8,
                       textDecoration: 'none',
-                      color: 'inherit'
+                      color: 'inherit',
+                      whiteSpace: 'nowrap'
                     }}
                     onMouseOver={(e) => {
                       e.target.style.opacity = 1;
@@ -153,7 +154,8 @@ const Navbar = () => {
                       textTransform: 'uppercase',
                       opacity: 0.8,
                       textDecoration: 'none',
-                      color: 'inherit'
+                      color: 'inherit',
+                      whiteSpace: 'nowrap'
                     }}
                     onMouseOver={(e) => {
                       e.target.style.opacity = 1;

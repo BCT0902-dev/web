@@ -135,8 +135,8 @@
     "m2": { "year": "2011", "title": "Middle School", "desc": "Attended Tan Thanh Secondary School. Began developing independent learning habits." },
     "m3": { "year": "2015", "title": "High School", "desc": "Studied at Huynh Thuc Khang High School. A critical stage in preparing for the future." },
     "m4": { "year": "2019", "title": "University", "desc": "Student at Lac Hong University. Where professional IT knowledge began to accumulate." },
-    "m5": { "year": "2023", "title": "Internship", "desc": "Interned at FPT Corporation. Experienced a top-tier professional working environment." },
-    "m6": { "year": "2023 - Pres", "title": "Official Employment", "desc": "Working at Chinh Nam Bien Hoa Company. Celebrating 1 year and 7 months of real-world impact." }
+    "m5": { "year": "2023", "title": "Technician @ FPT", "desc": "Internship and employment at FPT Group. Gained technical experience in one of Vietnam's leading professional environments." },
+    "m6": { "year": "07/2023 - 01/2025", "title": "IT @ Chính Nam Biên Hòa", "desc": "Led IT initiatives at Chinh Nam Bien Hoa for 1 year and 7 months. Currently independent and available for new challenges." }
   },
   "blog": {
     "title": "AI INSIGHTS",
