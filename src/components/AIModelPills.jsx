@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { Sparkles, Brain, Zap } from 'lucide-react';
 
 const AIModelPills = ({ selectedModel, onModelChange }) => {

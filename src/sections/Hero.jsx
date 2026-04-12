@@ -1,3 +1,5 @@
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import TechSphere from '../components/TechSphere';
 import QuoteCarousel from '../components/QuoteCarousel';
