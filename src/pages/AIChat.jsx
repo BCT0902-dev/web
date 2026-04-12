@@ -200,12 +200,14 @@ const AIChat = () => {
         <div className="messages-container">
           {messages.length === 0 ? (
             <div className="chat-welcome">
-              <h1 className="welcome-greeting">
+              <h1 className="welcome-greeting" style={{ fontSize: '2.8rem', gap: '1.5rem', marginBottom: '1rem' }}>
                 👋 Hi {getUserDisplayName()}, mình là IRIS
               </h1>
-              <p style={{ fontSize: '1.2rem', color: '#555', marginBottom: '2rem' }}>Mình có thể giúp gì cho bạn hôm nay?</p>
+              <h2 style={{ fontSize: '1.4rem', color: '#555', fontWeight: 500, marginBottom: '3rem' }}>
+                Mình có thể giúp gì cho bạn ?
+              </h2>
               
-              <div className="iris-model-selector">
+              <div className="iris-model-selector" style={{ transform: 'scale(1.1)' }}>
                 <AIModelPills selectedModel={selectedModel} onModelChange={setSelectedModel} />
               </div>
             </div>

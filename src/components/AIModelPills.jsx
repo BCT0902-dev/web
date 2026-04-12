@@ -1,15 +1,33 @@
 import React from 'react';
-import { Sparkles, Cpu, Zap } from 'lucide-react';
+import { Sparkles, Brain, Zap } from 'lucide-react';
 
-const AIModelPills = ({ selectedModel, onModelChange, theme = 'dark' }) => {
+const AIModelPills = ({ selectedModel, onModelChange }) => {
   const models = [
-    { id: 'gemini', name: 'Gemini', icon: <Sparkles size={14} />, color: '#00f0ff' },
-    { id: 'deepseek', name: 'DeepSeek', icon: <Cpu size={14} />, color: '#b026ff' },
-    { id: 'groq', name: 'Groq (Llama3)', icon: <Zap size={14} />, color: '#ff7300' }
+    { 
+      id: 'gemini', 
+      name: 'Gemini', 
+      icon: <Sparkles size={16} />, 
+      color: '#4285F4',
+      branding: 'linear-gradient(135deg, #4285F4 0%, #34A853 100%)'
+    },
+    { 
+      id: 'deepseek', 
+      name: 'DeepSeek', 
+      icon: <Brain size={16} />, 
+      color: '#673AB7',
+      branding: 'linear-gradient(135deg, #673AB7 0%, #2196F3 100%)'
+    },
+    { 
+      id: 'groq', 
+      name: 'Groq', 
+      icon: <Zap size={16} />, 
+      color: '#F4511E',
+      branding: 'linear-gradient(135deg, #F4511E 0%, #FFB300 100%)'
+    }
   ];
 
   return (
-    <div className="model-selection-wrapper" style={{ display: 'flex', gap: '0.8rem', marginBottom: '1.5rem' }}>
+    <div className="iris-model-selection" style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
       {models.map(model => (
         <button
           key={model.id}
@@ -17,24 +35,33 @@ const AIModelPills = ({ selectedModel, onModelChange, theme = 'dark' }) => {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '0.6rem',
-            padding: '0.5rem 1.2rem',
-            borderRadius: '20px',
-            border: '1px solid',
-            borderColor: selectedModel === model.id ? model.color : 'rgba(255,255,255,0.1)',
-            background: selectedModel === model.id ? `${model.color}15` : 'transparent',
-            color: selectedModel === model.id ? model.color : 'rgba(255,255,255,0.5)',
-            fontSize: '0.75rem',
+            gap: '0.8rem',
+            padding: '0.8rem 1.5rem',
+            borderRadius: '16px',
+            border: 'none',
+            background: selectedModel === model.id ? '#ffffff' : 'rgba(255,255,255,0.4)',
+            color: selectedModel === model.id ? '#1a1a1a' : '#666',
+            fontSize: '0.9rem',
             fontWeight: 700,
             cursor: 'pointer',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            fontFamily: 'var(--font-mono)',
-            textTransform: 'uppercase',
-            letterSpacing: '1px',
-            boxShadow: selectedModel === model.id ? `0 0 15px ${model.color}30` : 'none'
+            transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+            boxShadow: selectedModel === model.id ? '0 10px 25px rgba(0,0,0,0.1)' : '0 4px 12px rgba(0,0,0,0.02)',
+            transform: selectedModel === model.id ? 'scale(1.05)' : 'scale(1)'
           }}
         >
-          {model.icon}
+          <div style={{ 
+            color: '#white', 
+            background: model.branding,
+            width: '24px',
+            height: '24px',
+            borderRadius: '6px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white'
+          }}>
+            {model.icon}
+          </div>
           {model.name}
         </button>
       ))}
