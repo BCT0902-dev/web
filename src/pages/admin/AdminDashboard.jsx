@@ -204,17 +204,56 @@ const AdminDashboard = () => {
     }
   };
 
+  const compressImage = (base64) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = base64;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        
+        // Max dimension for thumbnail quality
+        const MAX_DIM = 1200;
+        if (width > height) {
+          if (width > MAX_DIM) {
+            height *= MAX_DIM / width;
+            width = MAX_DIM;
+          }
+        } else {
+          if (height > MAX_DIM) {
+            width *= MAX_DIM / height;
+            height = MAX_DIM;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        // Compressed to 0.7 quality
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
+      };
+    });
+  };
+
   const handleFileUpload = (e, callback) => {
     const file = e.target.files[0];
     if (file) {
-      // 50MB limit as requested
       if (file.size > 50 * 1024 * 1024) {
         alert('Tệp quá lớn! Giới hạn tối đa là 50MB.');
         return;
       }
       const reader = new FileReader();
-      reader.onloadend = () => {
-        callback(reader.result);
+      reader.onloadend = async () => {
+        const result = reader.result;
+        // Compress only if it's an image
+        if (typeof result === 'string' && result.startsWith('data:image')) {
+           const compressed = await compressImage(result);
+           callback(compressed);
+        } else {
+           callback(result);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -245,19 +284,40 @@ const AdminDashboard = () => {
 
       const cleanConfig = sanitize(localConfig);
       
-      // Split into 3 documents to avoid 1MB limit
+      // Split into 3 documents + Memories Collection to avoid 1MB limit
       const { content, ...rest } = cleanConfig;
       const { quotes, filmStripImages, ...contentRest } = content || {};
 
-      // Doc 1: General Config
+      // 1. Save General Config
       await setDoc(doc(db, 'system', 'config'), rest);
       
-      // Doc 2: Specific Content (Quotes etc)
+      // 2. Save Specific Content (Quotes etc)
       await setDoc(doc(db, 'system', 'content'), { ...contentRest, quotes });
       
-      // Doc 3: Memories (The largest part)
+      // 3. Save Memories to COLLECTION (The robust way)
       if (filmStripImages) {
-        await setDoc(doc(db, 'system', 'memories'), { filmStripImages });
+        // First delete old memories to ensure clean sync (simple sync for small data)
+        const oldMems = await getDocs(collection(db, 'memories'));
+        for (const m of oldMems.docs) {
+          await deleteDoc(doc(db, 'memories', m.id));
+        }
+        
+        // Write new ones
+        for (let i = 0; i < filmStripImages.length; i++) {
+           if (filmStripImages[i]) {
+              await setDoc(doc(db, 'memories', `mem_${i}`), {
+                url: filmStripImages[i],
+                order: i,
+                updatedAt: new Date().toISOString()
+              });
+           }
+        }
+
+        // Also save a small list of pointers to legacy doc for safety
+        await setDoc(doc(db, 'system', 'memories'), { 
+          lastUpdated: new Date().toISOString(),
+          count: filmStripImages.length
+        });
       }
 
       setStatus('CONFIG_UPDATED_SUCCESSFULLY');

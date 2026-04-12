@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { doc, onSnapshot, getDoc, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot, getDoc, setDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
 
 const ConfigContext = createContext();
@@ -95,23 +95,28 @@ export const ConfigProvider = ({ children }) => {
         const loadConfig = async () => {
             try {
                 // Fetch all docs
-                const [configSnap, contentSnap, memoriesSnap] = await Promise.all([
+                const [configSnap, contentSnap, memoriesSnap, memoriesColSnap] = await Promise.all([
                     getDoc(configDocRef),
                     getDoc(contentDocRef),
-                    getDoc(memoriesDocRef)
+                    getDoc(memoriesDocRef), // Keep for fallback/legacy
+                    getDocs(query(collection(db, 'memories'), orderBy('order', 'asc')))
                 ]);
 
                 let mergedData = { ...defaultConfig };
 
                 if (configSnap.exists()) mergedData = { ...mergedData, ...configSnap.data() };
                 if (contentSnap.exists()) mergedData.content = { ...mergedData.content, ...contentSnap.data() };
-                if (memoriesSnap.exists()) {
+                
+                // Collection-based memories (New)
+                if (!memoriesColSnap.empty) {
+                    const colImages = memoriesColSnap.docs.map(doc => doc.data().url);
+                    mergedData.content.filmStripImages = colImages;
+                } else if (memoriesSnap.exists()) {
+                    // Fallback to legacy single-doc memories
                     const memData = memoriesSnap.data();
                     if (memData.filmStripImages) mergedData.content.filmStripImages = memData.filmStripImages;
                 }
 
-                // If doc doesn't exist, we might need to initialize it
-                // but for now just use the merged data
                 setConfig(mergedData);
                 updateDynamicStyles(mergedData.appearance);
                 setLoading(false);
