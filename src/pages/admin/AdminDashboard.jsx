@@ -518,6 +518,25 @@ const AdminDashboard = () => {
               </motion.div>
             )}
 
+            {activeTab === 'appearance' && (
+              <motion.div key="appearance" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="config-section">
+                <div className="color-config-card">
+                  <h3>THEME COLOR ENGINE</h3>
+                  <div className="color-picker-grid">
+                    <div className="input-group">
+                      <label>MÀU CHỦ ĐẠO</label>
+                      <div className="color-input-wrapper">
+                        <input type="color" value={localConfig.appearance.primaryColor} onChange={(e) => updateNested('appearance', 'primaryColor', e.target.value)} />
+                        <code>{localConfig.appearance.primaryColor}</code>
+                      </div>
+                    </div>
+                    <div className="input-group">
+                      <label>MÀU NHẤN MẠNH</label>
+                      <div className="color-input-wrapper">
+                        <input type="color" value={localConfig.appearance.accentColor} onChange={(e) => updateNested('appearance', 'accentColor', e.target.value)} />
+                        <code>{localConfig.appearance.accentColor}</code>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
