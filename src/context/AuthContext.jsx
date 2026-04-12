@@ -64,10 +64,16 @@ export const AuthProvider = ({ children }) => {
         setIsAdmin(false);
     };
 
+    const loginAsAdminLocal = () => {
+        localStorage.setItem('bct_admin_session', 'true');
+        setIsAdmin(true);
+    };
+
     const value = {
         currentUser,
         isAdmin,
-        logout
+        logout,
+        loginAsAdminLocal
     };
 
     return (

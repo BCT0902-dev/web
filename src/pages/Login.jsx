@@ -7,9 +7,11 @@ import { auth, googleProvider, githubProvider, db } from '../firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import * as OTPAuth from 'otpauth';
 import { QRCodeCanvas } from 'qrcode.react';
+import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { loginAsAdminLocal } = useAuth();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showAdblockModal, setShowAdblockModal] = useState(false);
@@ -229,7 +231,7 @@ const Login = () => {
             updatedAt: new Date()
           });
         }
-        localStorage.setItem('bct_admin_session', 'true');
+        loginAsAdminLocal();
         navigate('/admin');
       } else {
         setError('Mã xác thực không đúng. Vui lòng kiểm tra lại!');
