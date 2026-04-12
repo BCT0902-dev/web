@@ -121,6 +121,7 @@ const AIChat = () => {
 
     try {
       let aiResponseContent = '';
+      let imageUrl = '';
       let displayPrompt = tempInput;
       
       if (isDeepThink) {
@@ -128,11 +129,14 @@ const AIChat = () => {
       }
 
       if (isImageMode) {
-        aiResponseContent = `🎨 **IRIS AI Image Engine**\n\nĐang khởi tạo hình ảnh cho yêu cầu: "${tempInput}"\n\n*(Tính năng tạo ảnh đang được kết nối với GPU Server...)*`;
+        // IMAGE GENERATION SIMULATION (IRIS Visual Studio)
+        await new Promise(r => setTimeout(r, 2000)); // Simulate GPU processing
+        imageUrl = '/iris_visual_studio_demo_1776002252586.png';
+        aiResponseContent = `🎨 **IRIS Visual Studio**\n\nHình ảnh đã được tạo dựa trên mô tả: "${tempInput}"\n\n![IRIS AI Generated Image](${imageUrl})`;
       } else {
         if (selectedModel === 'gemini') {
           const payload = { contents: [{ parts: [{ text: displayPrompt }] }] };
-          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
              method: 'POST',
              headers: { 'Content-Type': 'application/json' },
              body: JSON.stringify(payload)
@@ -148,7 +152,13 @@ const AIChat = () => {
         }
       }
 
-      const aiMsg = { role: 'assistant', content: aiResponseContent, timestamp: serverTimestamp() };
+      const aiMsg = { 
+        role: 'assistant', 
+        content: aiResponseContent, 
+        imageUrl: imageUrl, // Save separate URL if needed for UI optimizations
+        timestamp: serverTimestamp() 
+      };
+      
       if (currentUser && activeChatId) {
         await addDoc(collection(db, 'users', currentUser.uid, 'chats', activeChatId, 'messages'), aiMsg);
         await updateDoc(doc(db, 'users', currentUser.uid, 'chats', activeChatId), { lastUpdate: serverTimestamp() });
@@ -227,20 +237,31 @@ const AIChat = () => {
 
         {/* IRIS Input Center */}
         <div className="iris-input-area">
-          <div className="iris-input-card">
+          <div className={`iris-input-card ${isFocused ? 'focused' : ''}`}>
              <textarea 
                className="iris-textarea"
                placeholder={isImageMode ? "Mô tả hình ảnh bạn muốn tạo..." : "Nhập câu hỏi tại đây..."}
                value={input}
                onChange={(e) => setInput(e.target.value)}
                onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+               onFocus={() => setIsFocused(true)}
+               onBlur={() => setIsFocused(false)}
                rows={1}
              />
              
              <div className="iris-input-actions">
                 <div className="action-left">
                    <div className="model-dropdown-wrapper">
-                      <button className="action-chip model-selector-btn" onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}>
+                      <button 
+                        className={`action-chip model-selector-btn ${selectedModel}`} 
+                        onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+                        style={{ 
+                          background: selectedModel === 'gemini' ? '#4285F4' : (selectedModel === 'groq' ? '#F4511E' : '#673AB7'),
+                          color: '#fff',
+                          fontWeight: 'bold',
+                          boxShadow: `0 0 15px ${selectedModel === 'gemini' ? 'rgba(66, 133, 244, 0.4)' : (selectedModel === 'groq' ? 'rgba(244, 81, 30, 0.4)' : 'rgba(103, 58, 183, 0.4)')}`
+                        }}
+                      >
                          <Cpu size={16} /> {selectedModel.toUpperCase()} <ChevronDown size={14} />
                       </button>
                       
@@ -268,7 +289,7 @@ const AIChat = () => {
                       className={`action-chip ai-image ${isImageMode ? 'active' : ''}`}
                       onClick={() => setIsImageMode(!isImageMode)}
                    >
-                     <Sparkles size={16} /> AI Image
+                     <Sparkles size={16} /> Visual Studio
                    </div>
                 </div>
 

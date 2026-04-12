@@ -4,22 +4,43 @@
     "about": "Giới thiệu",
     "skills": "Kỹ năng",
     "projects": "Dự án",
+    "utilities": "Tiện ích",
     "contact": "Liên hệ",
     "theme_light": "Sáng",
-    "theme_dark": "Tối"
+    "theme_dark": "Tối",
+    "admin": "Quản trị",
+    "profile_settings": "Cài đặt hồ sơ",
+    "logout": "Đăng xuất"
   },
   "hero": {
-    "greeting": "XIN CHÀO_ // ĐÂY LÀ",
-    "title": "BCT0902",
-    "subtitle": "Kỹ sư Phần mềm & Lập trình viên Sáng tạo",
-    "description": "Tôi xây dựng các trải nghiệm kỹ thuật số với công nghệ web hiện đại, tập trung vào thiết kế đột phá và tính năng hoàn hảo.",
+    "greeting": "XIN CHÀO _ // ĐÂY LÀ",
+    "title": "Bùi Công Tới",
+    "subtitle": "Người Việt Nam yêu thích công nghệ",
     "cta_projects": "Xem Dự Án",
-    "cta_contact": "Liên hệ Ngay"
+    "cta_contact": "Liên hệ Ngay",
+    "total_likes": "Tổng lượt thích"
   },
   "about": {
     "title": "< Giới_thiệu />",
-    "content1": "Tôi là BCT0902, một nhà phát triển đam mê tạo ra các giải pháp kỹ thuật số mạnh mẽ và ấn tượng.",
-    "content2": "Với nền tảng kiến trúc IT vững chắc và tư duy thiết kế tương tác, tôi luôn nỗ lực phát triển những ứng dụng hiệu năng cao và có giao diện đẹp mắt."
+    "bio_file": "bio.js",
+    "coding_file": "coding.js",
+    "hometown_label": "Quê quán",
+    "hometown_value": "Hà Tĩnh",
+    "residence_label": "Nơi ở",
+    "residence_value": "Lâm Đồng",
+    "major_label": "Chuyên ngành",
+    "major_value": "Công nghệ thông tin",
+    "hobbies_label": "Sở thích",
+    "hobbies_music": "nhạc",
+    "hobbies_walking": "đi dạo",
+    "hobbies_apples": "ăn táo",
+    "role_label": "Vai trò",
+    "role_value": "12 lon Tiger / 2 đĩa mồi",
+    "skills_label": "Kỹ năng",
+    "skills_wrong_code": "Code sai",
+    "skills_wrong_logic": "logic sai",
+    "skills_wrong_design": "design sai",
+    "skills_wrong_handsome": "sai vì quá đẹp trai"
   },
   "skills": {
     "title": "< Công_Nghệ />",
@@ -27,12 +48,55 @@
     "backend": "Backend",
     "tools": "Công cụ & DevOps"
   },
-  "projects": {
-    "title": "< Dự_án />",
-    "view_source": "Mã Nguồn",
-    "live_demo": "Xem Trực tiếp"
+  "trusted": {
+    "title": "Ứng dụng tôi tin dùng"
+  },
+  "utilities": {
+    "gallery_title": "PHÒNG TRƯNG BÀY",
+    "gallery_subtitle": "Nơi lưu giữ những mảnh ghép kỹ thuật số và các dự án AI tâm huyết.",
+    "status_active": "HOẠT ĐỘNG",
+    "status_locked": "BỊ KHÓA",
+    "explore": "KHÁM PHÁ"
+  },
+  "chef": {
+    "title": "BCT CHEF ASSISTANT",
+    "subtitle": "Hệ thống gợi ý ẩm thực dựa trên kho thực phẩm hiện hữu",
+    "placeholder_name": "Tên thực phẩm (vd: Thịt bò)...",
+    "placeholder_qty": "Số lượng...",
+    "btn_add": "Thêm nguyên liệu",
+    "btn_cook": "Bắt đầu nấu ăn",
+    "unit_reasoning": "Đang suy luận đơn vị..."
   },
   "footer": {
-    "rights": "Hệ thống đang hoạt động. Đã đăng ký bản quyền."
+    "rights": "Hệ thống đang hoạt động. Đã đăng ký bản quyền.",
+    "session_active": "PHIÊN LÀM VIỆC: ĐANG HOẠT ĐỘNG",
+    "description": "Cảm ơn bạn đã ghé thăm Portfolio của tôi. Nếu có bất kỳ thắc mắc hoặc cơ hội hợp tác nào, hãy để lại lời nhắn bên cạnh nhé.",
+    "form_title": "GỬI THẮC MẮC",
+    "placeholder_name": "Họ tên",
+    "placeholder_email": "Email của bạn",
+    "placeholder_message": "Bạn muốn hỏi gì...",
+    "submit": "GỬI YÊU CẦU",
+    "success": "ĐÃ GỬI THÀNH CÔNG",
+    "scroll_up": "Hãy lướt lên để xem kỹ hơn hoặc bấm vào các icon social xinh xinh bên trên.",
+    "security_notice": "Dữ liệu được bảo mật với Firebase Firestore"
+  },
+  "nav": {
+     "blog": "Bài viết"
+  },
+  "testimonials": {
+    "title": "ĐƯỢC TIN TƯỞNG BỞI CÁC NHÀ ĐỔI MỚI",
+    "subtitle": "Mọi người đang nói gì về trải nghiệm với IRIS AI."
+  },
+  "blog": {
+    "title": "AI INSIGHTS",
+    "subtitle": "Khám phá ranh giới của AI, Web Development và Sáng tạo kỹ thuật số."
+  },
+  "admin": {
+    "dashboard": "BẢNG ĐIỀU KHIỂN",
+    "newsletters": "BẢN TIN AI",
+    "analytics": "PHÂN TÍCH"
+  },
+  "common": {
+    "error": "Đã xảy ra lỗi, vui lòng thử lại."
   }
 }

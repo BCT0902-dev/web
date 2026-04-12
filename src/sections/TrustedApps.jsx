@@ -112,7 +112,7 @@ const TrustedApps = () => {
           }}
           className="text-gradient"
         >
-          Ứng dụng tôi tin dùng
+          {t('trusted.title')}
         </motion.h2>
         <div style={{ width: '60px', height: '4px', background: 'var(--accent-main)', margin: '0 auto' }} />
       </div>

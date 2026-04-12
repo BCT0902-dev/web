@@ -38,19 +38,32 @@ const AIModelPills = ({ selectedModel, onModelChange }) => {
             gap: '0.8rem',
             padding: '0.8rem 1.5rem',
             borderRadius: '16px',
-            border: 'none',
-            background: selectedModel === model.id ? '#ffffff' : 'rgba(255,255,255,0.4)',
-            color: selectedModel === model.id ? '#1a1a1a' : '#666',
+            border: `1px solid ${selectedModel === model.id ? model.color : 'rgba(0,0,0,0.05)'}`,
+            background: selectedModel === model.id ? 'var(--bg-primary)' : 'rgba(255,255,255,0.8)',
+            color: selectedModel === model.id ? model.color : '#666',
             fontSize: '0.9rem',
-            fontWeight: 700,
+            fontWeight: 800,
             cursor: 'pointer',
             transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-            boxShadow: selectedModel === model.id ? '0 10px 25px rgba(0,0,0,0.1)' : '0 4px 12px rgba(0,0,0,0.02)',
-            transform: selectedModel === model.id ? 'scale(1.05)' : 'scale(1)'
+            boxShadow: selectedModel === model.id ? `0 10px 25px ${model.color}33, 0 0 20px ${model.color}22` : '0 4px 12px rgba(0,0,0,0.02)',
+            transform: selectedModel === model.id ? 'scale(1.05)' : 'scale(1)',
+            position: 'relative',
+            overflow: 'hidden'
           }}
         >
+          {selectedModel === model.id && (
+            <motion.div 
+              layoutId="pill-glow"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: model.branding,
+                opacity: 0.12,
+                zIndex: 0
+              }}
+            />
+          )}
           <div style={{ 
-            color: '#white', 
             background: model.branding,
             width: '24px',
             height: '24px',
@@ -58,11 +71,13 @@ const AIModelPills = ({ selectedModel, onModelChange }) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            flexShrink: 0,
+            zIndex: 1,
             color: 'white'
           }}>
             {model.icon}
           </div>
-          {model.name}
+          <span style={{ zIndex: 1, marginLeft: '0.8rem' }}>{model.name}</span>
         </button>
       ))}
     </div>

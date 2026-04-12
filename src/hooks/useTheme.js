@@ -7,7 +7,7 @@ export function useTheme() {
     if (savedTheme) {
       return savedTheme;
     }
-    return 'light'; // Ưu tiên giao diện sáng
+    return 'dark'; // Ưu tiên giao diện tối mặc định
   });
 
   useEffect(() => {

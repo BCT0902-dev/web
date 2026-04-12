@@ -120,27 +120,53 @@ const Navbar = () => {
         </div>
 
         <ul style={{ flex: 2, display: 'flex', justifyContent: 'center', gap: '2rem', listStyle: 'none', alignItems: 'center' }}>
-            {navLinks.map((link) => (
+            {['home', 'about', 'skills', 'blog'].map((link) => (
               <li key={link}>
-                <a 
-                  href={`/#${link}`} 
-                  style={{ 
-                    fontFamily: 'var(--font-mono)', 
-                    fontSize: '0.9rem',
-                    textTransform: 'uppercase',
-                    opacity: 0.8
-                  }}
-                  onMouseOver={(e) => {
-                    e.target.style.opacity = 1;
-                    e.target.style.color = 'var(--accent-main)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.target.style.opacity = 0.8;
-                    e.target.style.color = 'inherit';
-                  }}
-                >
-                  {t(`nav.${link}`)}
-                </a>
+                {link === 'blog' ? (
+                  <Link 
+                    to="/blog"
+                    style={{ 
+                      fontFamily: 'var(--font-mono)', 
+                      fontSize: '0.9rem',
+                      textTransform: 'uppercase',
+                      opacity: 0.8,
+                      textDecoration: 'none',
+                      color: 'inherit'
+                    }}
+                    onMouseOver={(e) => {
+                      e.target.style.opacity = 1;
+                      e.target.style.color = 'var(--accent-main)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.target.style.opacity = 0.8;
+                      e.target.style.color = 'inherit';
+                    }}
+                  >
+                    {t(`nav.${link}`)}
+                  </Link>
+                ) : (
+                  <a 
+                    href={`/#${link}`} 
+                    style={{ 
+                      fontFamily: 'var(--font-mono)', 
+                      fontSize: '0.9rem',
+                      textTransform: 'uppercase',
+                      opacity: 0.8,
+                      textDecoration: 'none',
+                      color: 'inherit'
+                    }}
+                    onMouseOver={(e) => {
+                      e.target.style.opacity = 1;
+                      e.target.style.color = 'var(--accent-main)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.target.style.opacity = 0.8;
+                      e.target.style.color = 'inherit';
+                    }}
+                  >
+                    {t(`nav.${link}`)}
+                  </a>
+                )}
               </li>
             ))}
             <li>
@@ -160,7 +186,7 @@ const Navbar = () => {
                 onMouseOver={(e) => e.currentTarget.style.opacity = 1}
                 onMouseOut={(e) => e.currentTarget.style.opacity = 0.8}
               >
-                <Zap size={18} /> TIỆN ÍCH
+                <Zap size={18} /> {t('nav.utilities')}
               </Link>
             </li>
         </ul>

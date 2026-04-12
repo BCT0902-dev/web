@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import TechSphere from '../components/TechSphere';
 import QuoteCarousel from '../components/QuoteCarousel';
 import { MessageSquare, Globe } from 'lucide-react';
@@ -23,6 +22,7 @@ const RandomCounter = () => {
 };
 
 const Hero = () => {
+  const { t } = useTranslation();
   const { config } = useConfig();
   
   const activeSocials = (config?.social_links && config.social_links.length > 0)
@@ -64,7 +64,7 @@ const Hero = () => {
           transition={{ duration: 0.5, delay: 0.2 }}
           style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-secondary)', marginBottom: '1.5rem', letterSpacing: '2px' }}
         >
-          XIN CHÀO _ // ĐÂY LÀ
+          {t('hero.greeting')}
         </motion.p>
         
         <motion.h1 
@@ -78,7 +78,7 @@ const Hero = () => {
           }}
           className="text-gradient"
         >
-          Bùi Công Tới
+          {t('hero.title')}
         </motion.h1>
 
         <motion.h2 
@@ -93,7 +93,7 @@ const Hero = () => {
             fontWeight: 400
           }}
         >
-          Người Việt Nam yêu thích công nghệ
+          {t('hero.subtitle')}
         </motion.h2>
 
         <motion.div
@@ -111,7 +111,7 @@ const Hero = () => {
           style={{ display: 'flex', gap: '1.5rem', marginTop: '3rem' }}
         >
           <a href="#projects" className="btn-primary">
-            XEM DỰ ÁN
+            {t('hero.cta_projects')}
           </a>
           <motion.a 
             href="#contact" 
@@ -135,7 +135,7 @@ const Hero = () => {
               overflow: 'hidden'
             }}
           >
-            LIÊN HỆ NGAY
+            {t('hero.cta_contact')}
           </motion.a>
         </motion.div>
         

@@ -25,7 +25,9 @@ import {
   ChevronDown,
   Brain,
   Sparkles,
-  Crop
+  Crop,
+  Mail,
+  BarChart3
 } from 'lucide-react';
 import { db } from '../../firebase';
 import { doc, setDoc, updateDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
@@ -49,7 +51,15 @@ const AdminDashboard = () => {
   const [userModal, setUserModal] = useState({ isOpen: false, mode: 'add', data: {} });
 
   // API Test states
-  const [apiTestStatus, setApiTestStatus] = useState({ gemini: '', deepseek: '' });
+  const [apiTestStatus, setApiTestStatus] = useState({ gemini: '', deepseek: '', groq: '' });
+  
+  // Newsletter Logic
+  const [newsletterContent, setNewsletterContent] = useState('');
+  const [newsletterLoading, setNewsletterLoading] = useState(false);
+
+  // Analytics Logic
+  const [analyticsData, setAnalyticsData] = useState([]);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
   useEffect(() => {
     if (config) {
@@ -60,8 +70,59 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (activeTab === 'users') {
       fetchUsers();
+    } else if (activeTab === 'analytics') {
+      fetchAnalytics();
     }
   }, [activeTab]);
+
+  const fetchAnalytics = async () => {
+    setLoadingAnalytics(true);
+    try {
+      const q = query(collection(db, "system_analytics"), orderBy('timestamp', 'desc'), limit(100));
+      const snapshot = await getDocs(q);
+      setAnalyticsData(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingAnalytics(false);
+    }
+  };
+
+  const generateNewsletter = async () => {
+    setNewsletterLoading(true);
+    const groqKey = localConfig?.integrations?.groqKey;
+    if (!groqKey) {
+      alert("Chưa cấu hình Groq API Key!");
+      setNewsletterLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${groqKey}`
+        },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          messages: [
+            { 
+              role: "system", 
+              content: "Bạn là chuyên gia viết Newsletter chuyên nghiệp cho IRIS AI Ecosystem. Hãy viết một bản tin ngắn gọn, lôi cuốn về các cập nhật mới nhất (Dark Mode, i18n, Chef AI) bằng tiếng Việt và Anh." 
+            },
+            { role: "user", content: "Hãy tạo một bản tin gửi khách hàng tuần này." }
+          ]
+        })
+      });
+      const data = await response.json();
+      setNewsletterContent(data.choices[0].message.content);
+    } catch (err) {
+      alert("Lỗi generation: " + err.message);
+    } finally {
+      setNewsletterLoading(false);
+    }
+  };
 
   const fetchUsers = async () => {
     setLoadingUsers(true);
@@ -124,17 +185,17 @@ const AdminDashboard = () => {
       setApiTestStatus(prev => ({ ...prev, gemini: '⚠️ Lỗi: Chưa điền API Key!' }));
       return;
     }
-    setApiTestStatus(prev => ({ ...prev, gemini: 'Đang kiểm tra bằng REST v1beta...' }));
-    try {
-      const payload = {
-        contents: [{ parts: [{ text: "Say 'TEST_OK'" }] }]
-      };
-      // High compatibility: Using v1beta and gemini-1.5-flash for free keys
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify(payload)
-      });
+      setApiTestStatus(prev => ({ ...prev, gemini: 'Đang kiểm tra bằng REST v1/gemini-1.5-flash...' }));
+      try {
+        const payload = {
+          contents: [{ parts: [{ text: "Say 'TEST_OK'" }] }]
+        };
+        // Use v1 (GA) for maximum stability with gemini-1.5-flash
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`, {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify(payload)
+        });
       const data = await response.json();
       if (response.ok && data.candidates) {
         setApiTestStatus(prev => ({ ...prev, gemini: '✅ KẾT NỐI THÀNH CÔNG!' }));
@@ -383,6 +444,8 @@ const AdminDashboard = () => {
     { id: 'apps', label: 'ỨNG DỤNG TIN DÙNG', icon: <Zap size={18} /> },
     { id: 'content', label: 'NỘI DUNG KHÁC', icon: <FileText size={18} /> },
     { id: 'integrations', label: 'TÍCH HỢP AI', icon: <Key size={18} /> },
+    { id: 'newsletter', label: 'BẢN TIN AI', icon: <Mail size={18} /> },
+    { id: 'analytics', label: 'THỐNG KÊ TRAFFIC', icon: <BarChart3 size={18} /> },
     { id: 'users', label: 'QUẢN LÝ TÀI KHOẢN', icon: <Users size={18} /> }
   ];
 
@@ -797,6 +860,82 @@ const AdminDashboard = () => {
                     <input style={{ flex: 1 }} type="password" value={localConfig.integrations.groqKey || ''} onChange={(e) => updateNested('integrations', 'groqKey', e.target.value)} />
                     <button className="add-btn" onClick={testGroqAPI}><Activity size={16} /> TEST GROQ</button>
                   </div>
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === 'newsletter' && (
+              <motion.div key="newsletter" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="config-section">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                   <div style={{ display: 'flex', gap: '0.8rem', color: 'var(--accent-main)' }}>
+                      <Mail size={24} /> <h3>IRIS AI NEWSLETTER GENERATOR</h3>
+                   </div>
+                   <button className="add-btn" onClick={generateNewsletter} disabled={newsletterLoading}>
+                      <Bot size={18} /> {newsletterLoading ? 'ĐANG SUY LUẬN...' : 'TẠO BẢN TIN VỚI GROQ'}
+                   </button>
+                </div>
+                
+                <div className="glass-panel" style={{ padding: '2rem', minHeight: '400px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                   <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>BẢN THẢO (MARKDOWN)</label>
+                   <textarea 
+                     value={newsletterContent}
+                     onChange={(e) => setNewsletterContent(e.target.value)}
+                     placeholder="Bản tin sẽ hiện ở đây sau khi bạn bấm tạo..."
+                     style={{ 
+                       flex: 1, 
+                       background: 'rgba(255,255,255,0.02)', 
+                       border: '1px solid rgba(255,255,255,0.1)', 
+                       borderRadius: '12px', 
+                       padding: '1.5rem', 
+                       color: '#fff', 
+                       fontFamily: 'inherit',
+                       fontSize: '1rem',
+                       lineHeight: '1.6',
+                       minHeight: '300px'
+                     }}
+                   />
+                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                      <button className="add-btn" style={{ background: 'rgba(255,255,255,0.1)' }} onClick={() => setNewsletterContent('')}>XÓA TRẮNG</button>
+                      <button className="add-btn" onClick={() => {
+                        navigator.clipboard.writeText(newsletterContent);
+                        alert("Đã sao chép vào bộ nhớ tạm!");
+                      }}>SAO CHÉP NỘI DUNG</button>
+                   </div>
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === 'analytics' && (
+              <motion.div key="analytics" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="config-section">
+                <div className="manager-header">
+                   <label>TRAFFIC & EVENT STREAM (TOP 100)</label>
+                   <button className="add-btn" onClick={fetchAnalytics}><Activity size={14} /> TẢI LẠI</button>
+                </div>
+                
+                <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
+                   <table className="admin-table">
+                     <thead>
+                       <tr>
+                         <th>Sự kiện</th>
+                         <th>Đường dẫn</th>
+                         <th>Thời gian</th>
+                         <th>Thiết bị / UserAgent</th>
+                       </tr>
+                     </thead>
+                     <tbody>
+                       {analyticsData.map(log => (
+                         <tr key={log.id}>
+                           <td><span style={{ color: 'var(--accent-main)', fontWeight: 700 }}>{log.event}</span></td>
+                           <td><code style={{ fontSize: '0.8rem' }}>{log.path}</code></td>
+                           <td style={{ fontSize: '0.8rem' }}>{log.timestamp?.toDate?.()?.toLocaleString() || 'Vừa xong'}</td>
+                           <td style={{ fontSize: '0.7rem', opacity: 0.6, maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.userAgent}</td>
+                         </tr>
+                       ))}
+                       {analyticsData.length === 0 && (
+                         <tr><td colSpan="4" style={{ textAlign: 'center', padding: '2rem', opacity: 0.5 }}>Chưa có dữ liệu thống kê...</td></tr>
+                       )}
+                     </tbody>
+                   </table>
                 </div>
               </motion.div>
             )}

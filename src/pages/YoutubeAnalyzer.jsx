@@ -124,9 +124,14 @@ const YoutubeAnalyzer = () => {
       let resultText = '';
 
       if (selectedModel === 'gemini') {
-          const genModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-          const result = await genModel.generateContent(prompt);
-          resultText = await result.response.text();
+          const payload = { contents: [{ parts: [{ text: prompt }] }] };
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify(payload)
+          });
+          const data = await response.json();
+          resultText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Lỗi phản hồi từ Gemini.";
       } else if (selectedModel === 'groq') {
           if (!groq) throw new Error('Chưa cấu hình Groq Key!');
           const completion = await groq.chat.completions.create({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }] });
@@ -235,10 +240,7 @@ const YoutubeAnalyzer = () => {
                  <Cpu size={24} /> <span style={{ fontWeight: 600, fontFamily: 'var(--font-mono)' }}>AI CORE ENGINE</span>
               </div>
               
-              <div style={{ marginBottom: '1.5rem' }}>
-                <p style={{ fontSize: '0.7rem', color: '#999', marginBottom: '0.5rem', fontWeight: 600 }}>MODEL SELECTION</p>
-                <AIModelPills selectedModel={selectedModel} onModelChange={setSelectedModel} />
-              </div>
+
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
                 <button className="btn-secondary" style={{ width: '100%', justifyContent: 'center', padding: '0.8rem 0', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--accent-main)' }} onClick={() => handleProcess('summary')} disabled={isProcessing}>

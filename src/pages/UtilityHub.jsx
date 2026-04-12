@@ -6,12 +6,13 @@ import './UtilityHub.css';
 
 const UtilityHub = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const utilities = [
     {
       id: 'chat',
       title: 'AI CHAT CORE',
-      description: 'Có những lúc code báo lỗi đỏ lòm mà không biết tại sao? Hay cần một người bạn ảo có thể hiểu bạn ngay cả khi bạn ốm? Vào đây chia sẻ cùng tôi nhé.',
+      description: t('utilities.chat_desc', 'Có những lúc code báo lỗi đỏ lòm mà không biết tại sao? Hay cần một người bạn ảo có thể hiểu bạn ngay cả khi bạn ốm? Vào đây chia sẻ cùng tôi nhé.'),
       image: '/thumbnails/chat_ai.png',
       status: 'ACTIVE',
       path: '/utilities/chat',
@@ -20,7 +21,7 @@ const UtilityHub = () => {
     {
       id: 'youtube',
       title: 'YT SMART ANALYZER',
-      description: 'Tìm được video YouTube hướng dẫn cực xịn nhưng mà nó dài tận 2 tiếng và toàn tiếng nước ngoài? Đưa link đây, để mình xử lý tóm tắt và dịch thuật cho.',
+      description: t('utilities.yt_desc', 'Tìm được video YouTube hướng dẫn cực xịn nhưng mà nó dài tận 2 tiếng và toàn tiếng nước ngoài? Đưa link đây, để mình xử lý tóm tắt và dịch thuật cho.'),
       image: '/thumbnails/yt_analyzer.png',
       status: 'ACTIVE',
       path: '/utilities/youtube',
@@ -29,7 +30,7 @@ const UtilityHub = () => {
     {
       id: 'chef',
       title: 'BCT CHEF',
-      description: 'Haizz tủ lạnh còn quá nhiều đồ hoặc có thể chỉ có vài món, vậy giờ làm gì để lấp đầy chiếc bụng đói này đây. Nhập vào bên dưới đi, chúng mình cùng nghiên cứu xem nên nấu món gì.',
+      description: t('utilities.chef_desc', 'Haizz tủ lạnh còn quá nhiều đồ hoặc có thể chỉ có vài món, vậy giờ làm gì để lấp đầy chiếc bụng đói này đây. Nhập vào bên dưới đi, chúng mình cùng nghiên cứu xem nên nấu món gì.'),
       image: '/thumbnails/chef_ai.png',
       status: 'ACTIVE',
       path: '/utilities/chef',
@@ -38,7 +39,7 @@ const UtilityHub = () => {
     {
       id: 'terminal',
       title: 'DEV TERMINAL',
-      description: 'Khoang điều khiển trung tâm dành cho hệ thống. Phân khu này đang bị khóa và chỉ dành riêng cho quyền Root.',
+      description: t('utilities.terminal_desc', 'Khoang điều khiển trung tâm dành cho hệ thống. Phân khu này đang bị khóa và chỉ dành riêng cho quyền Root.'),
       image: '/thumbnails/terminal.png',
       status: 'LOCKED',
       path: '#',
@@ -56,8 +57,8 @@ const UtilityHub = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
-          <h1>PHÒNG TRƯNG BÀY</h1>
-          <p>Nơi lưu giữ những mảnh ghép kỹ thuật số, những dự án nhỏ nhưng mang theo bao tâm huyết của tôi.</p>
+          <h1 className="text-gradient" style={{ textShadow: '0 0 20px var(--accent-glow)' }}>{t('utilities.gallery_title')}</h1>
+          <p style={{ color: 'var(--text-secondary)', maxWidth: '700px', margin: '0 auto' }}>{t('utilities.gallery_subtitle')}</p>
         </motion.div>
       </div>
 
@@ -70,6 +71,11 @@ const UtilityHub = () => {
             transition={{ duration: 0.8, delay: idx * 0.2 }}
             className={`utility-card ${item.status === 'LOCKED' ? 'disabled' : ''}`}
             onClick={() => item.status !== 'LOCKED' && navigate(item.path)}
+            style={{
+               background: 'rgba(10, 10, 15, 0.8)',
+               border: '1px solid rgba(255, 255, 255, 0.05)',
+               boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
+            }}
           >
             <div className="exhibit-display">
               <div className="artifact-glow" />
@@ -79,15 +85,17 @@ const UtilityHub = () => {
             </div>
 
             <div className="exhibit-info">
-              <h3>{item.title}</h3>
-              <p>{item.description}</p>
+              <h3 style={{ fontSize: '1.4rem' }}>{item.title}</h3>
+              <p style={{ minHeight: '80px' }}>{item.description}</p>
               
               <div className="exhibit-meta">
                 <span className="exhibit-id">{item.metadata}</span>
-                {item.status === 'ACTIVE' && (
-                  <div className="launch-btn">
-                    <Zap size={14} /> <span>EXPLORE</span>
+                {item.status === 'ACTIVE' ? (
+                  <div className="launch-btn" style={{ background: 'var(--accent-main)', color: '#000', padding: '0.4rem 0.8rem', borderRadius: '4px', opacity: 1, transform: 'none' }}>
+                    <Zap size={14} /> <span>{t('utilities.explore')}</span>
                   </div>
+                ) : (
+                  <span style={{ color: 'var(--danger)', fontSize: '0.7rem' }}>{t('utilities.status_locked')}</span>
                 )}
               </div>
             </div>
@@ -96,7 +104,7 @@ const UtilityHub = () => {
       </div>
 
       <div className="hub-footer">
-        <p>INTERNAL ACCESS PROTOCOL • SESSION: ACTIVE • ENCRYPTION: ROT-256</p>
+        <p>{t('footer.session_active')} • ENCRYPTION: ROT-256</p>
       </div>
     </div>
   );

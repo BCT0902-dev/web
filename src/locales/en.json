@@ -2,37 +2,101 @@
   "nav": {
     "home": "Home",
     "about": "About",
-    "skills": "Expertise",
+    "skills": "Skills",
     "projects": "Projects",
+    "utilities": "Utilities",
     "contact": "Contact",
     "theme_light": "Light",
-    "theme_dark": "Dark"
+    "theme_dark": "Dark",
+    "admin": "Admin",
+    "profile_settings": "Profile Settings",
+    "logout": "Logout"
   },
   "hero": {
-    "greeting": "HELLO VISITOR_ // THIS IS",
-    "title": "BCT0902",
-    "subtitle": "Software Engineer & Creative Developer",
-    "description": "I build digital experiences with modern web technologies, focusing on cutting-edge design and seamless functionality.",
-    "cta_projects": "View My Work",
-    "cta_contact": "Initialize Contact"
+    "greeting": "HELLO _ // THIS IS",
+    "title": "Bui Cong Toi",
+    "subtitle": "A Tech-Loving Vietnamese Developer",
+    "cta_projects": "View Projects",
+    "cta_contact": "Contact Now",
+    "total_likes": "Total Likes"
   },
   "about": {
-    "title": "< About />",
-    "content1": "I am BCT0902, a passionate developer obsessed with crafting robust and stunning digital solutions.",
-    "content2": "With a strong foundation in modern IT architecture and interactive design, I strive to build applications that are not only high-performing but also visually spectacular."
+    "title": "< About_Me />",
+    "bio_file": "bio.js",
+    "coding_file": "coding.js",
+    "hometown_label": "Hometown",
+    "hometown_value": "Ha Tinh",
+    "residence_label": "Residence",
+    "residence_value": "Lam Dong",
+    "major_label": "Major",
+    "major_value": "Information Technology",
+    "hobbies_label": "Hobbies",
+    "hobbies_music": "music",
+    "hobbies_walking": "walking",
+    "hobbies_apples": "eating apples",
+    "role_label": "Role",
+    "role_value": "Tiger Drunkard / 2 Plates of Snacks",
+    "skills_label": "Skills",
+    "skills_wrong_code": "Wrong code",
+    "skills_wrong_logic": "wrong logic",
+    "skills_wrong_design": "wrong design",
+    "skills_wrong_handsome": "wrong because handsome"
   },
   "skills": {
     "title": "< Tech_Stack />",
-    "frontend": "Frontend Development",
-    "backend": "Backend Systems",
-    "tools": "DevOps & Tools"
+    "frontend": "Frontend",
+    "backend": "Backend",
+    "tools": "Tools & DevOps"
   },
-  "projects": {
-    "title": "< Projects />",
-    "view_source": "Source Code",
-    "live_demo": "Live Demo"
+  "trusted": {
+    "title": "Trusted Applications"
+  },
+  "utilities": {
+    "gallery_title": "EXHIBIT GALLERY",
+    "gallery_subtitle": "A collection of digital artifacts and passion-driven AI projects.",
+    "status_active": "ACTIVE",
+    "status_locked": "LOCKED",
+    "explore": "EXPLORE"
+  },
+  "chef": {
+    "title": "BCT CHEF ASSISTANT",
+    "subtitle": "AI-Driven Culinary Suggestion System",
+    "placeholder_name": "Food item (e.g. Beef)...",
+    "placeholder_qty": "Quantity...",
+    "btn_add": "Add Ingredient",
+    "btn_cook": "Start Cooking",
+    "unit_reasoning": "Reasoning units..."
   },
   "footer": {
-    "rights": "All systems operational. All rights reserved."
+    "rights": "System online. All rights reserved.",
+    "session_active": "SESSION: ACTIVE",
+    "description": "Thank you for visiting my Portfolio. If you have any questions or collaboration opportunities, please leave a message.",
+    "form_title": "SEND INQUIRY",
+    "placeholder_name": "Full Name",
+    "placeholder_email": "Your Email",
+    "placeholder_message": "What would you like to ask...",
+    "submit": "SEND REQUEST",
+    "success": "SENT SUCCESSFULLY",
+    "scroll_up": "Scroll up to see more or click those cute social icons above.",
+    "security_notice": "Data secured with Firebase Firestore"
+  },
+  "nav": {
+     "blog": "Insights"
+  },
+  "testimonials": {
+    "title": "TRUSTED BY INNOVATORS",
+    "subtitle": "What people are saying about their IRIS AI experience."
+  },
+  "blog": {
+    "title": "AI INSIGHTS",
+    "subtitle": "Exploring the frontiers of AI, Web Development, and Digital Creativity."
+  },
+  "admin": {
+    "dashboard": "DASHBOARD",
+    "newsletters": "NEWSLETTERS",
+    "analytics": "ANALYTICS"
+  },
+  "common": {
+    "error": "An error occurred, please try again."
   }
 }
