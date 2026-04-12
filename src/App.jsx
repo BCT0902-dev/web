@@ -12,6 +12,7 @@ import Login from './pages/Login';
 import Utilities from './pages/Utilities';
 import FloatingChatBtn from './components/FloatingChatBtn';
 import { ConfigProvider } from './context/ConfigContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import LoadingScreen from './components/LoadingScreen';
 import { AnimatePresence } from 'framer-motion';
 
@@ -27,18 +28,17 @@ const Home = () => (
   </>
 );
 
-function App() {
+function AppRoutes() {
   const [isInitialLoading, setIsInitialLoading] = React.useState(true);
   const location = useLocation();
   const isLoginPage = location.pathname === '/login';
   const isAdminPage = location.pathname.startsWith('/admin');
   const isUtilitiesPage = location.pathname.startsWith('/utilities');
 
-  // Simple check for admin session
-  const isAdmin = localStorage.getItem('bct_admin_session') === 'true';
+  const { isAdmin } = useAuth();
 
   return (
-    <ConfigProvider>
+    <>
       <AnimatePresence>
         {isInitialLoading && (
           <LoadingScreen onComplete={() => setIsInitialLoading(false)} />
@@ -57,7 +57,17 @@ function App() {
         {!isAdminPage && <FloatingChatBtn />}
         {!isLoginPage && !isAdminPage && !isUtilitiesPage && <Footer />}
       </div>
-    </ConfigProvider>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <ConfigProvider>
+        <AppRoutes />
+      </ConfigProvider>
+    </AuthProvider>
   );
 }
 

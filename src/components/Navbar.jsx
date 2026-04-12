@@ -5,9 +5,11 @@ import { Moon, Sun, Globe, User, Bot, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useConfig } from '../context/ConfigContext';
+import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
   const { config } = useConfig();
+  const { currentUser, isAdmin, logout } = useAuth();
   const logoUrl = config?.appearance?.logoUrl || '/logobct.png';
   const { t, i18n } = useTranslation();
   const { theme, toggleTheme } = useTheme();
@@ -108,31 +110,47 @@ const Navbar = () => {
 
         <div style={{ width: '1px', height: '20px', background: 'var(--bg-glass-border)', flexShrink: 0 }} />
 
-        <Link to="/login" style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '0.5rem',
-          padding: '0.5rem 1rem',
-          borderRadius: '8px',
-          background: 'var(--accent-main)',
-          color: '#fff',
-          fontSize: '0.85rem',
-          fontWeight: 600,
-          textDecoration: 'none',
-          transition: 'all 0.3s ease'
-        }}
-        onMouseOver={(e) => {
-          e.currentTarget.style.transform = 'translateY(-2px)';
-          e.currentTarget.style.boxShadow = '0 0 15px var(--accent-glow)';
-        }}
-        onMouseOut={(e) => {
-          e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = 'none';
-        }}
-        >
-          <User size={18} />
-          <span>LOGIN</span>
-        </Link>
+        {currentUser || isAdmin ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255, 255, 255, 0.05)', padding: '0.4rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
+             <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: isAdmin ? 'var(--accent-gold, #ffd700)' : 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                {isAdmin ? "BCT_ADMIN" : (currentUser?.displayName || currentUser?.email?.split('@')[0])}
+             </span>
+             {isAdmin && (
+               <Link to="/admin" style={{ color: 'var(--accent-main)', textDecoration: 'none', fontSize: '0.75rem', fontWeight: 'bold', marginLeft: '0.5rem', background: 'rgba(var(--accent-rgb), 0.1)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                 TỚI ADMIN
+               </Link>
+             )}
+             <span style={{ cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.75rem', marginLeft: '0.5rem', transition: 'color 0.3s' }} onClick={logout} onMouseOver={(e) => e.target.style.color='var(--danger)'} onMouseOut={(e) => e.target.style.color='var(--text-muted)'}>
+                THOÁT
+             </span>
+          </div>
+        ) : (
+          <Link to="/login" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '0.5rem',
+            padding: '0.5rem 1rem',
+            borderRadius: '8px',
+            background: 'var(--accent-main)',
+            color: '#fff',
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            textDecoration: 'none',
+            transition: 'all 0.3s ease'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 0 15px var(--accent-glow)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
+          >
+            <User size={18} />
+            <span>LOGIN</span>
+          </Link>
+        )}
       </div>
     </motion.nav>
   );

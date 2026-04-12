@@ -12,10 +12,15 @@ import {
   Save, 
   CheckCircle,
   ExternalLink,
-  Bot
+  Bot,
+  Users,
+  Home,
+  Activity
 } from 'lucide-react';
 import { db } from '../../firebase';
-import { doc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Link } from 'react-router-dom';
 import { useConfig } from '../../context/ConfigContext';
 import './AdminDashboard.css';
 
@@ -25,12 +30,71 @@ const AdminDashboard = () => {
   const [localConfig, setLocalConfig] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [status, setStatus] = useState('');
+  
+  // Users state
+  const [usersList, setUsersList] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
+  // API Test states
+  const [apiTestStatus, setApiTestStatus] = useState({ gemini: '', deepseek: '' });
 
   useEffect(() => {
     if (config) {
       setLocalConfig(JSON.parse(JSON.stringify(config)));
     }
   }, [config]);
+
+  useEffect(() => {
+    if (activeTab === 'users') {
+      fetchUsers();
+    }
+  }, [activeTab]);
+
+  const fetchUsers = async () => {
+    setLoadingUsers(true);
+    try {
+      const querySnapshot = await getDocs(collection(db, "users"));
+      const usersData = [];
+      querySnapshot.forEach((doc) => {
+        usersData.push({ id: doc.id, ...doc.data() });
+      });
+      setUsersList(usersData);
+    } catch (err) {
+      console.error("Error fetching users:", err);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const deleteUserRecord = async (userId) => {
+    if (!window.confirm('Ngài có chắc chắn muốn xoá hồ sơ này khỏi Database? (Thao tác này không xoá trong Firebase Auth, chỉ xoá dữ liệu Profile)')) return;
+    try {
+      await deleteDoc(doc(db, "users", userId));
+      setUsersList(prev => prev.filter(u => u.id !== userId));
+      alert("Đã xoá thành công!");
+    } catch (err) {
+      alert("Lỗi khi xoá: " + err.message);
+    }
+  };
+
+  const testGeminiAPI = async () => {
+    const key = localConfig?.integrations?.geminiKey;
+    if (!key) {
+      setApiTestStatus(prev => ({ ...prev, gemini: '⚠️ Lỗi: Chưa điền API Key!' }));
+      return;
+    }
+    setApiTestStatus(prev => ({ ...prev, gemini: 'Đang kiểm tra...' }));
+    try {
+      const genAI = new GoogleGenerativeAI(key);
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const result = await model.generateContent("Say 'TEST_OK'");
+      if (result.response.text()) {
+        setApiTestStatus(prev => ({ ...prev, gemini: '✅ KẾT NỐI THÀNH CÔNG!' }));
+      }
+    } catch (err) {
+      setApiTestStatus(prev => ({ ...prev, gemini: '❌ LỖI: ' + err.message }));
+    }
+  };
 
   if (loading || !localConfig) {
     return <div className="admin-loading">INITIALIZING SYSTEM_ADMIN...</div>;
@@ -79,8 +143,9 @@ const AdminDashboard = () => {
   const tabs = [
     { id: 'general', label: 'CÀI ĐẶT CHUNG', icon: <Globe size={18} /> },
     { id: 'appearance', label: 'GIAO DIỆN', icon: <Palette size={18} /> },
+    { id: 'content', label: 'NỘI DUNG', icon: <FileText size={18} /> },
     { id: 'integrations', label: 'TÍCH HỢP AI', icon: <Key size={18} /> },
-    { id: 'content', label: 'NỘI DUNG', icon: <FileText size={18} /> }
+    { id: 'users', label: 'QUẢN LÝ TÀI KHOẢN', icon: <Users size={18} /> }
   ];
 
   return (
@@ -102,6 +167,13 @@ const AdminDashboard = () => {
               <span>{tab.label}</span>
             </button>
           ))}
+          
+          <div className="admin-divider" style={{ margin: '1rem 0' }}></div>
+          
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0.8rem 1rem', color: 'var(--text-muted)', textDecoration: 'none', borderRadius: '8px', transition: 'all 0.3s' }} onMouseOver={(e) => {e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}} onMouseOut={(e) => {e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'}}>
+            <Home size={18} />
+            <span>VỀ TRANG CHỦ</span>
+          </Link>
         </nav>
 
         <div className="admin-footer-btn">
@@ -115,7 +187,7 @@ const AdminDashboard = () => {
 
       <main className="admin-content">
         <header className="admin-header">
-          <h1>{tabs.find(t => t.id === activeTab).label}</h1>
+          <h1>{tabs.find(t => t.id === activeTab)?.label}</h1>
           <p>Thiết lập các thông số cơ bản cho hệ thống BCT0902.</p>
         </header>
 
@@ -277,17 +349,87 @@ const AdminDashboard = () => {
                 className="config-section"
               >
                 <div className="api-config-alert">
-                  <strong>CHÚ Ý:</strong> Các API Key cấu hình ở đây sẽ được ưu tiên sử dụng thay cho API Key trong file .env.
+                  <strong>CHUYÊN MỤC API KEY:</strong> Quản lý các cấu hình nhạy cảm. Lưu ý, React Client App sẽ làm lộ các Key này lên Network Tab nếu ai đó cố ý tìm kiếm.
                 </div>
                 
                 <div className="input-group">
-                  <label>GEMINI API KEY (GOOGLE)</label>
-                  <input type="password" value={localConfig.integrations.geminiKey} onChange={(e) => updateNested('integrations', 'geminiKey', e.target.value)} placeholder="AIza..." />
+                  <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>GEMINI API KEY (GOOGLE)</span>
+                    {apiTestStatus.gemini && (
+                       <span style={{ fontSize: '0.8rem', color: apiTestStatus.gemini.includes('LỖI') ? '#ef4444' : '#10b981' }}>{apiTestStatus.gemini}</span>
+                    )}
+                  </label>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <input style={{ flex: 1 }} type="password" value={localConfig.integrations.geminiKey} onChange={(e) => updateNested('integrations', 'geminiKey', e.target.value)} placeholder="AIza..." />
+                    <button onClick={testGeminiAPI} style={{ background: 'var(--bg-primary)', border: '1px solid var(--accent-main)', color: 'var(--accent-main)', padding: '0 1.5rem', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                       <Activity size={16} /> TEST KEY
+                    </button>
+                  </div>
                 </div>
                 
-                <div className="input-group">
-                  <label>DEEPSEEK API KEY</label>
+                <div className="input-group" style={{ marginTop: '1.5rem' }}>
+                  <label>DEEPSEEK API KEY (Hiện chưa kết nối SDK)</label>
                   <input type="password" value={localConfig.integrations.deepseekKey} onChange={(e) => updateNested('integrations', 'deepseekKey', e.target.value)} placeholder="sk-..." />
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === 'users' && (
+              <motion.div 
+                key="users" 
+                initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+                className="config-section"
+              >
+                <div className="manager-header" style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between' }}>
+                   <label>CƠ SỞ DỮ LIỆU NGƯỜI DÙNG</label>
+                   <button className="add-btn" onClick={fetchUsers} disabled={loadingUsers}>
+                      {loadingUsers ? 'ĐANG TẢI...' : 'LÀM MỚI DANH SÁCH'}
+                   </button>
+                </div>
+                
+                <div className="glass-panel" style={{ padding: '0', overflow: 'hidden' }}>
+                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+                      <thead>
+                         <tr style={{ background: 'rgba(255,255,255,0.05)' }}>
+                            <th style={{ padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Email</th>
+                            <th style={{ padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>User Details</th>
+                            <th style={{ padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Role</th>
+                            <th style={{ padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', textAlign: 'right' }}>Hành động</th>
+                         </tr>
+                      </thead>
+                      <tbody>
+                         {usersList.length === 0 ? (
+                           <tr>
+                              <td colSpan="4" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>Mảng dữ liệu Users trống.</td>
+                           </tr>
+                         ) : (
+                           usersList.map(user => (
+                              <tr key={user.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                 <td style={{ padding: '1rem' }}>{user.email}</td>
+                                 <td style={{ padding: '1rem' }}>
+                                    {user.displayName || (user.firstName ? `${user.lastName || ''} ${user.firstName}` : '')}
+                                    <br/>
+                                    <small style={{ color: 'var(--text-muted)' }}>@{user.username || 'unknown'}</small>
+                                 </td>
+                                 <td style={{ padding: '1rem' }}>
+                                    <span style={{ 
+                                       padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold',
+                                       background: user.role === 'admin' ? 'rgba(var(--accent-rgb), 0.2)' : 'rgba(255,255,255,0.1)',
+                                       color: user.role === 'admin' ? 'var(--accent-main)' : 'var(--text-muted)'
+                                    }}>
+                                       {user.role?.toUpperCase() || 'USER'}
+                                    </span>
+                                 </td>
+                                 <td style={{ padding: '1rem', textAlign: 'right' }}>
+                                    <button style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }} onClick={() => deleteUserRecord(user.id)} title="Xóa sơ yếu lý lịch này">
+                                       <Trash2 size={16} />
+                                    </button>
+                                 </td>
+                              </tr>
+                           ))
+                         )}
+                      </tbody>
+                   </table>
                 </div>
               </motion.div>
             )}

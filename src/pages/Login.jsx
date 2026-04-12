@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ShieldCheck, ArrowLeft, KeyRound, Smartphone, User, UserCircle } from 'lucide-react';
-import { signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { Mail, Lock, ShieldCheck, ArrowLeft, KeyRound, Smartphone, User, UserCircle, Eye, EyeOff } from 'lucide-react';
+import { signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { auth, googleProvider, githubProvider, db } from '../firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import * as OTPAuth from 'otpauth';
@@ -14,6 +14,18 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [showAdblockModal, setShowAdblockModal] = useState(false);
   
+  // Custom Autfill CSS override injected locally to prevent white background
+  const autofillFix = `
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover, 
+    input:-webkit-autofill:focus, 
+    input:-webkit-autofill:active{
+        -webkit-box-shadow: 0 0 0 30px #1e1e24 inset !important;
+        -webkit-text-fill-color: white !important;
+        transition: background-color 5000s ease-in-out 0s;
+    }
+  `;
+  
   // Auth Modes
   const [authMode, setAuthMode] = useState('login'); // 'login', 'register'
   const [step, setStep] = useState('auth'); // auth, 2fa_setup, 2fa_verify
@@ -21,30 +33,67 @@ const Login = () => {
   // Form State
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   
   // 2FA State
   const [totpSecret, setTotpSecret] = useState('');
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [otpCode, setOtpCode] = useState('');
 
+  const toggleAuthMode = (mode) => {
+    setAuthMode(mode);
+    setError('');
+    // Clear forms completely
+    setEmail('');
+    setPassword('');
+    setConfirmPassword('');
+    setFirstName('');
+    setLastName('');
+    setUsername('');
+  };
+
+  const validateEmail = (emailStr) => {
+    return String(emailStr).toLowerCase().match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+  };
+
+  const recoverPassword = async () => {
+    if (!email || !validateEmail(email)) {
+      setError('Vui lòng nhập định dạng email hợp lệ vào ô Email để lấy lại mật khẩu.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setError('');
+      alert('Đã gửi liên kết khôi phục. Vui lòng kiểm tra Hộp thư Email của ngài!');
+    } catch (err) {
+      if (err.code === 'auth/user-not-found') {
+        setError('Email này chưa được đăng ký trong hệ thống.');
+      } else {
+        setError('Không thể gửi yêu cầu: ' + err.message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleError = (err) => {
     const errorStr = err.toString().toLowerCase();
     console.error("Auth Error Object:", err);
     
-    // Check for explicit "blocked" markers
     if (errorStr.includes('blocked')) {
       setShowAdblockModal(true);
     } else if (err.message === 'TIMEOUT_FIRESTORE') {
-      setError("Không thể kết nối đến máy chủ Database (Timeout 5s). Dự án của ngài chưa kích hoạt Firebase Firestore hoặc kết nối bị tường lửa chặn đặc biệt!");
+      setError("Không kết nối được DB (Timeout 5s).");
     } else if (err?.code === 'unavailable') {
-      // Offline but maybe temporary
-      setError("Hệ thống hiện đang ngoại tuyến. Vui lòng kiểm tra lại kết nối mạng của ngài.");
+      setError("Hệ thống hiện đang ngoại tuyến.");
       setShowAdblockModal(true);
     } else if (err?.code === 'auth/unauthorized-domain') {
-      setError("Domain này chưa được cấp phép trong Firebase Console. Vui lòng liên hệ Admin!");
+      setError("Domain này chưa được cấp phép.");
     } else {
       setError('Lỗi kết nối: ' + (err.message || err.toString()));
     }
@@ -53,13 +102,24 @@ const Login = () => {
   const executeAuth = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (authMode === 'login' && email !== 'admin') {
+      if (!validateEmail(email)) {
+        setError('Định dạng email không hợp lệ.');
+        return;
+      }
+    } else if (authMode === 'register') {
+      if (!validateEmail(email)) {
+        setError('Định dạng email không hợp lệ.');
+        return;
+      }
+    }
+
     setLoading(true);
 
     if (authMode === 'login') {
-      // 1. Kiểm tra Hardcoded Admin
       if (email === 'admin' && password === 'Buicongtoi0902') {
         try {
-          // Timeout cầu chì 5 giây để tránh treo trình duyệt nếu DB chưa cấu hình
           const adminDoc = await Promise.race([
             getDoc(doc(db, 'system', 'admin_config')),
             new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT_FIRESTORE')), 5000))
@@ -91,7 +151,6 @@ const Login = () => {
         return;
       }
 
-      // 2. Nếu không phải Admin -> Đăng nhập User qua Firebase
       try {
         await signInWithEmailAndPassword(auth, email, password);
         navigate('/');
@@ -106,9 +165,13 @@ const Login = () => {
       }
 
     } else if (authMode === 'register') {
-      // Đăng ký mới
       if (!firstName || !lastName || !username) {
-         setError('Vui lòng điền đầy đủ các thông tin cá nhân.');
+         setError('Vui lòng điền đầy đủ thông tin cá nhân.');
+         setLoading(false);
+         return;
+      }
+      if (password !== confirmPassword) {
+         setError('Mật khẩu nhập lại không khớp.');
          setLoading(false);
          return;
       }
@@ -117,7 +180,6 @@ const Login = () => {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         
-        // Lưu thông tin người dùng vào Firestore Database
         await setDoc(doc(db, 'users', user.uid), {
           firstName,
           lastName,
@@ -133,7 +195,7 @@ const Login = () => {
       } catch (err) {
         console.error(err);
         if (err.code === 'auth/email-already-in-use') {
-           setError('Tài khoản Email này đã được sử dụng.');
+           setError('Tài khoản Email này đã tồn tại (Có thể bạn đã đăng nhập bằng Google trước đó). Quên mật khẩu?');
         } else if (err.code === 'auth/weak-password') {
            setError('Mật khẩu yếu. Vui lòng sử dụng mật khẩu trên 6 ký tự.');
         } else {
@@ -193,6 +255,7 @@ const Login = () => {
       padding: '2rem', position: 'relative', overflow: 'hidden',
       background: 'radial-gradient(circle at center, #111 0%, #050505 100%)'
     }}>
+      <style dangerouslySetInnerHTML={{ __html: autofillFix }} />
       <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '400px', height: '400px', background: 'var(--accent-glow)', filter: 'blur(100px)', opacity: 0.15, pointerEvents: 'none' }} />
       <div style={{ position: 'absolute', bottom: '-10%', left: '-10%', width: '400px', height: '400px', background: 'var(--accent-secondary)', filter: 'blur(100px)', opacity: 0.1, pointerEvents: 'none' }} />
 
@@ -219,7 +282,12 @@ const Login = () => {
                 </div>
               </div>
 
-              {error && <div className="error-box" style={{ padding: '0.8rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', borderRadius: '8px', fontSize: '0.8rem', marginBottom: '1.5rem', textAlign: 'center' }}>{error}</div>}
+              {error && <div className="error-box" style={{ padding: '0.8rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', borderRadius: '8px', fontSize: '0.8rem', marginBottom: '1.5rem', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                 <span>{error}</span>
+                 {error.includes('tồn tại') && (
+                    <button type="button" onClick={recoverPassword} style={{ background: 'transparent', border: '1px solid #ef4444', color: '#ef4444', padding: '0.4rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold' }}>QUÊN MẬT KHẨU?</button>
+                 )}
+              </div>}
 
               <form onSubmit={executeAuth} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
                 
@@ -243,17 +311,30 @@ const Login = () => {
 
                 <div style={{ position: 'relative' }}>
                   <Mail size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                  <input type="text" placeholder={authMode === 'login' ? "Email / ADMIN_NETWORK_ID" : "Email"} value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%', padding: '1rem 1rem 1rem 3rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontFamily: 'var(--font-mono)', outline: 'none' }} />
+                  <input type="text" placeholder={authMode === 'login' ? "Email / ADMIN_NETWORK_ID" : "Email hợp lệ (@gmail.com...)"} value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%', padding: '1rem 1rem 1rem 3rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontFamily: 'var(--font-mono)', outline: 'none' }} />
                 </div>
                 <div style={{ position: 'relative' }}>
                   <Lock size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                  <input type="password" placeholder={authMode === 'login' ? "Mật mã bảo mật" : "Nhập mật khẩu (Tối thiểu 6 ký tự)"} value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '1rem 1rem 1rem 3rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontFamily: 'var(--font-mono)', outline: 'none' }} />
+                  <input type={showPassword ? "text" : "password"} placeholder={authMode === 'login' ? "Mật mã bảo mật" : "Nhập mật khẩu (Tối thiểu 6 ký tự)"} value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '1rem 3rem 1rem 3rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontFamily: 'var(--font-mono)', outline: 'none' }} />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '0.8rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
                 </div>
                 
+                {authMode === 'register' && (
+                  <div style={{ position: 'relative' }}>
+                    <Lock size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                    <input type={showPassword ? "text" : "password"} placeholder="Xác nhận lại mật khẩu" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required style={{ width: '100%', padding: '1rem 3rem 1rem 3rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontFamily: 'var(--font-mono)', outline: 'none' }} />
+                  </div>
+                )}
+                
                 {authMode === 'login' && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '-0.5rem' }}>
-                    <input type="checkbox" id="remember" style={{ accentColor: 'var(--accent-main)', width: '16px', height: '16px', cursor: 'pointer', borderRadius: '50%' }} />
-                    <label htmlFor="remember" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', cursor: 'pointer' }}>Ghi nhớ đăng nhập</label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '-0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <input type="checkbox" id="remember" style={{ accentColor: 'var(--accent-main)', width: '16px', height: '16px', cursor: 'pointer', borderRadius: '50%' }} />
+                      <label htmlFor="remember" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', cursor: 'pointer' }}>Ghi nhớ đăng nhập</label>
+                    </div>
+                    <button type="button" onClick={recoverPassword} style={{ background: 'none', border: 'none', color: 'var(--accent-secondary)', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}>Quên mật khẩu?</button>
                   </div>
                 )}
 
@@ -263,11 +344,11 @@ const Login = () => {
 
                 <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
                   {authMode === 'login' ? (
-                    <button type="button" onClick={() => setAuthMode('register')} style={{ color: 'var(--accent-secondary)', fontSize: '0.85rem', textDecoration: 'underline', transition: 'color 0.3s' }} onMouseOver={(e) => e.target.style.color = '#fff'} onMouseOut={(e) => e.target.style.color = 'var(--accent-secondary)'}>
-                      Ngài chưa có tư cách lưu trữ? KHỞI TẠO HỒ SƠ
+                    <button type="button" onClick={() => toggleAuthMode('register')} style={{ color: 'var(--accent-secondary)', fontSize: '0.85rem', textDecoration: 'underline', transition: 'color 0.3s', cursor: 'pointer', background: 'none', border: 'none' }} onMouseOver={(e) => e.target.style.color = '#fff'} onMouseOut={(e) => e.target.style.color = 'var(--accent-secondary)'}>
+                      Đăng ký tài khoản
                     </button>
                   ) : (
-                    <button type="button" onClick={() => setAuthMode('login')} style={{ color: 'var(--accent-secondary)', fontSize: '0.85rem', textDecoration: 'underline', transition: 'color 0.3s' }} onMouseOver={(e) => e.target.style.color = '#fff'} onMouseOut={(e) => e.target.style.color = 'var(--accent-secondary)'}>
+                    <button type="button" onClick={() => toggleAuthMode('login')} style={{ color: 'var(--accent-secondary)', fontSize: '0.85rem', textDecoration: 'underline', transition: 'color 0.3s', cursor: 'pointer', background: 'none', border: 'none' }} onMouseOver={(e) => e.target.style.color = '#fff'} onMouseOut={(e) => e.target.style.color = 'var(--accent-secondary)'}>
                       Đã có hồ sơ? Quay lại ĐĂNG NHẬP
                     </button>
                   )}
@@ -336,56 +417,42 @@ const Login = () => {
         </div>
       </motion.div>
 
-      {/* Museum Style AdBlock Modal */}
-      <AnimatePresence>
-        {showAdblockModal && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(8px)' }}
+      {showAdblockModal && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(8px)' }}
+        >
+          <motion.div
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            style={{ background: '#0A0A0A', width: '90%', maxWidth: '550px', padding: '3.5rem 3rem 3rem', border: '1px solid rgba(212, 175, 55, 0.4)', borderRadius: '2px', boxShadow: '0 20px 50px rgba(0,0,0,0.8), inset 0 0 60px rgba(212, 175, 55, 0.05)', textAlign: 'center', position: 'relative' }}
           >
-            <motion.div
-              initial={{ y: 50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              style={{ background: '#0A0A0A', width: '90%', maxWidth: '550px', padding: '3.5rem 3rem 3rem', border: '1px solid rgba(212, 175, 55, 0.4)', borderRadius: '2px', boxShadow: '0 20px 50px rgba(0,0,0,0.8), inset 0 0 60px rgba(212, 175, 55, 0.05)', textAlign: 'center', position: 'relative' }}
-            >
-               <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translate(-50%, -50%)', background: '#0A0A0A', padding: '0 1.5rem', color: 'var(--accent-gold)' }}>
-                 <ShieldCheck size={36} />
-               </div>
-               
-               <h2 style={{ fontFamily: "var(--font-heading), 'Chakra Petch', sans-serif", color: 'var(--accent-gold)', fontSize: '2.2rem', marginBottom: '1.5rem', letterSpacing: '3px', textTransform: 'uppercase' }}>
-                 TÁC PHẨM BỊ TỪ CHỐI
-               </h2>
-               
-               <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '1.05rem', marginBottom: '2.5rem', fontFamily: 'system-ui, sans-serif' }}>
-                 Hệ thống bảo vệ (AdBlock / Shields) hoặc cấu hình mạng đang ngăn chặn tác phẩm này giao tiếp với máy chủ kho lưu trữ.
-                 <br/><br/>
-                 <span style={{ fontSize: '0.9rem', color: 'var(--accent-gold)', opacity: 0.8 }}>
-                   * Nếu ngài KHÔNG dùng AdBlock, hãy kiểm tra xem Domain này đã được "Authorized" trong Firebase Console chưa.
-                 </span>
-                 <br/><br/>
-                 Để chiêm ngưỡng và tham gia giao tiếp với toàn bộ không gian nghệ thuật tại đây, hệ thống xin ngài vui lòng <b style={{ color: '#fff' }}>hạ khiên bảo vệ</b> hoặc kiểm tra lại kết nối mạng.
-               </p>
+             <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translate(-50%, -50%)', background: '#0A0A0A', padding: '0 1.5rem', color: 'var(--accent-gold)' }}>
+               <ShieldCheck size={36} />
+             </div>
+             
+             <h2 style={{ fontFamily: "var(--font-heading), 'Chakra Petch', sans-serif", color: 'var(--accent-gold)', fontSize: '2.2rem', marginBottom: '1.5rem', letterSpacing: '3px', textTransform: 'uppercase' }}>
+               TÁC PHẨM BỊ TỪ CHỐI
+             </h2>
+             
+             <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '1.05rem', marginBottom: '2.5rem', fontFamily: 'system-ui, sans-serif' }}>
+               Hệ thống bảo vệ đang ngăn chặn kết nối mạng.<br/><br/>
+               Xin vui lòng hạ khiên bảo vệ hoặc tải lại trang.
+             </p>
 
-               <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                 <button 
-                   onClick={() => { setShowAdblockModal(false); window.location.reload(); }} 
-                   style={{ background: 'var(--accent-gold)', padding: '1rem 2rem', border: '1px solid var(--accent-gold)', color: '#000', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', fontWeight: 'bold', letterSpacing: '1px', transition: 'all 0.3s' }}
-                 >
-                   TÔI ĐÃ TẮT & TẢI LẠI
-                 </button>
-                 <button 
-                   onClick={() => setShowAdblockModal(false)}
-                   style={{ background: 'transparent', padding: '1rem 2rem', border: '1px solid rgba(255,255,255,0.2)', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', letterSpacing: '1px', transition: 'all 0.3s' }}
-                 >
-                   THỬ LẠI NGAY
-                 </button>
-               </div>
-            </motion.div>
+             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+               <button 
+                 onClick={() => { setShowAdblockModal(false); window.location.reload(); }} 
+                 style={{ background: 'var(--accent-gold)', padding: '1rem 2rem', border: '1px solid var(--accent-gold)', color: '#000', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', fontWeight: 'bold' }}
+               >
+                 TẢI LẠI TRANG
+               </button>
+             </div>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </motion.div>
+      )}
     </div>
   );
 };
