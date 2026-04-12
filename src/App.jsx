@@ -7,6 +7,7 @@ import FilmStrip from './sections/FilmStrip';
 import Skills from './sections/Skills';
 import TrustedApps from './sections/TrustedApps';
 import Footer from './components/Footer';
+import Testimonials from './sections/Testimonials';
 import Background from './components/Background';
 import Login from './pages/Login';
 import Utilities from './pages/Utilities';
