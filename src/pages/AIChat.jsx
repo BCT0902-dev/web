@@ -17,7 +17,8 @@ import {
   History,
   Terminal,
   Eraser,
-  Shield
+  Shield,
+  ChevronDown
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';

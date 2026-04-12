@@ -2,7 +2,7 @@
   min-height: 100vh;
   width: 100%;
   padding: 10rem 10% 6rem;
-  background: var(--bg-primary); /* Auto adapt to Light / Dark themes */
+  background: transparent; /* Reveal parent's --utility-bg */
   position: relative;
   overflow-x: hidden;
   transition: background-color 0.3s ease;
