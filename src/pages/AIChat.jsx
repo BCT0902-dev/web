@@ -40,13 +40,14 @@ const AIChat = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeepThink, setIsDeepThink] = useState(false);
+  const [isImageMode, setIsImageMode] = useState(false);
+  const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState('gemini');
   const [chatHistory, setChatHistory] = useState([]);
   const [activeChatId, setActiveChatId] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
-  const [isDeepThink, setIsDeepThink] = useState(false);
-  const [isImageMode, setIsImageMode] = useState(false);
   
   const messagesEndRef = useRef(null);
   const { currentUser: authUser, isAdmin } = useAuth();
@@ -200,16 +201,12 @@ const AIChat = () => {
         <div className="messages-container">
           {messages.length === 0 ? (
             <div className="chat-welcome">
-              <h1 className="welcome-greeting" style={{ fontSize: '2.8rem', gap: '1.5rem', marginBottom: '1rem' }}>
+              <h1 className="welcome-greeting" style={{ fontFamily: "'Chakra Petch', sans-serif", fontSize: '3.5rem', gap: '1.5rem', marginBottom: '1rem' }}>
                 👋 Hi {getUserDisplayName()}, mình là IRIS
               </h1>
-              <h2 style={{ fontSize: '1.4rem', color: '#555', fontWeight: 500, marginBottom: '3rem' }}>
+              <h2 style={{ fontFamily: "'Chakra Petch', sans-serif", fontSize: '1.8rem', color: '#555', fontWeight: 500, marginBottom: '3rem', opacity: 0.8 }}>
                 Mình có thể giúp gì cho bạn ?
               </h2>
-              
-              <div className="iris-model-selector" style={{ transform: 'scale(1.1)' }}>
-                <AIModelPills selectedModel={selectedModel} onModelChange={setSelectedModel} />
-              </div>
             </div>
           ) : (
             messages.map((msg, index) => (
@@ -240,6 +237,25 @@ const AIChat = () => {
              
              <div className="iris-input-actions">
                 <div className="action-left">
+                   <div className="model-dropdown-wrapper">
+                      <button className="action-chip model-selector-btn" onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}>
+                         <Cpu size={16} /> {selectedModel.toUpperCase()} <ChevronDown size={14} />
+                      </button>
+                      
+                      {isModelDropdownOpen && (
+                         <div className="model-dropdown-menu">
+                            {['gemini', 'deepseek', 'groq'].map(m => (
+                               <div key={m} className={`dropdown-item ${selectedModel === m ? 'active' : ''}`} onClick={() => { setSelectedModel(m); setIsModelDropdownOpen(false); }}>
+                                  {m === 'gemini' && <Sparkles size={14} color="#4285F4" />}
+                                  {m === 'deepseek' && <Brain size={14} color="#673AB7" />}
+                                  {m === 'groq' && <Zap size={14} color="#F4511E" />}
+                                  {m.toUpperCase()}
+                               </div>
+                            ))}
+                         </div>
+                      )}
+                   </div>
+
                    <div 
                       className={`action-chip ${isDeepThink ? 'active' : ''}`}
                       onClick={() => setIsDeepThink(!isDeepThink)}

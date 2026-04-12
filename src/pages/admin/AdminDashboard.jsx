@@ -203,6 +203,11 @@ const AdminDashboard = () => {
   const handleFileUpload = (e, callback) => {
     const file = e.target.files[0];
     if (file) {
+      // 50MB limit as requested
+      if (file.size > 50 * 1024 * 1024) {
+        alert('Tệp quá lớn! Giới hạn tối đa là 50MB.');
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
         callback(reader.result);
@@ -404,39 +409,46 @@ const AdminDashboard = () => {
                   <label>HÌNH ẢNH DẢI PHIM (FILM STRIP)</label>
                   <button className="add-btn" onClick={() => {
                      const newFilms = [...(localConfig.content.filmStripImages || [])];
-                     newFilms.push('/placeholder.png');
+                     newFilms.push('');
                      updateNested('content', 'filmStripImages', newFilms);
                   }}>
-                    <Plus size={14} /> THÊM ẢNH
+                    <Plus size={14} /> THÊM ẢNH/VIDEO
                   </button>
                 </div>
-                <div className="film-list" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-                  {(localConfig.content.filmStripImages || []).map((imgUrl, idx) => (
-                    <div key={idx} className="glass-panel" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                       <div style={{ height: '120px', background: '#000', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
-                          <img src={imgUrl} alt="strip" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => e.target.src = '/placeholder.png'} />
-                       </div>
-                       <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <input type="text" value={imgUrl} style={{ flex: 1, fontSize: '0.8rem' }} onChange={(e) => {
-                             const newFilms = [...localConfig.content.filmStripImages];
-                             newFilms[idx] = e.target.value;
-                             updateNested('content', 'filmStripImages', newFilms);
-                          }} />
-                          <label style={{ background: 'var(--accent-main)', color: '#fff', padding: '0.4rem', borderRadius: '4px', cursor: 'pointer' }}>
-                             <Upload size={14} />
-                             <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, (res) => {
-                                const newFilms = [...localConfig.content.filmStripImages];
-                                newFilms[idx] = res;
-                                updateNested('content', 'filmStripImages', newFilms);
-                             })} />
-                          </label>
-                          <button style={{ background: 'var(--danger)', color: '#fff', padding: '0.4rem', borderRadius: '4px', border: 'none' }} onClick={() => {
-                             const newFilms = localConfig.content.filmStripImages.filter((_, i) => i !== idx);
-                             updateNested('content', 'filmStripImages', newFilms);
-                          }}><Trash2 size={14} /></button>
-                       </div>
-                    </div>
-                  ))}
+                <div className="film-list" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
+                  {(localConfig.content.filmStripImages || []).map((imgUrl, idx) => {
+                    const isVideo = imgUrl?.match(/\.(mp4|webm|ogg|mov)$|^data:video/i);
+                    return (
+                      <div key={idx} className="glass-panel" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}>
+                         <div style={{ height: '140px', background: '#000', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                            {isVideo ? (
+                              <video src={imgUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} autoPlay muted loop />
+                            ) : (
+                              <img src={imgUrl} alt="strip" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => e.target.src = '/placeholder.png'} />
+                            )}
+                         </div>
+                         <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <input type="text" placeholder="URL hoặc Base64" value={imgUrl} style={{ flex: 1, fontSize: '0.8rem', padding: '0.5rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }} onChange={(e) => {
+                               const newFilms = [...localConfig.content.filmStripImages];
+                               newFilms[idx] = e.target.value;
+                               updateNested('content', 'filmStripImages', newFilms);
+                            }} />
+                            <label style={{ background: 'var(--accent-main)', color: '#fff', padding: '0.6rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                               <Upload size={14} />
+                               <input type="file" accept="image/*,video/*" style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, (res) => {
+                                  const newFilms = [...localConfig.content.filmStripImages];
+                                  newFilms[idx] = res;
+                                  updateNested('content', 'filmStripImages', newFilms);
+                               })} />
+                            </label>
+                            <button style={{ background: 'var(--danger)', color: '#fff', padding: '0.6rem', borderRadius: '8px', border: 'none', cursor: 'pointer' }} onClick={() => {
+                               const newFilms = localConfig.content.filmStripImages.filter((_, i) => i !== idx);
+                               updateNested('content', 'filmStripImages', newFilms);
+                            }}><Trash2 size={14} /></button>
+                         </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </motion.div>
             )}
@@ -502,29 +514,39 @@ const AdminDashboard = () => {
 
             {activeTab === 'content' && (
               <motion.div key="content" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="config-section">
-                <div className="input-group">
-                  <label>LỜI CHÀO BCT ENGINE (DÀNH CHO KHÁCH)</label>
-                  <textarea value={localConfig.content.welcomeMessage} onChange={(e) => updateNested('content', 'welcomeMessage', e.target.value)} rows={2} />
-                </div>
-                <div className="input-group" style={{ marginTop: '1rem' }}>
-                  <label>LỜI CHÀO BCT ENGINE (DÀNH CHO USER ĐÃ ĐĂNG NHẬP)</label>
-                  <textarea value={localConfig.content.welcomeUserMessage || ''} onChange={(e) => updateNested('content', 'welcomeUserMessage', e.target.value)} rows={2} placeholder="Sử dụng biến ngẫu nhiên hoặc tên custom..." />
-                </div>
-                <div className="admin-divider" style={{ margin: '2rem 0' }}></div>
-                <div className="quotes-manager">
-                  <label>DANH NGÔN TÙY CHỈNH</label>
-                  <div className="quotes-list" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                    {(localConfig.content.quotes || []).map((quote, idx) => (
-                      <div key={idx} className="quote-item">
-                        <span>{idx + 1}</span>
-                        <input type="text" value={quote} onChange={(e) => {
-                          const newQuotes = [...localConfig.content.quotes];
-                          newQuotes[idx] = e.target.value;
-                          updateNested('content', 'quotes', newQuotes);
-                        }} />
-                      </div>
-                    ))}
-                  </div>
+                <div className="quotes-manager-glass">
+                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                      <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', color: 'var(--accent-main)' }}>
+                         <MessageSquare size={20} /> QUẢN LÝ DANH NGÔN TÙY CHỈNH
+                      </h3>
+                      <button className="add-btn" onClick={() => {
+                        const newQuotes = [...(localConfig.content.quotes || [])];
+                        newQuotes.push('Danh ngôn mới...');
+                        updateNested('content', 'quotes', newQuotes);
+                      }}>+ THÊM CÂU MỚI</button>
+                   </div>
+
+                   <div className="quotes-modern-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', maxHeight: '60vh', overflowY: 'auto', paddingRight: '1rem' }}>
+                      {(localConfig.content.quotes || []).map((quote, idx) => (
+                        <div key={idx} className="quote-row-modern" style={{ display: 'flex', gap: '1rem', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                           <span style={{ minWidth: '30px', fontWeight: 800, color: 'var(--accent-secondary)' }}>{String(idx + 1).padStart(2, '0')}</span>
+                           <textarea 
+                             value={quote} 
+                             style={{ flex: 1, background: 'transparent', border: 'none', color: '#fff', fontSize: '0.95rem', resize: 'none', padding: '0.5rem' }}
+                             onChange={(e) => {
+                               const newQuotes = [...localConfig.content.quotes];
+                               newQuotes[idx] = e.target.value;
+                               updateNested('content', 'quotes', newQuotes);
+                             }} 
+                             rows={2} 
+                           />
+                           <button style={{ color: 'var(--danger)', opacity: 0.6, cursor: 'pointer' }} onClick={() => {
+                               const newQuotes = localConfig.content.quotes.filter((_, i) => i !== idx);
+                               updateNested('content', 'quotes', newQuotes);
+                           }}><Trash2 size={18} /></button>
+                        </div>
+                      ))}
+                   </div>
                 </div>
               </motion.div>
             )}

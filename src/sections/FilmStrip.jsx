@@ -19,11 +19,18 @@ const FilmStrip = () => {
       </div>
       <div className="film-marquee-wrapper">
         <div className="film-marquee" style={{ animationDuration: `${speed}s` }}>
-          {duplicatedImages.map((src, index) => (
-            <div className="film-frame" key={index}>
-              <img src={src} alt={`Ký ức ${index}`} />
-            </div>
-          ))}
+          {duplicatedImages.map((src, index) => {
+            const isVideo = src?.match(/\.(mp4|webm|ogg|mov)$|^data:video/i);
+            return (
+              <div className="film-frame" key={index}>
+                {isVideo ? (
+                  <video src={src} autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <img src={src} alt={`Ký ức ${index}`} />
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>

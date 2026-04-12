@@ -305,18 +305,115 @@
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 10px 20px rgba(59, 130, 246, 0.4);
 }
 
 .iris-send-btn:hover {
   transform: scale(1.1);
   background: #2563eb;
+  box-shadow: 0 15px 30px rgba(59, 130, 246, 0.6);
 }
 
 .iris-send-btn:disabled {
   background: #ccc;
   box-shadow: none;
   cursor: not-allowed;
+}
+
+/* aRGB LED Lamp Effect */
+.iris-input-card {
+  position: relative;
+  background: #fff;
+  border-radius: 32px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  transition: all 0.3s;
+  z-index: 1;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+}
+
+.iris-input-card::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 34px;
+  background: linear-gradient(90deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
+  background-size: 400%;
+  z-index: -1;
+  filter: blur(10px);
+  animation: argb-glow 20s linear infinite;
+  opacity: 0.5;
+}
+
+@keyframes argb-glow {
+  0% { background-position: 0 0; }
+  50% { background-position: 400% 0; }
+  100% { background-position: 0 0; }
+}
+
+/* Model Dropdown Styles */
+.model-dropdown-wrapper {
+  position: relative;
+}
+
+.model-dropdown-menu {
+  position: absolute;
+  bottom: calc(100% + 15px);
+  left: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  padding: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 180px;
+  border: 1px solid rgba(0,0,0,0.05);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+  z-index: 1000;
+  animation: dropdownFadeIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes dropdownFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 1.2rem;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 700;
+  transition: all 0.2s;
+  color: #555;
+}
+
+.dropdown-item:hover {
+  background: rgba(0,0,0,0.05);
+  color: #1a1a1a;
+}
+
+.dropdown-item.active {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.action-chip {
+  box-shadow: 0 8px 15px rgba(0,0,0,0.05);
+}
+
+.action-chip:hover {
+  box-shadow: 0 12px 25px rgba(0,0,0,0.1);
+}
+
+.action-chip.active {
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
 }
 
 /* Animations */
