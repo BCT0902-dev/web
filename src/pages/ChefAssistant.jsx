@@ -16,7 +16,7 @@ const ChefAssistant = () => {
     const navigate = useNavigate();
     const { config } = useConfig();
     const currentUser = auth.currentUser;
-    const [ingredients, setIngredients] = useState([{ id: Date.now(), name: '', quantity: '' }]);
+    const [ingredients, setIngredients] = useState([{ id: Date.now(), name: '', quantity: '', unit: '' }]);
     const [isProcessing, setIsProcessing] = useState(false);
     const [recipes, setRecipes] = useState([]); 
     const [selectedRecipe, setSelectedRecipe] = useState(null); 
@@ -44,23 +44,29 @@ const ChefAssistant = () => {
     }, [currentUser]);
 
     const addIngredientRow = () => {
-        setIngredients([...ingredients, { id: Date.now(), name: '', quantity: '' }]);
+        setIngredients([...ingredients, { id: Date.now(), name: '', quantity: '', unit: '' }]);
     };
 
     const inferUnit = async (id, foodName) => {
         if (!foodName || foodName.length < 2) return;
         
         try {
-            const prompt = `Bạn là một đầu bếp chuyên nghiệp. Hãy gợi ý 1 đơn vị đo lường phổ biến và ngắn gọn nhất (ví dụ: gram, ml, quả, cái, bó, lát, muỗng) cho thực phẩm: "${foodName}". Chỉ trả về đúng 1 từ duy nhất là đơn vị đó.`;
+            const prompt = `Bạn là một đầu bếp chuyên nghiệp. Hãy gợi ý 1 đơn vị đo lường SIÊU NGẮN GỌN và CHÍNH XÁC nhất (ví dụ: quả, cái, bó, gram, ml, lát, muỗng) cho thực phẩm: "${foodName}". 
+            QUY TẮC LOGIC:
+            - Trứng -> quả hoặc cái.
+            - Rau -> bó hoặc gram.
+            - Nước/Chất lỏng -> ml hoặc lít.
+            - Thịt -> gram hoặc kg.
+            Chỉ trả về đúng 1 từ duy nhất là đơn vị đó. Không thêm bất kỳ ký tự nào khác.`;
             
-            let unit = '';
+            let unitResult = '';
             if (config?.integrations?.groqKey) {
                 const completion = await groq.chat.completions.create({ 
                     model: "llama-3.1-8b-instant", 
                     messages: [{ role: "user", content: prompt }],
                     max_tokens: 10
                 });
-                unit = completion.choices[0].message.content.trim().toLowerCase();
+                unitResult = completion.choices[0].message.content.trim().toLowerCase().replace(/\./g, '');
             } else {
                 const geminiKey = config?.integrations?.geminiKey || import.meta.env.VITE_GEMINI_API_KEY;
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
@@ -69,13 +75,13 @@ const ChefAssistant = () => {
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
                 const data = await response.json();
-                unit = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase() || '';
+                unitResult = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase().replace(/\./g, '') || '';
             }
 
-            if (unit && unit.length < 15) {
+            if (unitResult && unitResult.length < 15) {
                 setIngredients(prev => prev.map(ing => {
-                    if (ing.id === id && !ing.quantity) {
-                        return { ...ing, quantity: unit };
+                    if (ing.id === id && !ing.unit) {
+                        return { ...ing, unit: unitResult };
                     }
                     return ing;
                 }));
@@ -96,7 +102,7 @@ const ChefAssistant = () => {
         // Auto-add new row if breathing into the last one
         const lastIng = newIngredients[newIngredients.length - 1];
         if (lastIng.name.trim() !== '' && field === 'name') {
-            newIngredients.push({ id: Date.now(), name: '', quantity: '' });
+            newIngredients.push({ id: Date.now(), name: '', quantity: '', unit: '' });
         }
 
         setIngredients(newIngredients);
@@ -121,7 +127,7 @@ const ChefAssistant = () => {
 
 
         try {
-            const ingredientList = activeIngredients.map(ing => `${ing.name} ${ing.quantity}`).join(', ');
+            const ingredientList = activeIngredients.map(ing => `${ing.name} ${ing.quantity} ${ing.unit}`).join(', ');
             const prompt = `Tôi có các nguyên liệu sau: ${ingredientList}. Hãy gợi ý khoảng 3 món ăn ngon có thể nấu từ chúng. 
             Trả phí kết quả dưới định dạng JSON JSON_START { "recipes": [ { "name": "Tên món", "description": "Mô tả ngắn gọn", "instructions": "Cách nấu chi tiết theo từng bước", "ingredientsNeeded": "Các nguyên liệu cần dùng" } ] } JSON_END. Hãy chỉ gợi ý các món thực tiễn.`;
 
@@ -189,7 +195,7 @@ const ChefAssistant = () => {
             <FallingFood />
             <div className="museum-scanlines" style={{ opacity: 0.1 }} />
             
-            <div className="container" style={{ maxWidth: '1200px', width: '100%', margin: '0 auto', position: 'relative', zIndex: 5, flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <div className="container" style={{ maxWidth: '1400px', width: '100%', margin: '0 auto', position: 'relative', zIndex: 5, flex: 1, display: 'flex', flexDirection: 'column' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
                     <button onClick={() => navigate('/utilities')} className="back-link" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-main)', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)' }}>
                         <ChevronLeft size={20} /> {t('nav.utilities')}
@@ -238,25 +244,32 @@ const ChefAssistant = () => {
                             <AIModelPills selectedModel={selectedModel} onModelChange={setSelectedModel} />
                         </div>
 
-                        <div style={{ flex: 1, overflowY: 'auto', marginBottom: '2rem', paddingRight: '0.5rem', position: 'relative', zIndex: 1 }}>
+                        <div style={{ flex: 1, overflowY: 'auto', marginBottom: '2rem', paddingRight: '0.5rem', position: 'relative', zIndex: 1, overflowX: 'hidden' }}>
                             {ingredients.map((ing, idx) => (
-                                <motion.div key={ing.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ display: 'flex', gap: '1rem', marginBottom: '1.2rem' }}>
+                                <motion.div key={ing.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ display: 'flex', gap: '0.8rem', marginBottom: '1.2rem', alignItems: 'center' }}>
                                     <input 
                                         type="text" 
                                         placeholder={t('chef.placeholder_name')}
                                         value={ing.name}
                                         onBlur={(e) => inferUnit(ing.id, e.target.value)}
                                         onChange={(e) => updateIngredient(ing.id, 'name', e.target.value)}
-                                        style={{ flex: 2, padding: '1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(212, 175, 55, 0.1)', borderRadius: '12px', color: 'var(--text-primary)', fontSize: '0.95rem', transition: 'all 0.3s' }}
+                                        style={{ flex: 3, padding: '1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(212, 175, 55, 0.1)', borderRadius: '12px', color: 'var(--text-primary)', fontSize: '0.95rem', transition: 'all 0.3s' }}
                                     />
                                     <input 
                                         type="text" 
-                                        placeholder={t('chef.placeholder_qty')}
+                                        placeholder="Số lượng"
                                         value={ing.quantity}
                                         onChange={(e) => updateIngredient(ing.id, 'quantity', e.target.value)}
-                                        style={{ flex: 1, padding: '1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(212, 175, 55, 0.1)', borderRadius: '12px', color: 'var(--text-primary)', fontSize: '0.95rem', transition: 'all 0.3s' }}
+                                        style={{ flex: 1.2, padding: '1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(212, 175, 55, 0.1)', borderRadius: '12px', color: 'var(--text-primary)', fontSize: '0.95rem', transition: 'all 0.3s' }}
                                     />
-                                    <button onClick={() => removeIngredient(ing.id)} style={{ color: 'var(--danger)', background: 'transparent', border: 'none', cursor: 'pointer', opacity: ingredients.length > 1 ? 1 : 0 }}>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Đơn vị"
+                                        value={ing.unit}
+                                        onChange={(e) => updateIngredient(ing.id, 'unit', e.target.value)}
+                                        style={{ flex: 1.5, padding: '1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(212, 175, 55, 0.1)', borderRadius: '12px', color: 'var(--text-primary)', fontSize: '0.95rem', transition: 'all 0.3s' }}
+                                    />
+                                    <button onClick={() => removeIngredient(ing.id)} style={{ color: 'var(--danger)', background: 'transparent', border: 'none', cursor: 'pointer', opacity: ingredients.length > 1 ? 1 : 0, padding: '0.5rem' }}>
                                         <Trash2 size={18} />
                                     </button>
                                 </motion.div>

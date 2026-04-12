@@ -43,7 +43,7 @@ const Testimonials = () => {
             viewport={{ once: true }}
           >
              <h2 className="text-gradient" style={{ fontSize: '3rem', marginBottom: '1rem', fontFamily: 'Chakra Petch' }}>
-                {t('testimonials.title', 'TRUSTED BY INNOVATORS')}
+                {t('testimonials.title', '< ĐƯỢC TIN TƯỞNG />')}
              </h2>
              <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto' }}>
                 {t('testimonials.subtitle', 'What people are saying about their IRIS AI experience.')}

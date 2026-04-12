@@ -169,7 +169,14 @@ const AIChat = () => {
       console.error(error);
     } finally {
       setIsLoading(false);
+      setIsImageMode(false); // Reset after action if used as toggle
     }
+  };
+
+  const generateImage = async () => {
+    if (!input.trim() || isLoading) return;
+    setIsImageMode(true);
+    await handleSend();
   };
 
   return (
@@ -247,6 +254,7 @@ const AIChat = () => {
                onFocus={() => setIsFocused(true)}
                onBlur={() => setIsFocused(false)}
                rows={1}
+               style={{ color: '#1a1a1a' }}
              />
              
              <div className="iris-input-actions">
@@ -279,19 +287,22 @@ const AIChat = () => {
                       )}
                    </div>
 
-                   <div 
-                      className={`action-chip ${isDeepThink ? 'active' : ''}`}
-                      onClick={() => setIsDeepThink(!isDeepThink)}
-                   >
-                     <Zap size={16} /> DeepThink
-                   </div>
-                   <div 
-                      className={`action-chip ai-image ${isImageMode ? 'active' : ''}`}
-                      onClick={() => setIsImageMode(!isImageMode)}
-                   >
-                     <Sparkles size={16} /> Visual Studio
-                   </div>
-                </div>
+                    <div 
+                       className={`action-chip ${isDeepThink ? 'active' : ''}`}
+                       onClick={() => setIsDeepThink(!isDeepThink)}
+                    >
+                      <Zap size={16} /> DeepThink
+                    </div>
+                    
+                    <button 
+                       className="action-chip ai-image"
+                       onClick={generateImage}
+                       disabled={isLoading || !input.trim()}
+                       style={{ border: '1px solid #ff00c866', background: 'rgba(255, 0, 200, 0.05)' }}
+                    >
+                      <Sparkles size={16} color="#ff00c8" /> IRIS Visual Studio
+                    </button>
+                 </div>
 
                 <button 
                   className="iris-send-btn"

@@ -324,7 +324,7 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  border: 1px solid #eee;
+  border: 1px solid rgba(0,0,0,0.05);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   z-index: 2;
@@ -334,14 +334,14 @@
 .iris-input-card::before {
   content: '';
   position: absolute;
-  inset: -2px; /* Very thin border glow */
-  border-radius: 22px;
+  inset: -1.5px; /* Extremely sharp outer border */
+  border-radius: 21.5px;
   background: linear-gradient(90deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
   background-size: 400%;
   z-index: -1;
-  filter: blur(4px); /* Sharp glow border effect */
-  animation: argb-glow 12s linear infinite;
-  opacity: 0.8;
+  filter: blur(2px); /* High-precision LED border effect */
+  animation: argb-glow 8s linear infinite;
+  opacity: 1;
 }
 
 .iris-input-card.focused {
