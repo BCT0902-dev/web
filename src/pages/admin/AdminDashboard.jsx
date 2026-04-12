@@ -38,6 +38,9 @@ const AdminDashboard = () => {
   const [localConfig, setLocalConfig] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [status, setStatus] = useState('');
+  const [adjustmentModal, setAdjustmentModal] = useState({ isOpen: false, src: '', callback: null, aspect: 2 });
+  const [zoom, setZoom] = useState(1);
+  const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
   
   // Users state
   const [usersList, setUsersList] = useState([]);
@@ -237,7 +240,7 @@ const AdminDashboard = () => {
     });
   };
 
-  const handleFileUpload = (e, callback) => {
+  const handleFileUpload = (e, callback, aspect = 1.5) => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 50 * 1024 * 1024) {
@@ -247,16 +250,54 @@ const AdminDashboard = () => {
       const reader = new FileReader();
       reader.onloadend = async () => {
         const result = reader.result;
-        // Compress only if it's an image
+        // If it's an image, open adjuster
         if (typeof result === 'string' && result.startsWith('data:image')) {
-           const compressed = await compressImage(result);
-           callback(compressed);
+           setAdjustmentModal({ isOpen: true, src: result, callback, aspect });
+           setZoom(1);
+           setDragPos({ x: 0, y: 0 });
         } else {
            callback(result);
         }
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const getCroppedImage = async () => {
+    const img = new Image();
+    img.src = adjustmentModal.src;
+    await new Promise(r => img.onload = r);
+
+    const canvas = document.createElement('canvas');
+    const targetWidth = 1200;
+    const targetHeight = targetWidth / adjustmentModal.aspect;
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    const ctx = canvas.getContext('2d');
+
+    // Math for cropping
+    // We want to fill the canvas with the image at current zoom and offset
+    const containerWidth = 600; // Modal display width
+    const containerHeight = containerWidth / adjustmentModal.aspect;
+    
+    // Scale factor between display and real canvas
+    const displayToReal = targetWidth / containerWidth;
+
+    // Draw
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, targetWidth, targetHeight);
+    
+    const drawWidth = img.width * (targetHeight / img.height) * zoom;
+    const drawHeight = targetHeight * zoom;
+    
+    const x = (targetWidth - drawWidth) / 2 + (dragPos.x * displayToReal);
+    const y = (targetHeight - drawHeight) / 2 + (dragPos.y * displayToReal);
+
+    ctx.drawImage(img, x, y, drawWidth, drawHeight);
+    
+    const result = canvas.toDataURL('image/jpeg', 0.85);
+    adjustmentModal.callback(result);
+    setAdjustmentModal({ isOpen: false, src: '', callback: null, aspect: 1.5 });
   };
 
   const updateNested = (category, field, value) => {
@@ -403,7 +444,7 @@ const AdminDashboard = () => {
                      />
                      <label className="btn-secondary" style={{ cursor: 'pointer', padding: '0.8rem 1.5rem', whiteSpace: 'nowrap', background: 'var(--accent-main)', color: '#fff', borderRadius: '4px' }}>
                         TẢI LÊN LOGO
-                        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, (res) => updateNested('appearance', 'logoUrl', res))} />
+                        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, (res) => updateNested('appearance', 'logoUrl', res), 1)} />
                      </label>
                   </div>
                 </div>
@@ -446,7 +487,7 @@ const AdminDashboard = () => {
                              const newSocials = [...localConfig.social_links];
                              newSocials[idx].iconUrl = res;
                              setLocalConfig(prev => ({ ...prev, social_links: newSocials }));
-                          })} />
+                          }, 1)} />
                         </label>
                       </div>
 
@@ -517,7 +558,7 @@ const AdminDashboard = () => {
                                   const newFilms = [...localConfig.content.filmStripImages];
                                   newFilms[idx] = res;
                                   updateNested('content', 'filmStripImages', newFilms);
-                               })} />
+                               }, 1.77)} />
                             </label>
                             <button style={{ background: 'var(--danger)', color: '#fff', padding: '0.6rem', borderRadius: '8px', border: 'none', cursor: 'pointer' }} onClick={() => {
                                const newFilms = localConfig.content.filmStripImages.filter((_, i) => i !== idx);
@@ -562,7 +603,7 @@ const AdminDashboard = () => {
                                const newApps = [...localConfig.apps];
                                newApps[idx].iconUrl = res;
                                setLocalConfig(prev => ({ ...prev, apps: newApps }));
-                            })} />
+                            }, 1)} />
                          </label>
                       </div>
 
@@ -800,6 +841,87 @@ const AdminDashboard = () => {
            </div>
         </div>
       )}
+
+      {/* MODAL IMAGE ADJUSTER */}
+      <AnimatePresence>
+        {adjustmentModal.isOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
+            className="admin-modal-overlay"
+          >
+             <motion.div 
+               initial={{ scale: 0.9, y: 20 }}
+               animate={{ scale: 1, y: 0 }}
+               className="admin-modal-card" 
+               style={{ maxWidth: '700px', width: '90%' }}
+             >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                   <h2 style={{ margin: 0 }}>CĂN CHỈNH VÙNG HIỂN THỊ</h2>
+                   <button className="modal-close" onClick={() => setAdjustmentModal({ ...adjustmentModal, isOpen: false })}><X size={20} /></button>
+                </div>
+
+                <div className="adjuster-viewport-wrapper" style={{ 
+                  width: '100%', 
+                  aspectRatio: adjustmentModal.aspect, 
+                  background: '#0a0a0a', 
+                  borderRadius: '12px', 
+                  overflow: 'hidden', 
+                  position: 'relative',
+                  border: '2px solid var(--accent-main)',
+                  boxShadow: '0 0 20px rgba(0, 240, 255, 0.2)'
+                }}>
+                   <motion.img 
+                     src={adjustmentModal.src}
+                     drag
+                     dragConstraints={{ left: -1000, right: 1000, top: -1000, bottom: 1000 }} // Soft constraints, math will fix crop
+                     onDragEnd={(e, info) => setDragPos(prev => ({ x: prev.x + info.offset.x, y: prev.y + info.offset.y }))}
+                     style={{ 
+                        position: 'absolute', 
+                        top: '50%', 
+                        left: '50%',
+                        x: '-50%',
+                        y: '-50%',
+                        cursor: 'move',
+                        scale: zoom,
+                        maxHeight: '100%'
+                     }} 
+                   />
+                   
+                   {/* Centering guide lines */}
+                   <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', border: '1px dashed rgba(255,255,255,0.2)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                      <div style={{ width: '1px', height: '100%', background: 'rgba(255,255,255,0.1)' }} />
+                      <div style={{ position: 'absolute', width: '100%', height: '1px', background: 'rgba(255,255,255,0.1)' }} />
+                   </div>
+                </div>
+
+                <div style={{ marginTop: '2rem' }}>
+                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.8rem', opacity: 0.7 }}>
+                      <span>MỨC PHÓNG ĐẠI: {Math.round(zoom * 100)}%</span>
+                      <span>KÉO ẢNH ĐỂ CĂN GIỮA KHUÔN MẶT</span>
+                   </div>
+                   <input 
+                     type="range" 
+                     min="1" max="3" step="0.01" 
+                     value={zoom} 
+                     onChange={(e) => setZoom(parseFloat(e.target.value))}
+                     style={{ width: '100%', height: '6px', appearance: 'none', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', cursor: 'pointer' }}
+                   />
+                </div>
+
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+                   <button className="add-btn" style={{ flex: 1, padding: '1rem' }} onClick={getCroppedImage}>
+                      <CheckCircle size={18} /> HOÀN TẤT CĂN CHỈNH
+                   </button>
+                   <button className="modal-close" style={{ position: 'relative', top: 0, right: 0, padding: '1rem', background: 'rgba(255,255,255,0.05)' }} onClick={() => setAdjustmentModal({ ...adjustmentModal, isOpen: false })}>
+                      HỦY
+                   </button>
+                </div>
+             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
