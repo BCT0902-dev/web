@@ -2,8 +2,9 @@ import React, { useRef } from 'react';
 import { motion, useScroll, useSpring, useTransform } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { GraduationCap, Briefcase, School, BookOpen, Star, Rocket } from 'lucide-react';
+import { useConfig } from '../context/ConfigContext';
 
-const Milestone = ({ milestone, index, isLast }) => {
+const Milestone = ({ milestone, index, isLast, image }) => {
   const { t } = useTranslation();
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({
@@ -61,19 +62,31 @@ const Milestone = ({ milestone, index, isLast }) => {
         }}
         className="glass-panel"
         style={{ 
-          padding: '2rem', 
+          padding: '2.5rem', 
           background: 'var(--bg-glass)', 
           border: '1px solid rgba(255,255,255,0.05)',
           borderRadius: '24px',
           position: 'relative',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: index % 2 === 0 ? 'row' : 'row-reverse',
+          gap: '2rem',
+          alignItems: 'center'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-           <div style={{ color: 'var(--accent-secondary)' }}>{icons[index]}</div>
-           <h3 style={{ fontFamily: 'Chakra Petch', fontSize: '1.4rem', color: '#fff' }}>{milestone.title}</h3>
+        <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+            <div style={{ color: 'var(--accent-secondary)' }}>{icons[index]}</div>
+            <h3 style={{ fontFamily: 'Chakra Petch', fontSize: '1.4rem', color: '#fff' }}>{milestone.title}</h3>
+            </div>
+            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>{milestone.desc}</p>
         </div>
-        <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>{milestone.desc}</p>
+
+        {image && (
+            <div style={{ width: '180px', height: '180px', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', flexShrink: 0 }}>
+                <img src={image} alt={milestone.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+        )}
         
         {/* Subtle background icon */}
         <div style={{ position: 'absolute', right: '-20px', bottom: '-20px', opacity: 0.03, transform: 'rotate(-15deg)' }}>
@@ -86,7 +99,10 @@ const Milestone = ({ milestone, index, isLast }) => {
 
 const PersonalChronicles = () => {
   const { t } = useTranslation();
+  const { config } = useConfig();
   const containerRef = useRef(null);
+  
+  const images = config?.content?.filmStripImages || [];
   
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -147,6 +163,7 @@ const PersonalChronicles = () => {
                         milestone={milestone} 
                         index={idx} 
                         isLast={idx === milestones.length - 1} 
+                        image={images[idx]}
                     />
                 ))}
             </div>

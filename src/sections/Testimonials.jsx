@@ -101,6 +101,32 @@ const Testimonials = () => {
             </motion.div>
           </AnimatePresence>
         </div>
+
+        {/* Pagination Dots */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          gap: '1rem', 
+          marginTop: '4rem' 
+        }}>
+          {[0, 1].map((idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrentIndex(idx)}
+              style={{
+                width: idx === currentIndex ? '30px' : '12px',
+                height: '12px',
+                borderRadius: '6px',
+                background: idx === currentIndex ? 'var(--accent-main)' : 'rgba(255,255,255,0.1)',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                boxShadow: idx === currentIndex ? '0 0 10px var(--accent-main)' : 'none'
+              }}
+              title={`Set ${idx + 1}`}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );
