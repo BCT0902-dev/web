@@ -224,7 +224,7 @@ const About = () => {
   const { t } = useTranslation();
 
   return (
-    <section id="about" className="container" style={{ padding: '4rem 2rem' }}>
+    <section id="about" style={{ padding: '3rem 2rem 1rem', background: 'transparent' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '3rem', alignItems: 'start' }}>
         
         {/* Bio Terminal (Black background as requested) */}

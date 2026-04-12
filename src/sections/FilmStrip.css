@@ -1,6 +1,6 @@
 .film-strip-container {
   width: 100%;
-  padding: 4rem 0;
+  padding: 0.5rem 0;
   background: transparent;
   position: relative;
   transition: background-color 0.3s ease;
@@ -10,7 +10,7 @@
   width: 100%;
   position: relative;
   background-color: #111; /* Real film strip color */
-  padding: 3.5rem 0;
+  padding: 2rem 0;
   overflow: hidden;
   /* Bóng mờ tổng thể cuộn phim */
   box-shadow: 0 15px 30px rgba(0,0,0,0.2);

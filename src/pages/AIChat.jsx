@@ -207,6 +207,36 @@ const AIChat = () => {
     try {
       let aiResponseContent = '';
 
+      // Check for image generation intent
+      const imageKeywords = ['vẽ', 'tạo ảnh', 'generate image', 'imagine', '/imagine', 'bức tranh', 'hình ảnh'];
+      const isImageRequest = imageKeywords.some(kw => input.toLowerCase().includes(kw));
+
+      if (isImageRequest) {
+        let imagePrompt = input;
+        imageKeywords.forEach(kw => {
+          if (input.toLowerCase().includes(kw)) {
+             imagePrompt = input.toLowerCase().replace(kw, '').trim() || input;
+          }
+        });
+        
+        const imageUrl = `https://pollinations.ai/p/${encodeURIComponent(imagePrompt)}?width=1024&height=1024&seed=${Math.floor(Math.random()*1000000)}&model=flux`;
+        
+        const imgMsg = { 
+          role: 'assistant', 
+          content: `Đang khởi tạo hình ảnh dựa trên yêu cầu: **${imagePrompt}**\n\n![AI Image](${imageUrl})`,
+          timestamp: currentUser ? serverTimestamp() : new Date()
+        };
+
+        if (currentUser && activeChatId) {
+          await addDoc(collection(db, 'users', currentUser.uid, 'chats', activeChatId, 'messages'), imgMsg);
+        } else {
+          setMessages(prev => [...prev, imgMsg]);
+        }
+        
+        setIsLoading(false);
+        return;
+      }
+
       if (selectedModel === 'gemini') {
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         // Use v1 instead of v1beta via the SDK's internal mechanisms if possible, 

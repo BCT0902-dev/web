@@ -15,6 +15,7 @@ import { ConfigProvider } from './context/ConfigContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoadingScreen from './components/LoadingScreen';
 import { AnimatePresence } from 'framer-motion';
+import ScrollToTop from './components/ScrollToTop';
 
 import AdminDashboard from './pages/admin/AdminDashboard';
 
@@ -65,6 +66,7 @@ function App() {
   return (
     <AuthProvider>
       <ConfigProvider>
+        <ScrollToTop />
         <AppRoutes />
       </ConfigProvider>
     </AuthProvider>

@@ -333,7 +333,10 @@ const Login = () => {
                 {authMode === 'login' && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '-0.5rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <input type="checkbox" id="remember" style={{ accentColor: 'var(--accent-main)', width: '16px', height: '16px', cursor: 'pointer', borderRadius: '50%' }} />
+                      <div className="circular-checkbox" style={{ position: 'relative', width: '18px', height: '18px' }}>
+                        <input type="checkbox" id="remember" style={{ opacity: 0, position: 'absolute', cursor: 'pointer', width: '100%', height: '100%', zIndex: 2 }} />
+                        <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: '2px solid var(--accent-main)', background: 'transparent', transition: 'all 0.3s' }}></div>
+                      </div>
                       <label htmlFor="remember" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', cursor: 'pointer' }}>Ghi nhớ đăng nhập</label>
                     </div>
                     <button type="button" onClick={recoverPassword} style={{ background: 'none', border: 'none', color: 'var(--accent-secondary)', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}>Quên mật khẩu?</button>
@@ -346,11 +349,11 @@ const Login = () => {
 
                 <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
                   {authMode === 'login' ? (
-                    <button type="button" onClick={() => toggleAuthMode('register')} style={{ color: 'var(--accent-secondary)', fontSize: '0.85rem', textDecoration: 'underline', transition: 'color 0.3s', cursor: 'pointer', background: 'none', border: 'none' }} onMouseOver={(e) => e.target.style.color = '#fff'} onMouseOut={(e) => e.target.style.color = 'var(--accent-secondary)'}>
-                      Đăng ký tài khoản
+                    <button type="button" onClick={() => toggleAuthMode('register')} style={{ width: '100%', padding: '0.8rem', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid var(--accent-secondary)', color: 'var(--accent-secondary)', borderRadius: '8px', fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.3s', fontFamily: "var(--font-heading), 'Chakra Petch', sans-serif" }} onMouseOver={(e) => { e.target.style.background = 'var(--accent-secondary)'; e.target.style.color = '#000'; }} onMouseOut={(e) => { e.target.style.background = 'rgba(255, 255, 255, 0.05)'; e.target.style.color = 'var(--accent-secondary)'; }}>
+                      ĐĂNG KÝ TÀI KHOẢN
                     </button>
                   ) : (
-                    <button type="button" onClick={() => toggleAuthMode('login')} style={{ color: 'var(--accent-secondary)', fontSize: '0.85rem', textDecoration: 'underline', transition: 'color 0.3s', cursor: 'pointer', background: 'none', border: 'none' }} onMouseOver={(e) => e.target.style.color = '#fff'} onMouseOut={(e) => e.target.style.color = 'var(--accent-secondary)'}>
+                    <button type="button" onClick={() => toggleAuthMode('login')} style={{ color: 'var(--accent-secondary)', fontSize: '0.85rem', textDecoration: 'underline', cursor: 'pointer', background: 'none', border: 'none' }}>
                       Đã có hồ sơ? Quay lại ĐĂNG NHẬP
                     </button>
                   )}
