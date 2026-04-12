@@ -146,7 +146,7 @@ const YoutubeAnalyzer = () => {
   };
 
   return (
-    <div className="cyber-matrix-container" style={{ paddingTop: '6rem', minHeight: 'calc(100vh - 60px)', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+    <div className="cyber-matrix-container" style={{ paddingTop: '6rem', minHeight: 'calc(100vh - 60px)', display: 'flex', flexDirection: 'column', position: 'relative', overflowY: 'auto' }}>
       <style>{`
         .cyber-matrix-container {
           background-color: transparent;

@@ -133,10 +133,10 @@ const ChefAssistant = () => {
     return (
         <div className="utility-hub-container museum-theme" style={{ 
             padding: '6rem 5% 0', 
-            height: '100vh', 
+            minHeight: '100vh', 
             display: 'flex', 
             flexDirection: 'column', 
-            overflow: 'hidden',
+            overflowY: 'auto',
             background: 'transparent'
         }}>
             <FallingFood />
