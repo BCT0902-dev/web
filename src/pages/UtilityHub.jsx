@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { Bot, Play, Utensils, Terminal, Shield, Zap, Cpu, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import './UtilityHub.css';
