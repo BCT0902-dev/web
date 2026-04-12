@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useConfig } from '../context/ConfigContext';
 
@@ -81,6 +82,7 @@ const apps = [
 ];
 
 const TrustedApps = () => {
+  const { t } = useTranslation();
   const { config } = useConfig();
   
   // Use config apps if available, otherwise fallback to static list
