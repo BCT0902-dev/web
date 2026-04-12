@@ -12,6 +12,7 @@ const Login = () => {
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showAdblockModal, setShowAdblockModal] = useState(false);
   
   // Auth Modes
   const [authMode, setAuthMode] = useState('login'); // 'login', 'register'
@@ -31,7 +32,7 @@ const Login = () => {
 
   const handleError = (err) => {
     if (err.toString().toLowerCase().includes('blocked') || err?.code === 'unavailable') {
-      setError("Cực Kì Quan Trọng: Tắt AdBlock / Chặn quảng cáo cho trang này để hệ thống có thể kết nối Internet!");
+      setShowAdblockModal(true);
     } else {
       setError('Lỗi: ' + (err.message || err.toString()));
     }
@@ -303,6 +304,47 @@ const Login = () => {
           SHELL_STATUS: [MODE: {authMode.toUpperCase()}]
         </div>
       </motion.div>
+
+      {/* Museum Style AdBlock Modal */}
+      <AnimatePresence>
+        {showAdblockModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(8px)' }}
+          >
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              style={{ background: '#0A0A0A', width: '90%', maxWidth: '550px', padding: '3.5rem 3rem 3rem', border: '1px solid rgba(212, 175, 55, 0.4)', borderRadius: '2px', boxShadow: '0 20px 50px rgba(0,0,0,0.8), inset 0 0 60px rgba(212, 175, 55, 0.05)', textAlign: 'center', position: 'relative' }}
+            >
+               <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translate(-50%, -50%)', background: '#0A0A0A', padding: '0 1.5rem', color: 'var(--accent-gold)' }}>
+                 <ShieldCheck size={36} />
+               </div>
+               
+               <h2 style={{ fontFamily: "var(--font-heading), 'Chakra Petch', sans-serif", color: 'var(--accent-gold)', fontSize: '2.2rem', marginBottom: '1.5rem', letterSpacing: '3px', textTransform: 'uppercase' }}>
+                 TÁC PHẨM BỊ TỪ CHỐI
+               </h2>
+               
+               <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '1.05rem', marginBottom: '2.5rem', fontFamily: 'system-ui, sans-serif' }}>
+                 Hệ thống bảo vệ (AdBlock / Shields) trên trình duyệt của ngài đang ngăn chặn tác phẩm này giao tiếp với máy chủ kho lưu trữ.
+                 <br/><br/>
+                 Để chiêm ngưỡng và tham gia giao tiếp với toàn bộ không gian nghệ thuật tại đây, hệ thống xin ngài vui lòng <b style={{ color: '#fff' }}>hạ khiên bảo vệ (Tắt trình chặn quảng cáo)</b> áp dụng riêng cho miền này.
+               </p>
+
+               <button 
+                 onClick={() => { setShowAdblockModal(false); window.location.reload(); }} 
+                 style={{ background: 'transparent', padding: '1rem 2rem', border: '1px solid var(--accent-gold)', color: 'var(--accent-gold)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '0.9rem', letterSpacing: '2px', transition: 'all 0.3s' }}
+                 onMouseOver={(e) => { e.currentTarget.style.background = 'var(--accent-gold)'; e.currentTarget.style.color = '#000'; }}
+                 onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--accent-gold)'; }}
+               >
+                 TÔI ĐÃ HIỂU VÀ ĐÃ TẮT
+               </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
