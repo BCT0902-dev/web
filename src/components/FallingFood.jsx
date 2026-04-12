@@ -1,12 +1,12 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
 
-const FoodItem = ({ delay }) => {
-  const randomXInit = Math.random() * 100;
-  const randomDuration = 10 + Math.random() * 20;
-  const randomScale = 0.8 + Math.random() * 1.5;
+const FoodItem = memo(({ delay }) => {
+  const randomXInit = useMemo(() => Math.random() * 100, []);
+  const randomDuration = useMemo(() => 10 + Math.random() * 20, []);
+  const randomScale = useMemo(() => 0.8 + Math.random() * 1.5, []);
   const foodEmojis = ['🍅', '🍳', '🥩', '🥦', '🍕', '🥗', '🥢', '🍷', '🥖', '🥕', '🥔'];
-  const food = foodEmojis[Math.floor(Math.random() * foodEmojis.length)];
+  const food = useMemo(() => foodEmojis[Math.floor(Math.random() * foodEmojis.length)], []);
 
   return (
     <motion.div
@@ -40,11 +40,11 @@ const FoodItem = ({ delay }) => {
       {food}
     </motion.div>
   );
-};
+});
 
-const FallingFood = () => {
+const FallingFood = memo(() => {
   const foodCount = 20;
-  const foods = Array.from({ length: foodCount });
+  const foods = useMemo(() => Array.from({ length: foodCount }), []);
 
   return (
     <div style={{
@@ -62,6 +62,6 @@ const FallingFood = () => {
       ))}
     </div>
   );
-};
+});
 
 export default FallingFood;

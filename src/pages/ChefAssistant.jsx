@@ -6,8 +6,10 @@ import ReactMarkdown from 'react-markdown';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { useConfig } from '../context/ConfigContext';
 import { db, auth } from '../firebase';
-import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, where } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, where, doc, updateDoc } from 'firebase/firestore';
 import FallingFood from '../components/FallingFood';
+import AIModelPills from '../components/AIModelPills';
+import OpenAI from 'openai';
 
 const ChefAssistant = () => {
     const navigate = useNavigate();
@@ -15,13 +17,19 @@ const ChefAssistant = () => {
     const currentUser = auth.currentUser;
     const [ingredients, setIngredients] = useState([{ id: Date.now(), name: '', quantity: '' }]);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [recipes, setRecipes] = useState([]); // List of suggested recipes
-    const [selectedRecipe, setSelectedRecipe] = useState(null); // Detailed recipe view
+    const [recipes, setRecipes] = useState([]); 
+    const [selectedRecipe, setSelectedRecipe] = useState(null); 
     const [history, setHistory] = useState([]);
     const [showHistory, setShowHistory] = useState(false);
+    const [selectedModel, setSelectedModel] = useState('gemini');
 
     const geminiKey = config?.integrations?.geminiKey || import.meta.env.VITE_GEMINI_API_KEY;
+    const deepseekKey = config?.integrations?.deepseekKey || import.meta.env.VITE_DEEPSEEK_API_KEY;
+    const groqKey = config?.integrations?.groqKey;
+
     const genAI = new GoogleGenerativeAI(geminiKey || 'dummy_key');
+    const deepseek = new OpenAI({ apiKey: deepseekKey || 'dummy_key', baseURL: 'https://api.deepseek.com', dangerouslyAllowBrowser: true });
+    const groq = groqKey ? new OpenAI({ apiKey: groqKey, baseURL: 'https://api.groq.com/openai/v1', dangerouslyAllowBrowser: true }) : null;
 
     // Load History
     useEffect(() => {
@@ -72,23 +80,33 @@ const ChefAssistant = () => {
         setRecipes([]);
         setSelectedRecipe(null);
 
-        try {
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-            const ingredientList = activeIngredients.map(ing => `${ing.name} ${ing.quantity}`).join(', ');
-            
-            const prompt = `Tôi có các nguyên liệu sau: ${ingredientList}. Hãy gợi ý khoảng 3 món ăn ngon có thể nấu từ chúng. 
-            Trả về kết quả dưới định dạng JSON JSON_START { "recipes": [ { "name": "Tên món", "description": "Mô tả ngắn gọn", "instructions": "Cách nấu chi tiết theo từng bước", "ingredientsNeeded": "Các nguyên liệu cần dùng" } ] } JSON_END. Hãy chỉ gợi ý các món thực tiễn.`;
 
-            const result = await model.generateContent(prompt);
-            const text = result.response.text();
+        try {
+            const ingredientList = activeIngredients.map(ing => `${ing.name} ${ing.quantity}`).join(', ');
+            const prompt = `Tôi có các nguyên liệu sau: ${ingredientList}. Hãy gợi ý khoảng 3 món ăn ngon có thể nấu từ chúng. 
+            Trả phí kết quả dưới định dạng JSON JSON_START { "recipes": [ { "name": "Tên món", "description": "Mô tả ngắn gọn", "instructions": "Cách nấu chi tiết theo từng bước", "ingredientsNeeded": "Các nguyên liệu cần dùng" } ] } JSON_END. Hãy chỉ gợi ý các món thực tiễn.`;
+
+            let resultText = '';
+
+            if (selectedModel === 'gemini') {
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                const result = await model.generateContent(prompt);
+                resultText = result.response.text();
+            } else if (selectedModel === 'groq') {
+                if (!groq) throw new Error('Chưa cấu hình Groq Key!');
+                const completion = await groq.chat.completions.create({ model: "llama3-70b-8192", messages: [{ role: "user", content: prompt }] });
+                resultText = completion.choices[0].message.content;
+            } else {
+                const completion = await deepseek.chat.completions.create({ model: "deepseek-chat", messages: [{ role: "user", content: prompt }] });
+                resultText = completion.choices[0].message.content;
+            }
             
-            const jsonStr = text.match(/JSON_START([\s\S]*?)JSON_END/);
+            const jsonStr = resultText.match(/JSON_START([\s\S]*?)JSON_END/);
             if (jsonStr) {
                 const data = JSON.parse(jsonStr[1]);
                 setRecipes(data.recipes);
             } else {
-                // Fallback for markdown
-                setRecipes([{ name: 'Kết quả gợi ý', instructions: text }]);
+                setRecipes([{ name: 'Kết quả gợi ý', instructions: resultText }]);
             }
         } catch (error) {
             console.error('AI Error:', error);
@@ -113,9 +131,16 @@ const ChefAssistant = () => {
     };
 
     return (
-        <div className="utility-hub-container" style={{ padding: '6rem 5% 0', height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div className="utility-hub-container museum-theme" style={{ 
+            padding: '6rem 5% 0', 
+            height: '100vh', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            overflow: 'hidden',
+            background: 'radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.9) 0%, rgba(245, 245, 240, 1) 100%), url("https://www.transparenttextures.com/patterns/p-6.png")'
+        }}>
             <FallingFood />
-            <div className="museum-scanlines" />
+            <div className="museum-scanlines" style={{ opacity: 0.1 }} />
             
             <div className="container" style={{ maxWidth: '1200px', width: '100%', margin: '0 auto', position: 'relative', zIndex: 5, flex: 1, display: 'flex', flexDirection: 'column' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
@@ -123,7 +148,7 @@ const ChefAssistant = () => {
                         <ChevronLeft size={20} /> QUAY LẠI GALLERY
                     </button>
                     {currentUser && (
-                        <button onClick={() => setShowHistory(!showHistory)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--bg-glass-border)', padding: '0.6rem 1.2rem', borderRadius: '4px', color: '#fff', cursor: 'pointer' }}>
+                        <button onClick={() => setShowHistory(!showHistory)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(212, 175, 55, 0.2)', padding: '0.6rem 1.2rem', borderRadius: '4px', color: '#1a1a1a', cursor: 'pointer', fontWeight: 600 }}>
                             <History size={18} /> {showHistory ? 'ẨN LỊCH SỬ' : 'LỊCH SỬ NẤU ĂN'}
                         </button>
                     )}
@@ -138,8 +163,8 @@ const ChefAssistant = () => {
                     
                     {/* History Sidebar */}
                     {showHistory && (
-                        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="glass-panel" style={{ padding: '1.5rem', maxHeight: '70vh', overflowY: 'auto' }}>
-                            <h3 style={{ fontFamily: 'var(--font-mono)', fontSize: '1rem', marginBottom: '1.5rem', color: 'var(--accent-main)' }}>RECIPE LOGS</h3>
+                        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="glass-panel" style={{ padding: '1.5rem', maxHeight: '70vh', overflowY: 'auto', background: 'rgba(255,255,255,0.8)', borderColor: 'rgba(212, 175, 55, 0.2)' }}>
+                            <h3 style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', marginBottom: '1.5rem', color: '#b8860b', letterSpacing: '2px' }}>RECIPE LOGS</h3>
                             {history.length === 0 ? <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Chưa có lịch sử.</p> : (
                                 history.map(item => (
                                     <div key={item.id} onClick={() => setSelectedRecipe(item)} style={{ padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', hover: { background: 'rgba(255,255,255,0.02)' } }}>
@@ -152,13 +177,18 @@ const ChefAssistant = () => {
                     )}
 
                     {/* Left: Input List */}
-                    <div className="glass-panel" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 15px rgba(0,0,0,0.1)' }}>
+                    <div className="glass-panel" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', background: 'rgba(255,255,255,0.8)', borderColor: 'rgba(212, 175, 55, 0.2)', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.05)' }}>
                         {/* Background Watermark */}
                         <Utensils size={300} style={{ position: 'absolute', top: '5%', right: '-10%', opacity: 0.04, color: 'var(--accent-main)', pointerEvents: 'none', transform: 'rotate(15deg)' }} />
                         <ChefHat size={250} style={{ position: 'absolute', bottom: '5%', left: '-5%', opacity: 0.04, color: 'var(--accent-main)', pointerEvents: 'none', transform: 'rotate(-10deg)' }} />
 
-                        <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem', color: 'var(--accent-main)' }}>
+                        <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', color: '#b8860b' }}>
                             <List size={24} /> <span style={{ fontWeight: 600, fontFamily: 'var(--font-mono)' }}>DANH SÁCH THỰC PHẨM</span>
+                        </div>
+
+                        <div style={{ position: 'relative', zIndex: 1 }}>
+                            <p style={{ fontSize: '0.7rem', color: '#999', marginBottom: '0.5rem', fontWeight: 600 }}>CHỌN MODEL TRÍ TUỆ NHÂN TẠO</p>
+                            <AIModelPills selectedModel={selectedModel} onModelChange={setSelectedModel} />
                         </div>
 
                         <div style={{ flex: 1, overflowY: 'auto', marginBottom: '2rem', paddingRight: '0.5rem', position: 'relative', zIndex: 1 }}>
@@ -189,7 +219,7 @@ const ChefAssistant = () => {
                             className="btn-primary" 
                             onClick={handleGenerateRecipes}
                             disabled={isProcessing}
-                            style={{ position: 'relative', zIndex: 1, width: '100%', justifyContent: 'center', gap: '0.8rem', padding: '1.2rem' }}
+                            style={{ position: 'relative', zIndex: 1, width: '100%', justifyContent: 'center', gap: '0.8rem', padding: '1.2rem', background: '#D4AF37', color: '#fff', border: 'none', borderRadius: '4px', boxShadow: '0 10px 20px rgba(212, 175, 55, 0.2)' }}
                         >
                             {isProcessing ? <Loader2 size={24} className="spin" /> : <ChefHat size={24} />}
                             NẤU ĂN THÔI!

@@ -169,6 +169,37 @@ const AdminDashboard = () => {
     }
   };
 
+  const testGroqAPI = async () => {
+    const key = localConfig?.integrations?.groqKey;
+    if (!key) {
+      setApiTestStatus(prev => ({ ...prev, groq: '⚠️ Lỗi: Chưa điền API Key!' }));
+      return;
+    }
+    setApiTestStatus(prev => ({ ...prev, groq: 'Đang kiểm tra bằng REST...' }));
+    try {
+      const payload = {
+        model: "llama3-70b-8192",
+        messages: [{ role: "user", content: "Say 'TEST_OK'" }]
+      };
+      const response = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
+         method: 'POST',
+         headers: { 
+           'Content-Type': 'application/json',
+           'Authorization': `Bearer ${key}`
+         },
+         body: JSON.stringify(payload)
+      });
+      const data = await response.json();
+      if (response.ok && data.choices) {
+        setApiTestStatus(prev => ({ ...prev, groq: '✅ KẾT NỐI THÀNH CÔNG!' }));
+      } else {
+        setApiTestStatus(prev => ({ ...prev, groq: `❌ LỖI: ${data.error?.message || response.statusText}` }));
+      }
+    } catch (err) {
+      setApiTestStatus(prev => ({ ...prev, groq: '❌ LỖI MẠNG: ' + err.message }));
+    }
+  };
+
   const handleFileUpload = (e, callback) => {
     const file = e.target.files[0];
     if (file) {

@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { useConfig } from '../context/ConfigContext';
+import AIModelPills from '../components/AIModelPills';
+import OpenAI from 'openai';
 
 const YoutubeAnalyzer = () => {
   const navigate = useNavigate();
@@ -15,9 +17,15 @@ const YoutubeAnalyzer = () => {
   const [result, setResult] = useState('');
   const [activeTask, setActiveTask] = useState(null); // 'summary', 'translate', 'vocab'
   const [targetLang, setTargetLang] = useState('vi');
+  const [selectedModel, setSelectedModel] = useState('gemini');
 
   const geminiKey = config?.integrations?.geminiKey || import.meta.env.VITE_GEMINI_API_KEY;
+  const deepseekKey = config?.integrations?.deepseekKey || import.meta.env.VITE_DEEPSEEK_API_KEY;
+  const groqKey = config?.integrations?.groqKey;
+
   const genAI = new GoogleGenerativeAI(geminiKey || 'dummy_key');
+  const deepseek = new OpenAI({ apiKey: deepseekKey || 'dummy_key', baseURL: 'https://api.deepseek.com', dangerouslyAllowBrowser: true });
+  const groq = groqKey ? new OpenAI({ apiKey: groqKey, baseURL: 'https://api.groq.com/openai/v1', dangerouslyAllowBrowser: true }) : null;
 
   const extractVideoId = (url) => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -101,9 +109,8 @@ const YoutubeAnalyzer = () => {
          return;
       }
 
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      let prompt = '';
 
+      let prompt = '';
       if (task === 'summary') {
         prompt = `Hãy tóm tắt nội dung chính của video/phụ đề sau đây một cách súc tích và mạch lạc bằng tiếng Việt: \n\n ${finalTranscript}`;
       } else if (task === 'translate') {
@@ -113,9 +120,22 @@ const YoutubeAnalyzer = () => {
         prompt = `Hãy liệt kê khoảng 10-15 từ vựng/cụm từ quan trọng trong đoạn nội dung sau. Với mỗi từ, hãy ghi rõ nghĩa (tiếng Việt), cách phát âm và ví dụ đặt câu: \n\n ${finalTranscript}`;
       }
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      setResult(response.text());
+      let resultText = '';
+
+      if (selectedModel === 'gemini') {
+          const genModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+          const result = await genModel.generateContent(prompt);
+          resultText = await result.response.text();
+      } else if (selectedModel === 'groq') {
+          if (!groq) throw new Error('Chưa cấu hình Groq Key!');
+          const completion = await groq.chat.completions.create({ model: "llama3-70b-8192", messages: [{ role: "user", content: prompt }] });
+          resultText = completion.choices[0].message.content;
+      } else {
+          const completion = await deepseek.chat.completions.create({ model: "deepseek-chat", messages: [{ role: "user", content: prompt }] });
+          resultText = completion.choices[0].message.content;
+      }
+
+      setResult(resultText);
     } catch (error) {
       console.error('AI Processing Error:', error);
       setResult('Đã xảy ra lỗi trong quá trình xử lý. Vui lòng kiểm tra lại API Key hoặc nội dung văn bản.');
@@ -210,10 +230,15 @@ const YoutubeAnalyzer = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 25%) 1fr', gap: '2rem' }}>
             {/* LEFT: CONTROLS */}
             <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', height: 'fit-content', border: '1px solid var(--bg-glass-border)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', color: 'var(--accent-secondary)' }}>
-                 <Cpu size={24} /> <span style={{ fontWeight: 600, fontFamily: 'var(--font-mono)' }}>AI OPERATIONS</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem', color: '#b8860b' }}>
+                 <Cpu size={24} /> <span style={{ fontWeight: 600, fontFamily: 'var(--font-mono)' }}>AI CORE ENGINE</span>
               </div>
               
+              <div style={{ marginBottom: '1.5rem' }}>
+                <p style={{ fontSize: '0.7rem', color: '#999', marginBottom: '0.5rem', fontWeight: 600 }}>MODEL SELECTION</p>
+                <AIModelPills selectedModel={selectedModel} onModelChange={setSelectedModel} />
+              </div>
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <button className="btn-secondary" style={{ width: '100%', justifyContent: 'center', padding: '1rem 0', gap: '0.5rem', fontSize: '0.95rem' }} onClick={() => handleProcess('summary')} disabled={isProcessing}>
                   <Sparkles size={18} /> TÓM TẮT CORE

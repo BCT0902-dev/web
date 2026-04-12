@@ -31,6 +31,7 @@ import { db, auth } from '../firebase';
 import { useTheme } from '../hooks/useTheme';
 import { collection, addDoc, query, where, orderBy, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { useConfig } from '../context/ConfigContext';
+import AIModelPills from '../components/AIModelPills';
 import './AIChat.css';
 
 const AIChat = () => {
@@ -56,8 +57,15 @@ const AIChat = () => {
   // Initialize AI clients with config keys
   const geminiKey = config?.integrations?.geminiKey || import.meta.env.VITE_GEMINI_API_KEY;
   const deepseekKey = config?.integrations?.deepseekKey || import.meta.env.VITE_DEEPSEEK_API_KEY;
+  const groqKey = config?.integrations?.groqKey;
 
   const genAI = new GoogleGenerativeAI(geminiKey || 'dummy_key');
+  
+  const groq = groqKey ? new OpenAI({
+    apiKey: groqKey,
+    baseURL: 'https://api.groq.com/openai/v1',
+    dangerouslyAllowBrowser: true
+  }) : null;
   // Helper to get formatted name
   const getUserDisplayName = () => {
     if (currentUser?.displayName) return currentUser.displayName;
@@ -275,6 +283,13 @@ const AIChat = () => {
             throw new Error(data.error?.message || 'Gemini API Error');
           }
         }
+      } else if (selectedModel === 'groq') {
+        if (!groq) throw new Error('Chưa cấu hình Groq API Key trong Admin!');
+        const completion = await groq.chat.completions.create({
+          model: "llama3-70b-8192",
+          messages: [{ role: "user", content: input }]
+        });
+        aiResponseContent = completion.choices[0].message.content;
       } else {
         const completion = await deepseek.chat.completions.create({
           messages: [...messages, { role: 'user', content: input }],
@@ -523,18 +538,7 @@ const AIChat = () => {
         <div className="chat-input-container">
           {/* Model selection moved inside input container */}
           <div className="input-model-pills">
-            <button 
-              className={`pill-btn ${selectedModel === 'gemini' ? 'active' : ''}`}
-              onClick={() => setSelectedModel('gemini')}
-            >
-              <Sparkles size={14} /> Gemini
-            </button>
-            <button 
-              className={`pill-btn ${selectedModel === 'deepseek' ? 'active' : ''}`}
-              onClick={() => setSelectedModel('deepseek')}
-            >
-              <Cpu size={14} /> DeepSeek
-            </button>
+            <AIModelPills selectedModel={selectedModel} onModelChange={setSelectedModel} />
           </div>
 
           <div className={`input-glow-wrapper ${isFocused ? 'focus' : ''} ${isLoading ? 'loading' : ''} ${(!currentUser && guestMsgCount >= 10) ? 'locked' : ''}`}>
