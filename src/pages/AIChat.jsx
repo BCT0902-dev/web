@@ -56,6 +56,13 @@ const AIChat = () => {
   const deepseekKey = config?.integrations?.deepseekKey || import.meta.env.VITE_DEEPSEEK_API_KEY;
 
   const genAI = new GoogleGenerativeAI(geminiKey || 'dummy_key');
+  // Helper to get formatted name
+  const getUserDisplayName = () => {
+    if (currentUser?.displayName) return currentUser.displayName;
+    if (currentUser?.email) return currentUser.email.split('@')[0];
+    return 'bạn';
+  };
+
   const deepseek = new OpenAI({
     apiKey: deepseekKey || 'dummy_key',
     baseURL: 'https://api.deepseek.com',
@@ -202,8 +209,23 @@ const AIChat = () => {
 
       if (selectedModel === 'gemini') {
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        const result = await model.generateContent(input);
-        aiResponseContent = result.response.text();
+        // Use v1 instead of v1beta via the SDK's internal mechanisms if possible, 
+        // but the SDK usually handles this. However, since the user noted v1beta failure:
+        // Let's use the fetch method directly for more control as done in AdminDashboard later
+        const payload = {
+          contents: [{ parts: [{ text: input }] }]
+        };
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (response.ok && data.candidates) {
+          aiResponseContent = data.candidates[0].content.parts[0].text;
+        } else {
+          throw new Error(data.error?.message || 'Gemini API Error');
+        }
       } else {
         const completion = await deepseek.chat.completions.create({
           messages: [...messages, { role: 'user', content: input }],
@@ -384,10 +406,9 @@ const AIChat = () => {
                 <h2>BCT CORE ENGINE</h2>
                 <div className="welcome-text-content">
                   <p>
-                    {config?.content?.welcomeMessage || 
-                      (currentUser 
-                        ? 'Hệ thống AI Assistant được đồng bộ hóa đám mây. Hãy nhập lệnh hoặc đặt câu hỏi để bắt đầu phiên làm việc.' 
-                        : 'Bạn đang sử dụng phiên bản giới hạn dành cho khách. Hãy đăng nhập để lưu trữ vĩnh viễn mọi hội thoại của bạn.')
+                    {currentUser 
+                      ? (config?.content?.welcomeUserMessage || `BCT Core Engine v3.0 - Đang trực tuyến. Tôi có thể giúp gì cho ${getUserDisplayName()}?`)
+                      : (config?.content?.welcomeMessage || 'BCT Core Engine v3.0 - Đang trực tuyến. Tôi có thể giúp gì cho bạn?')
                     }
                   </p>
                 </div>

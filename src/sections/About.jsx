@@ -50,19 +50,33 @@ const CodeTypewriter = () => {
     ]}
   ];
 
-  const fullText = codeContent.map(l => l.text).join('\n');
-  const [visibleChars, setVisibleChars] = useState(0);
+  // Starting typing effect from 'wrong design' (index 7 in codeContent)
+  const startIndex = 7;
+  const staticText = codeContent.slice(0, startIndex).map(l => l.text).join('\n') + '\n';
+  const dynamicText = codeContent.slice(startIndex).map(l => l.text).join('\n');
+  const fullText = staticText + dynamicText;
+  
+  const [visibleChars, setVisibleChars] = useState(staticText.length);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setVisibleChars(prev => {
-        if (prev < fullText.length) return prev + 1;
-        clearInterval(timer);
-        return prev;
-      });
-    }, 20);
+    let timer;
+    const startTyping = () => {
+      timer = setInterval(() => {
+        setVisibleChars(prev => {
+          if (prev < fullText.length) return prev + 1;
+          clearInterval(timer);
+          setTimeout(() => {
+            setVisibleChars(staticText.length);
+            startTyping();
+          }, 3000); // 3 second pause then loop
+          return prev;
+        });
+      }, 50);
+    };
+
+    startTyping();
     return () => clearInterval(timer);
-  }, [fullText.length]);
+  }, [fullText.length, staticText.length]);
 
   let globalCharCount = 0;
 
@@ -70,17 +84,17 @@ const CodeTypewriter = () => {
     <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6rem', minHeight: '260px' }}>
       {codeContent.map((lineData, lineIdx) => {
         const lineStart = globalCharCount;
-        globalCharCount += lineData.text.length + 1; // +1 for newline character
+        globalCharCount += lineData.text.length + 1;
         
         return (
           <div key={lineIdx} style={{ whiteSpace: 'pre' }}>
             {lineData.tokens.map((token, tokenIdx) => {
-              const tokenStart = lineData.text.indexOf(token.text);
+              const tokenStartInLine = lineData.text.indexOf(token.text);
               const charsInLineSoFar = visibleChars - lineStart;
               
-              if (charsInLineSoFar <= tokenStart) return null;
+              if (charsInLineSoFar <= tokenStartInLine) return null;
               
-              const displayedToken = token.text.slice(0, charsInLineSoFar - tokenStart);
+              const displayedToken = token.text.slice(0, charsInLineSoFar - tokenStartInLine);
               
               return (
                 <span key={tokenIdx} style={{ color: token.color }}>
@@ -88,7 +102,6 @@ const CodeTypewriter = () => {
                 </span>
               );
             })}
-            {/* Blinking cursor only at the very end of currently typing character */}
             {visibleChars >= lineStart && visibleChars < globalCharCount && (
               <motion.span
                 animate={{ opacity: [0, 1, 0] }}
@@ -152,19 +165,33 @@ const BioTerminal = () => {
     ]}
   ];
 
-  const fullText = bioContent.map(l => l.text).join('\n');
-  const [visibleChars, setVisibleChars] = useState(0);
+  // Starting typing effect from 'walking' (index 7 in bioContent)
+  const startIndex = 7;
+  const staticText = bioContent.slice(0, startIndex).map(l => l.text).join('\n') + '\n';
+  const dynamicText = bioContent.slice(startIndex).map(l => l.text).join('\n');
+  const fullText = staticText + dynamicText;
+
+  const [visibleChars, setVisibleChars] = useState(staticText.length);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setVisibleChars(prev => {
-        if (prev < fullText.length) return prev + 1;
-        clearInterval(timer);
-        return prev;
-      });
-    }, 15);
+    let timer;
+    const startTyping = () => {
+      timer = setInterval(() => {
+        setVisibleChars(prev => {
+          if (prev < fullText.length) return prev + 1;
+          clearInterval(timer);
+          setTimeout(() => {
+            setVisibleChars(staticText.length);
+            startTyping();
+          }, 3000); // 3 second pause
+          return prev;
+        });
+      }, 40);
+    };
+
+    startTyping();
     return () => clearInterval(timer);
-  }, [fullText.length]);
+  }, [fullText.length, staticText.length]);
 
   let globalCharCount = 0;
 
@@ -177,10 +204,10 @@ const BioTerminal = () => {
         return (
           <div key={lineIdx} style={{ whiteSpace: 'pre' }}>
             {lineData.tokens.map((token, tokenIdx) => {
-              const tokenStart = lineData.text.indexOf(token.text);
+              const tokenStartInLine = lineData.text.indexOf(token.text);
               const charsInLineSoFar = visibleChars - lineStart;
-              if (charsInLineSoFar <= tokenStart) return null;
-              const displayedToken = token.text.slice(0, charsInLineSoFar - tokenStart);
+              if (charsInLineSoFar <= tokenStartInLine) return null;
+              const displayedToken = token.text.slice(0, charsInLineSoFar - tokenStartInLine);
               return <span key={tokenIdx} style={{ color: token.color }}>{displayedToken}</span>;
             })}
             {visibleChars >= lineStart && visibleChars < globalCharCount && (

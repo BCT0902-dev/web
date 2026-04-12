@@ -13,7 +13,18 @@ const Footer = () => {
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [status, setStatus] = useState('idle'); // idle, sending, success, error
 
-  const socials = [
+  // Use config social_links if available (array format from CMS), otherwise fallback
+  const displaySocials = (config?.social_links && config.social_links.length > 0) 
+    ? config.social_links.filter(s => s.isVisible !== false).map(s => ({
+        name: s.name,
+        brandColor: s.color || 'var(--accent-main)',
+        icon: s.iconUrl ? <img src={s.iconUrl} alt={s.name} style={{ width: '20px', height: '20px', objectFit: 'contain' }} /> : (
+           // Fallback to lucide-react or svg based on name if no iconUrl
+           s.name.toLowerCase().includes('messenger') ? <MessageSquare size={20} /> : <Globe size={20} />
+        ),
+        url: s.url
+      }))
+    : [
     { 
       name: "Facebook",
       brandColor: "#1877F2",
@@ -126,8 +137,8 @@ const Footer = () => {
   return (
     <footer id="contact" style={{ 
       borderTop: '1px solid var(--bg-glass-border)',
-      padding: '4rem 2rem 2rem',
-      marginTop: '2rem',
+      padding: '2rem 2rem 1.5rem',
+      marginTop: '1rem',
       background: 'rgba(var(--bg-rgb), 0.3)'
     }}>
       <div className="container" style={{ 
@@ -148,21 +159,25 @@ const Footer = () => {
           </p>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
-            {socials.map((social, idx) => (
+            {displaySocials.map((social, idx) => (
               <a 
                 key={idx} 
                 href={social.url} 
+                target="_blank"
+                rel="noreferrer"
                 className="glass-panel" 
                 style={{ padding: '0.8rem', display: 'flex', transition: 'all 0.3s ease' }}
                 onMouseOver={(e) => {
                   e.currentTarget.style.transform = 'translateY(-5px)';
                   e.currentTarget.style.borderColor = social.brandColor;
-                  e.currentTarget.querySelector('svg').style.color = social.brandColor;
+                  const icon = e.currentTarget.querySelector('svg') || e.currentTarget.querySelector('img');
+                  if (icon) icon.style.filter = `drop-shadow(0 0 8px ${social.brandColor})`;
                 }}
                 onMouseOut={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)';
                   e.currentTarget.style.borderColor = 'var(--bg-glass-border)';
-                  e.currentTarget.querySelector('svg').style.color = 'inherit';
+                  const icon = e.currentTarget.querySelector('svg') || e.currentTarget.querySelector('img');
+                  if (icon) icon.style.filter = 'none';
                 }}
               >
                 {social.icon}

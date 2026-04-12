@@ -30,6 +30,7 @@ export const ConfigProvider = ({ children }) => {
       },
       content: {
         welcomeMessage: 'BCT Core Engine v3.0 - Đang trực tuyến. Tôi có thể giúp gì cho bạn?',
+        welcomeUserMessage: '',
         quotes: [
           "Không có gì quý hơn độc lập, tự do. - Hồ Chí Minh",
           "Vì lợi ích mười năm thì phải trồng cây, vì lợi ích trăm năm thì phải trồng người. - Hồ Chí Minh",
