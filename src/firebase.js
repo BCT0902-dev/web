@@ -24,8 +24,8 @@ export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export const githubProvider = new GithubAuthProvider();
 
-// Khởi tạo Firestore với cấu hình cưỡng ép Long Polling để vượt qua rào cản mạng/WebSockets
+// Khởi tạo Firestore với cấu hình tự động nhận dạng Long Polling để vượt qua rào cản mạng/WebSockets
 export const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true,
+  experimentalAutoDetectLongPolling: true,
   useFetchStreams: false // Giảm thiểu tối đa việc sử dụng các luồng giao thức phức tạp bị tường lửa chặn
 });

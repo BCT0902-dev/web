@@ -37,6 +37,8 @@ const Login = () => {
     // Check for explicit "blocked" markers
     if (errorStr.includes('blocked')) {
       setShowAdblockModal(true);
+    } else if (err.message === 'TIMEOUT_FIRESTORE') {
+      setError("Không thể kết nối đến máy chủ Database (Timeout 5s). Dự án của ngài chưa kích hoạt Firebase Firestore hoặc kết nối bị tường lửa chặn đặc biệt!");
     } else if (err?.code === 'unavailable') {
       // Offline but maybe temporary
       setError("Hệ thống hiện đang ngoại tuyến. Vui lòng kiểm tra lại kết nối mạng của ngài.");
@@ -57,7 +59,12 @@ const Login = () => {
       // 1. Kiểm tra Hardcoded Admin
       if (email === 'admin' && password === 'Buicongtoi0902') {
         try {
-          const adminDoc = await getDoc(doc(db, 'system', 'admin_config'));
+          // Timeout cầu chì 5 giây để tránh treo trình duyệt nếu DB chưa cấu hình
+          const adminDoc = await Promise.race([
+            getDoc(doc(db, 'system', 'admin_config')),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT_FIRESTORE')), 5000))
+          ]);
+
           if (adminDoc.exists() && adminDoc.data().totpSecret) {
             setTotpSecret(adminDoc.data().totpSecret);
             setStep('2fa_verify');
