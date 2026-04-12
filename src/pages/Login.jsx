@@ -96,8 +96,8 @@ const Login = () => {
         await signInWithEmailAndPassword(auth, email, password);
         navigate('/');
       } catch (err) {
-        if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-           setError('Tài khoản hoặc Mật khẩu không chính xác.');
+        if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential' || err.code === 'auth/invalid-email') {
+           setError('Sai mật khẩu hoặc tên đăng nhập.');
         } else {
            handleError(err);
         }
@@ -213,15 +213,9 @@ const Login = () => {
                   </h1>
                 </Link>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
-                   <button 
-                     onClick={() => setAuthMode('login')} 
-                     style={{ background: 'none', border: 'none', color: authMode === 'login' ? 'var(--accent-main)' : 'var(--text-muted)', fontWeight: authMode === 'login' ? 700 : 400, cursor: 'pointer', fontFamily: 'var(--font-mono)' }}
-                   >ĐĂNG NHẬP</button>
-                   <span style={{ color: 'var(--text-muted)' }}>|</span>
-                   <button 
-                     onClick={() => setAuthMode('register')}
-                     style={{ background: 'none', border: 'none', color: authMode === 'register' ? 'var(--accent-main)' : 'var(--text-muted)', fontWeight: authMode === 'register' ? 700 : 400, cursor: 'pointer', fontFamily: 'var(--font-mono)' }}
-                   >ĐĂNG KÝ</button>
+                   <p style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}>
+                     {authMode === 'login' ? 'VUI LÒNG ĐĂNG NHẬP ĐỂ TIẾP TỤC' : 'ĐIỀN THÔNG TIN ĐỂ TẠO CẤP PHÉP MỚI'}
+                   </p>
                 </div>
               </div>
 
@@ -255,9 +249,29 @@ const Login = () => {
                   <Lock size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                   <input type="password" placeholder={authMode === 'login' ? "Mật mã bảo mật" : "Nhập mật khẩu (Tối thiểu 6 ký tự)"} value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '1rem 1rem 1rem 3rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontFamily: 'var(--font-mono)', outline: 'none' }} />
                 </div>
-                <button type="submit" className="btn-primary" style={{ width: '100%', padding: '1rem', opacity: loading ? 0.7 : 1 }} disabled={loading}>
+                
+                {authMode === 'login' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '-0.5rem' }}>
+                    <input type="checkbox" id="remember" style={{ accentColor: 'var(--accent-main)', width: '16px', height: '16px', cursor: 'pointer', borderRadius: '50%' }} />
+                    <label htmlFor="remember" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', cursor: 'pointer' }}>Ghi nhớ đăng nhập</label>
+                  </div>
+                )}
+
+                <button type="submit" className="btn-primary" style={{ width: '100%', padding: '1rem', opacity: loading ? 0.7 : 1, marginTop: '0.5rem' }} disabled={loading}>
                   {loading ? 'ĐANG CHẠY TRÌNH KẾT NỐI...' : (authMode === 'login' ? 'XÁC NHẬN TRUY CẬP' : 'KHỞI TẠO TÀI KHOẢN MỚI')}
                 </button>
+
+                <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
+                  {authMode === 'login' ? (
+                    <button type="button" onClick={() => setAuthMode('register')} style={{ color: 'var(--accent-secondary)', fontSize: '0.85rem', textDecoration: 'underline', transition: 'color 0.3s' }} onMouseOver={(e) => e.target.style.color = '#fff'} onMouseOut={(e) => e.target.style.color = 'var(--accent-secondary)'}>
+                      Ngài chưa có tư cách lưu trữ? KHỞI TẠO HỒ SƠ
+                    </button>
+                  ) : (
+                    <button type="button" onClick={() => setAuthMode('login')} style={{ color: 'var(--accent-secondary)', fontSize: '0.85rem', textDecoration: 'underline', transition: 'color 0.3s' }} onMouseOver={(e) => e.target.style.color = '#fff'} onMouseOut={(e) => e.target.style.color = 'var(--accent-secondary)'}>
+                      Đã có hồ sơ? Quay lại ĐĂNG NHẬP
+                    </button>
+                  )}
+                </div>
               </form>
 
               {authMode === 'login' && (

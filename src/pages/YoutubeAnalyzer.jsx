@@ -125,7 +125,7 @@ const YoutubeAnalyzer = () => {
   };
 
   return (
-    <div className="cyber-matrix-container" style={{ paddingTop: '8rem', minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+    <div className="cyber-matrix-container" style={{ paddingTop: '6rem', minHeight: 'calc(100vh - 60px)', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
       <style>{`
         .cyber-matrix-container {
           background-color: var(--bg-primary);
@@ -175,12 +175,12 @@ const YoutubeAnalyzer = () => {
           <ChevronLeft size={20} /> QUAY LẠI GALLERY
         </button>
 
-        <div className="hub-header" style={{ textAlign: 'left', marginBottom: '2rem', border: 'none', padding: 0 }}>
+        <div className="hub-header" style={{ textAlign: 'left', marginBottom: '1.5rem', border: 'none', padding: 0 }}>
            <h1 style={{ fontSize: '2.5rem', letterSpacing: '5px', color: 'var(--text-primary)' }}>YT SMART ANALYZER</h1>
            <p style={{ color: 'var(--text-muted)' }}>Phòng thí nghiệm phân tích nội dung số đa ngôn ngữ</p>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', paddingBottom: '4rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', paddingBottom: '2rem' }}>
           
           {/* TOP BANNER: URL SCANNER */}
           <div className="glass-panel" style={{ padding: '1.5rem 2rem', border: '1px solid var(--accent-glow)', display: 'flex', gap: '2rem', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -241,7 +241,7 @@ const YoutubeAnalyzer = () => {
             </div>
 
             {/* RIGHT: RESULTS */}
-            <div className="glass-panel" style={{ padding: '2.5rem', minHeight: '600px', background: 'var(--bg-glass)', backdropFilter: 'blur(10px)', border: '1px inset var(--bg-glass-border)', position: 'relative', overflowY: 'auto', boxShadow: 'inset 0 0 20px rgba(0,0,0,0.05)' }}>
+            <div className="glass-panel" style={{ padding: '2.5rem', minHeight: '400px', background: 'var(--bg-glass)', backdropFilter: 'blur(10px)', border: '1px inset var(--bg-glass-border)', position: 'relative', overflowY: 'auto', boxShadow: 'inset 0 0 20px rgba(0,0,0,0.05)' }}>
               <AnimatePresence mode="wait">
                 {isProcessing ? (
                   <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>

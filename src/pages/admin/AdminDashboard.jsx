@@ -36,6 +36,21 @@ const AdminDashboard = () => {
     return <div className="admin-loading">INITIALIZING SYSTEM_ADMIN...</div>;
   }
 
+  const handleLogoUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 1024 * 1024) {
+         alert("Ảnh quá lớn! Vui lòng chọn ảnh dưới 1MB để đảm bảo tốc độ tải hệ thống.");
+         return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        updateNested('appearance', 'logoUrl', reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     setStatus('SAVING...');
@@ -115,32 +130,109 @@ const AdminDashboard = () => {
                 className="config-section"
               >
                 <div className="input-group">
-                  <label>LOGO WEBSITE (URL)</label>
-                  <input 
-                    type="text" 
-                    value={localConfig.appearance.logoUrl} 
-                    onChange={(e) => updateNested('appearance', 'logoUrl', e.target.value)}
-                    placeholder="https://example.com/logo.png"
-                  />
-                  <small>Để trống để sử dụng logo mặc định hệ thống.</small>
+                  <label>LOGO WEBSITE</label>
+                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                     <input 
+                       type="text" 
+                       value={localConfig.appearance.logoUrl} 
+                       onChange={(e) => updateNested('appearance', 'logoUrl', e.target.value)}
+                       placeholder="URL Logo hoặc tải lên từ máy..."
+                       style={{ flex: 1 }}
+                     />
+                     <label className="btn-secondary" style={{ cursor: 'pointer', padding: '0.8rem 1.5rem', whiteSpace: 'nowrap' }}>
+                        TẢI LÊN ẢNH
+                        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleLogoUpload} />
+                     </label>
+                  </div>
+                  <small>Kích thước khuyên dùng: 200x200px. Hỗ trợ PNG/SVG (Tối đa 1MB).</small>
                 </div>
 
-                <div className="form-grid">
-                  <div className="input-group">
-                    <label>FACEBOOK LINK</label>
-                    <input type="text" value={localConfig.socials.facebook} onChange={(e) => updateNested('socials', 'facebook', e.target.value)} />
+                <div className="admin-divider" style={{ margin: '2rem 0' }}></div>
+
+                <div className="apps-manager">
+                  <div className="manager-header">
+                    <label>QUẢN LÝ MẠNG XÃ HỘI (SOCIALS)</label>
+                    <button className="add-btn" onClick={() => {
+                       const newSocials = [...(localConfig.social_links || [])];
+                       newSocials.push({ name: 'Mới', icon: 'Globe', url: '', color: '#0084FF', isVisible: true });
+                       setLocalConfig(prev => ({ ...prev, social_links: newSocials }));
+                    }}>
+                      <Plus size={14} /> THÊM MXH
+                    </button>
                   </div>
-                  <div className="input-group">
-                    <label>GITHUB LINK</label>
-                    <input type="text" value={localConfig.socials.github} onChange={(e) => updateNested('socials', 'github', e.target.value)} />
-                  </div>
-                  <div className="input-group">
-                    <label>LINKEDIN LINK</label>
-                    <input type="text" value={localConfig.socials.linkedin} onChange={(e) => updateNested('socials', 'linkedin', e.target.value)} />
-                  </div>
-                  <div className="input-group">
-                    <label>YOUTUBE LINK</label>
-                    <input type="text" value={localConfig.socials.youtube} onChange={(e) => updateNested('socials', 'youtube', e.target.value)} />
+                  <div className="apps-table" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {(localConfig.social_links || []).map((social, idx) => (
+                      <div key={idx} className="app-edit-row" style={{ display: 'grid', gridTemplateColumns: 'auto 200px 150px 1fr auto auto', gap: '0.5rem', alignItems: 'center' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={social.isVisible !== false} 
+                          onChange={(e) => {
+                            const newSocials = [...localConfig.social_links];
+                            newSocials[idx].isVisible = e.target.checked;
+                            setLocalConfig(prev => ({ ...prev, social_links: newSocials }));
+                          }} 
+                          title="Trạng thái Ẩn/Hiện"
+                          style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--accent-main)' }}
+                        />
+                        <input 
+                          type="text" 
+                          placeholder="Tên (VD: Facebook)" 
+                          value={social.name} 
+                          onChange={(e) => {
+                            const newSocials = [...localConfig.social_links];
+                            newSocials[idx].name = e.target.value;
+                            setLocalConfig(prev => ({ ...prev, social_links: newSocials }));
+                          }} 
+                        />
+                        <select 
+                          value={social.icon} 
+                          onChange={(e) => {
+                            const newSocials = [...localConfig.social_links];
+                            newSocials[idx].icon = e.target.value;
+                            setLocalConfig(prev => ({ ...prev, social_links: newSocials }));
+                          }} 
+                          style={{ background: 'var(--bg-primary)', color: '#fff', border: '1px solid var(--bg-glass-border)', padding: '0.5rem', borderRadius: '4px', outline: 'none' }}
+                        >
+                           <option value="Facebook">Facebook (Logo)</option>
+                           <option value="Github">Github (Logo)</option>
+                           <option value="LinkedIn">LinkedIn (Logo)</option>
+                           <option value="Youtube">Youtube (Logo)</option>
+                           <option value="MessageSquare">Messenger (Chat)</option>
+                           <option value="Instagram">Instagram (Logo)</option>
+                           <option value="Twitter">Twitter / X</option>
+                           <option value="Globe">Khác (Trái Đất)</option>
+                        </select>
+                        <input 
+                          type="text" 
+                          placeholder="Link liên kết URL" 
+                          value={social.url} 
+                          onChange={(e) => {
+                            const newSocials = [...localConfig.social_links];
+                            newSocials[idx].url = e.target.value;
+                            setLocalConfig(prev => ({ ...prev, social_links: newSocials }));
+                          }} 
+                        />
+                        <div className="color-input-wrapper" style={{ padding: 0, border: 'none', background: 'transparent' }}>
+                          <input 
+                            type="color" 
+                            title="Màu sắc nhận diện"
+                            value={social.color} 
+                            onChange={(e) => {
+                              const newSocials = [...localConfig.social_links];
+                              newSocials[idx].color = e.target.value;
+                              setLocalConfig(prev => ({ ...prev, social_links: newSocials }));
+                            }} 
+                            style={{ margin: 0 }}
+                          />
+                        </div>
+                        <button className="delete-row-btn" onClick={() => {
+                          const newSocials = localConfig.social_links.filter((_, i) => i !== idx);
+                          setLocalConfig(prev => ({ ...prev, social_links: newSocials }));
+                        }}>
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </motion.div>
