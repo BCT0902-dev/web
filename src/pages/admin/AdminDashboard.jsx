@@ -116,13 +116,13 @@ const AdminDashboard = () => {
       setApiTestStatus(prev => ({ ...prev, gemini: '⚠️ Lỗi: Chưa điền API Key!' }));
       return;
     }
-    setApiTestStatus(prev => ({ ...prev, gemini: 'Đang kiểm tra bằng REST v1...' }));
+    setApiTestStatus(prev => ({ ...prev, gemini: 'Đang kiểm tra bằng REST v1beta...' }));
     try {
       const payload = {
         contents: [{ parts: [{ text: "Say 'TEST_OK'" }] }]
       };
       // Fixed: Using v1 instead of v1beta and ensuring model name is correct
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify(payload)

@@ -20,6 +20,7 @@ import {
   Shield
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -46,7 +47,8 @@ const AIChat = () => {
   const [showGuestPopup, setShowGuestPopup] = useState(false);
   const [guestMsgCount, setGuestMsgCount] = useState(0);
   const messagesEndRef = useRef(null);
-  const currentUser = auth.currentUser;
+  const { currentUser: authUser, isAdmin } = useAuth();
+  const currentUser = authUser;
   const navigate = useNavigate();
 
   const codeTheme = theme === 'dark' ? atomDark : oneLight;
@@ -71,12 +73,12 @@ const AIChat = () => {
 
   // Load guest message count from sessionStorage
   useEffect(() => {
-    if (!currentUser) {
+    if (!currentUser && !isAdmin) {
       const count = sessionStorage.getItem('bct_guest_msg_count') || 0;
       setGuestMsgCount(parseInt(count));
       setShowGuestPopup(true);
     }
-  }, [currentUser]);
+  }, [currentUser, isAdmin]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -87,9 +89,9 @@ const AIChat = () => {
   }, [messages]);
 
   useEffect(() => {
-    if (!currentUser) return;
-    // ... logic for authenticated user remains the same
-    const chatsRef = collection(db, 'users', currentUser.uid, 'chats');
+    if (!currentUser && !isAdmin) return;
+    const uid = currentUser?.uid || 'admin';
+    const chatsRef = collection(db, 'users', uid, 'chats');
     const q = query(chatsRef, orderBy('lastUpdate', 'desc'));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -142,10 +144,11 @@ const AIChat = () => {
 
   const deleteChat = async (e, id) => {
     e.stopPropagation();
-    if (!currentUser) return;
+    if (!currentUser && !isAdmin) return;
 
     try {
-        await deleteDoc(doc(db, 'users', currentUser.uid, 'chats', id));
+        const uid = currentUser?.uid || 'admin';
+        await deleteDoc(doc(db, 'users', uid, 'chats', id));
         if (activeChatId === id) {
             setActiveChatId(null);
             setMessages([]);
@@ -159,7 +162,7 @@ const AIChat = () => {
     if (!input.trim() || isLoading) return;
 
     // Check guest limit
-    if (!currentUser && guestMsgCount >= 10) {
+    if (!currentUser && !isAdmin && guestMsgCount >= 10) {
       setShowGuestPopup(true);
       return;
     }
@@ -170,11 +173,12 @@ const AIChat = () => {
         timestamp: currentUser ? serverTimestamp() : new Date() 
     };
 
-    if (currentUser) {
+    if (currentUser || isAdmin) {
         let chatId = activeChatId;
+        const uid = currentUser?.uid || 'admin';
 
         if (!chatId) {
-            const chatsRef = collection(db, 'users', currentUser.uid, 'chats');
+            const chatsRef = collection(db, 'users', uid, 'chats');
             const newDoc = await addDoc(chatsRef, {
                 title: input.slice(0, 30),
                 lastUpdate: serverTimestamp(),
@@ -184,11 +188,11 @@ const AIChat = () => {
             setActiveChatId(chatId);
         }
 
-        const msgsRef = collection(db, 'users', currentUser.uid, 'chats', chatId, 'messages');
+        const msgsRef = collection(db, 'users', uid, 'chats', chatId, 'messages');
         await addDoc(msgsRef, newMessage);
         
         if (messages.length === 0) {
-            await updateDoc(doc(db, 'users', currentUser.uid, 'chats', chatId), {
+            await updateDoc(doc(db, 'users', uid, 'chats', chatId), {
                 title: input.slice(0, 30),
                 lastUpdate: serverTimestamp()
             });
@@ -227,8 +231,8 @@ const AIChat = () => {
           timestamp: currentUser ? serverTimestamp() : new Date()
         };
 
-        if (currentUser && activeChatId) {
-          await addDoc(collection(db, 'users', currentUser.uid, 'chats', activeChatId, 'messages'), imgMsg);
+        if ((currentUser || isAdmin) && activeChatId) {
+          await addDoc(collection(db, 'users', (currentUser?.uid || 'admin'), 'chats', activeChatId, 'messages'), imgMsg);
         } else {
           setMessages(prev => [...prev, imgMsg]);
         }
@@ -245,7 +249,7 @@ const AIChat = () => {
         const payload = {
           contents: [{ parts: [{ text: input }] }]
         };
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
            method: 'POST',
            headers: { 'Content-Type': 'application/json' },
            body: JSON.stringify(payload)
@@ -254,7 +258,22 @@ const AIChat = () => {
         if (response.ok && data.candidates) {
           aiResponseContent = data.candidates[0].content.parts[0].text;
         } else {
-          throw new Error(data.error?.message || 'Gemini API Error');
+          // Fallback to gemini-pro if flash is not found in v1beta
+          if (data.error?.message?.includes('not found')) {
+            const fbResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiKey}`, {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify(payload)
+            });
+            const fbData = await fbResponse.json();
+            if (fbResponse.ok && fbData.candidates) {
+              aiResponseContent = fbData.candidates[0].content.parts[0].text;
+            } else {
+              throw new Error(fbData.error?.message || 'Gemini Pro Fallback Error');
+            }
+          } else {
+            throw new Error(data.error?.message || 'Gemini API Error');
+          }
         }
       } else {
         const completion = await deepseek.chat.completions.create({
@@ -356,7 +375,7 @@ const AIChat = () => {
 
           <div className="history-list">
             <div className="history-label">
-              <History size={14} /> {currentUser ? 'GẦN ĐÂY' : 'CHẾ ĐỘ KHÁCH'}
+              <History size={14} /> {(currentUser || isAdmin) ? 'GẦN ĐÂY' : 'CHẾ ĐỘ KHÁCH'}
             </div>
             {currentUser ? chatHistory.map(chat => (
               <motion.div 
@@ -436,7 +455,7 @@ const AIChat = () => {
                 <h2>BCT CORE ENGINE</h2>
                 <div className="welcome-text-content">
                   <p>
-                    {currentUser 
+                    {(currentUser || isAdmin) 
                       ? (config?.content?.welcomeUserMessage || `BCT Core Engine v3.0 - Đang trực tuyến. Tôi có thể giúp gì cho ${getUserDisplayName()}?`)
                       : (config?.content?.welcomeMessage || 'BCT Core Engine v3.0 - Đang trực tuyến. Tôi có thể giúp gì cho bạn?')
                     }
@@ -446,7 +465,7 @@ const AIChat = () => {
                   <span>#GUEST_ACCESS</span>
                   <span>#V3_PROTOCOL</span>
                   <span>#DEEPSEEK</span>
-                  <span>{currentUser ? '#SECURE_SYNC' : '#10_MSGS_LIMIT'}</span>
+                  <span>{(currentUser || isAdmin) ? '#SECURE_SYNC' : '#10_MSGS_LIMIT'}</span>
                 </div>
               </motion.div>
             </div>
