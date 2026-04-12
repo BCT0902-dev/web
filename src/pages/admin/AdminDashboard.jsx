@@ -121,8 +121,8 @@ const AdminDashboard = () => {
       const payload = {
         contents: [{ parts: [{ text: "Say 'TEST_OK'" }] }]
       };
-      // High compatibility: Using v1 and gemini-1.5-flash
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`, {
+      // High compatibility: Using v1beta and gemini-1.5-flash for free keys
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify(payload)
@@ -225,7 +225,18 @@ const AdminDashboard = () => {
     setIsSaving(true);
     setStatus('SAVING...');
     try {
-      await setDoc(doc(db, 'system', 'config'), localConfig);
+      // Deep sanitize to prevent Firebase: Property content contains an invalid nested entity
+      const sanitize = (obj) => {
+        return JSON.parse(JSON.stringify(obj, (key, value) => {
+          if (value === undefined) return null;
+          // Strip potential React elements or complex objects that shouldn't be in config
+          if (value && typeof value === 'object' && value.$$typeof) return null;
+          return value;
+        }));
+      };
+
+      const cleanConfig = sanitize(localConfig);
+      await setDoc(doc(db, 'system', 'config'), cleanConfig);
       setStatus('CONFIG_UPDATED_SUCCESSFULLY');
       setTimeout(() => setStatus(''), 3000);
     } catch (err) {
