@@ -137,7 +137,7 @@ const ChefAssistant = () => {
             display: 'flex', 
             flexDirection: 'column', 
             overflow: 'hidden',
-            background: 'radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.9) 0%, rgba(245, 245, 240, 1) 100%), url("https://www.transparenttextures.com/patterns/p-6.png")'
+            background: 'transparent'
         }}>
             <FallingFood />
             <div className="museum-scanlines" style={{ opacity: 0.1 }} />

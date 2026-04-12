@@ -18,7 +18,8 @@ import {
   Terminal,
   Eraser,
   Shield,
-  ChevronDown
+  ChevronDown,
+  Brain
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';

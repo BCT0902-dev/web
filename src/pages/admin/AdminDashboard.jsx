@@ -24,7 +24,8 @@ import {
   MessageSquare,
   ChevronDown,
   Brain,
-  Sparkles
+  Sparkles,
+  Crop
 } from 'lucide-react';
 import { db } from '../../firebase';
 import { doc, setDoc, updateDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
@@ -240,6 +241,12 @@ const AdminDashboard = () => {
     });
   };
 
+  const handleReAdjust = (imageUrl, callback, aspect = 1.5) => {
+    setAdjustmentModal({ isOpen: true, src: imageUrl, callback, aspect });
+    setZoom(1);
+    setDragPos({ x: 0, y: 0 });
+  };
+
   const handleFileUpload = (e, callback, aspect = 1.5) => {
     const file = e.target.files[0];
     if (file) {
@@ -252,9 +259,7 @@ const AdminDashboard = () => {
         const result = reader.result;
         // If it's an image, open adjuster
         if (typeof result === 'string' && result.startsWith('data:image')) {
-           setAdjustmentModal({ isOpen: true, src: result, callback, aspect });
-           setZoom(1);
-           setDragPos({ x: 0, y: 0 });
+           handleReAdjust(result, callback, aspect);
         } else {
            callback(result);
         }
@@ -442,10 +447,17 @@ const AdminDashboard = () => {
                        placeholder="URL Logo hoặc tải lên..."
                        style={{ flex: 1 }}
                      />
-                     <label className="btn-secondary" style={{ cursor: 'pointer', padding: '0.8rem 1.5rem', whiteSpace: 'nowrap', background: 'var(--accent-main)', color: '#fff', borderRadius: '4px' }}>
-                        TẢI LÊN LOGO
-                        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, (res) => updateNested('appearance', 'logoUrl', res), 1)} />
-                     </label>
+                     <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <label className="btn-secondary" style={{ cursor: 'pointer', padding: '0.8rem 1.2rem', whiteSpace: 'nowrap', background: 'var(--accent-main)', color: '#fff', borderRadius: '4px', fontSize: '0.8rem' }}>
+                           TẢI LÊN
+                           <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, (res) => updateNested('appearance', 'logoUrl', res), 1)} />
+                        </label>
+                        {localConfig.appearance.logoUrl && (
+                           <button className="btn-secondary" style={{ padding: '0.8rem', background: 'rgba(255,255,255,0.1)', color: '#fff', borderRadius: '4px', border: 'none', cursor: 'pointer' }} onClick={() => handleReAdjust(localConfig.appearance.logoUrl, (res) => updateNested('appearance', 'logoUrl', res), 1)}>
+                              <Crop size={18} />
+                           </button>
+                        )}
+                     </div>
                   </div>
                 </div>
 
@@ -481,14 +493,25 @@ const AdminDashboard = () => {
                         <div style={{ width: '30px', height: '30px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                            {social.iconUrl ? <img src={social.iconUrl} alt="icon" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <ImageIcon size={14} />}
                         </div>
-                        <label style={{ fontSize: '0.7rem', background: 'rgba(255,255,255,0.1)', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer' }}>
-                          UPLOAD
-                          <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, (res) => {
-                             const newSocials = [...localConfig.social_links];
-                             newSocials[idx].iconUrl = res;
-                             setLocalConfig(prev => ({ ...prev, social_links: newSocials }));
-                          }, 1)} />
-                        </label>
+                        <div style={{ display: 'flex', gap: '0.3rem' }}>
+                          <label style={{ fontSize: '0.7rem', background: 'rgba(255,255,255,0.1)', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer' }}>
+                            <Upload size={14} />
+                            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, (res) => {
+                               const newSocials = [...localConfig.social_links];
+                               newSocials[idx].iconUrl = res;
+                               setLocalConfig(prev => ({ ...prev, social_links: newSocials }));
+                            }, 1)} />
+                          </label>
+                          {social.iconUrl && (
+                            <button style={{ background: 'rgba(255,255,255,0.05)', color: '#fff', padding: '0.3rem 0.5rem', borderRadius: '4px', border: 'none', cursor: 'pointer' }} onClick={() => handleReAdjust(social.iconUrl, (res) => {
+                               const newSocials = [...localConfig.social_links];
+                               newSocials[idx].iconUrl = res;
+                               setLocalConfig(prev => ({ ...prev, social_links: newSocials }));
+                            }, 1)}>
+                               <Crop size={14} />
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       <input type="text" placeholder="Link liên kết URL" value={social.url} onChange={(e) => {
@@ -552,14 +575,25 @@ const AdminDashboard = () => {
                                newFilms[idx] = e.target.value;
                                updateNested('content', 'filmStripImages', newFilms);
                             }} />
-                            <label style={{ background: 'var(--accent-main)', color: '#fff', padding: '0.6rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                               <Upload size={14} />
-                               <input type="file" accept="image/*,video/*" style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, (res) => {
-                                  const newFilms = [...localConfig.content.filmStripImages];
-                                  newFilms[idx] = res;
-                                  updateNested('content', 'filmStripImages', newFilms);
-                               }, 1.77)} />
-                            </label>
+                            <div style={{ display: 'flex', gap: '0.3rem' }}>
+                               <label style={{ background: 'var(--accent-main)', color: '#fff', padding: '0.6rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                                  <Upload size={14} />
+                                  <input type="file" accept="image/*,video/*" style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, (res) => {
+                                     const newFilms = [...localConfig.content.filmStripImages];
+                                     newFilms[idx] = res;
+                                     updateNested('content', 'filmStripImages', newFilms);
+                                  }, 1.77)} />
+                               </label>
+                               {!isVideo && imgUrl && (
+                                  <button style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', padding: '0.6rem', borderRadius: '8px', border: 'none', cursor: 'pointer' }} onClick={() => handleReAdjust(imgUrl, (res) => {
+                                     const newFilms = [...localConfig.content.filmStripImages];
+                                     newFilms[idx] = res;
+                                     updateNested('content', 'filmStripImages', newFilms);
+                                  }, 1.77)}>
+                                     <Crop size={14} />
+                                  </button>
+                               )}
+                            </div>
                             <button style={{ background: 'var(--danger)', color: '#fff', padding: '0.6rem', borderRadius: '8px', border: 'none', cursor: 'pointer' }} onClick={() => {
                                const newFilms = localConfig.content.filmStripImages.filter((_, i) => i !== idx);
                                updateNested('content', 'filmStripImages', newFilms);
@@ -597,14 +631,25 @@ const AdminDashboard = () => {
                          <div style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', overflow: 'hidden' }}>
                             <img src={app.iconUrl || '/placeholder.png'} alt="app-icon" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                          </div>
-                         <label style={{ cursor: 'pointer', fontSize: '0.7rem' }}>
-                            <Upload size={14} />
-                            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, (res) => {
-                               const newApps = [...localConfig.apps];
-                               newApps[idx].iconUrl = res;
-                               setLocalConfig(prev => ({ ...prev, apps: newApps }));
-                            }, 1)} />
-                         </label>
+                         <div style={{ display: 'flex', gap: '0.3rem' }}>
+                            <label style={{ cursor: 'pointer', fontSize: '0.7rem', background: 'rgba(255,255,255,0.1)', padding: '0.3rem 0.5rem', borderRadius: '4px' }}>
+                               <Upload size={14} />
+                               <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, (res) => {
+                                  const newApps = [...localConfig.apps];
+                                  newApps[idx].iconUrl = res;
+                                  setLocalConfig(prev => ({ ...prev, apps: newApps }));
+                               }, 1)} />
+                            </label>
+                            {app.iconUrl && (
+                              <button style={{ background: 'rgba(255,255,255,0.05)', color: '#fff', padding: '0.3rem 0.5rem', borderRadius: '4px', border: 'none', cursor: 'pointer' }} onClick={() => handleReAdjust(app.iconUrl, (res) => {
+                                 const newApps = [...localConfig.apps];
+                                 newApps[idx].iconUrl = res;
+                                 setLocalConfig(prev => ({ ...prev, apps: newApps }));
+                              }, 1)}>
+                                 <Crop size={14} />
+                              </button>
+                            )}
+                         </div>
                       </div>
 
                       <input type="text" placeholder="Hoặc dán URL Icon" value={app.iconUrl} onChange={(e) => {

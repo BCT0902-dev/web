@@ -149,7 +149,7 @@ const YoutubeAnalyzer = () => {
     <div className="cyber-matrix-container" style={{ paddingTop: '6rem', minHeight: 'calc(100vh - 60px)', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
       <style>{`
         .cyber-matrix-container {
-          background-color: var(--bg-primary);
+          background-color: transparent;
           transition: background-color 0.3s ease;
         }
         .cyber-grid-layer {
