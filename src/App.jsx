@@ -24,12 +24,12 @@ import ScrollToTop from './components/ScrollToTop';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import Blog from './pages/blog/Blog'; // Assuming I move it to pages/blog/Blog.jsx or keep it simple
 import BlogPost from './pages/blog/BlogPost';
+import Chronicles from './pages/Chronicles';
 
 const Home = () => (
   <>
     <Hero />
     <About />
-    <PersonalChronicles />
     <FilmStrip />
     <Skills />
     <TrustedApps />
@@ -44,6 +44,7 @@ function AppRoutes() {
   const isAdminPage = location.pathname.startsWith('/admin');
   const isUtilitiesPage = location.pathname.startsWith('/utilities');
   const isBlogPage = location.pathname.startsWith('/blog');
+  const isChroniclesPage = location.pathname === '/chronicles';
 
   const { isAdmin } = useAuth();
 
@@ -65,11 +66,12 @@ function AppRoutes() {
           <Route path="/utilities/*" element={<Utilities />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:id" element={<BlogPost />} />
+          <Route path="/chronicles" element={<Chronicles />} />
           <Route path="/admin" element={isAdmin ? <AdminDashboard /> : <Login />} />
         </Routes>
         {!isAdminPage && <FloatingChatBtn />}
-        {!isLoginPage && !isAdminPage && !isUtilitiesPage && !isBlogPage && <Footer />}
-        {isBlogPage && <Footer />}
+        {!isLoginPage && !isAdminPage && !isUtilitiesPage && !isBlogPage && !isChroniclesPage && <Footer />}
+        {(isBlogPage || isChroniclesPage) && <Footer />}
       </div>
     </>
   );

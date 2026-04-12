@@ -11,7 +11,8 @@
     "admin": "Admin",
     "profile_settings": "Profile Settings",
     "logout": "Logout",
-    "blog": "Insights"
+    "blog": "Insights",
+    "chronicles": "Chronicles"
   },
   "hero": {
     "greeting": "HELLO _ // THIS IS",

@@ -120,11 +120,11 @@ const Navbar = () => {
         </div>
 
         <ul style={{ flex: 2, display: 'flex', justifyContent: 'center', gap: '2rem', listStyle: 'none', alignItems: 'center' }}>
-            {['home', 'about', 'skills', 'blog'].map((link) => (
+            {['home', 'about', 'chronicles', 'skills', 'blog'].map((link) => (
               <li key={link}>
-                {link === 'blog' ? (
+                {(link === 'blog' || link === 'chronicles') ? (
                   <Link 
-                    to="/blog"
+                    to={link === 'blog' ? "/blog" : "/chronicles"}
                     style={{ 
                       fontFamily: 'var(--font-mono)', 
                       fontSize: '0.9rem',
