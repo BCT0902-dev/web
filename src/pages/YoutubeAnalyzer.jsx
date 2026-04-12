@@ -165,36 +165,26 @@ const YoutubeAnalyzer = () => {
       
       <div className="cyber-grid-layer" />
       <div className="cyber-scanline" />
-      
-      <div className="container" style={{ maxWidth: '1000px', margin: '0 auto', position: 'relative', zIndex: 5 }}>
+
+      <div className="container" style={{ maxWidth: '1400px', width: '100%', margin: '0 auto', position: 'relative', zIndex: 5, padding: '0 2rem' }}>
         {/* Back Button */}
         <button 
           onClick={() => navigate('/utilities')}
-          style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '0.5rem', 
-            color: 'var(--accent-main)', 
-            background: 'transparent',
-            marginBottom: '2rem',
-            fontFamily: 'var(--font-mono)',
-            fontSize: '0.9rem',
-            cursor: 'pointer'
-          }}
+          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-main)', background: 'transparent', marginBottom: '2rem', fontFamily: 'var(--font-mono)', fontSize: '0.9rem', cursor: 'pointer', border: 'none' }}
         >
           <ChevronLeft size={20} /> QUAY LẠI GALLERY
         </button>
 
-        <div className="hub-header" style={{ textAlign: 'left', marginBottom: '3rem', border: 'none' }}>
-           <h1 style={{ fontSize: '3rem', letterSpacing: '5px' }}>YT SMART ANALYZER</h1>
-           <p>Phòng thí nghiệm phân tích nội dung số đa ngôn ngữ</p>
+        <div className="hub-header" style={{ textAlign: 'left', marginBottom: '2rem', border: 'none', padding: 0 }}>
+           <h1 style={{ fontSize: '2.5rem', letterSpacing: '5px', color: 'var(--text-primary)' }}>YT SMART ANALYZER</h1>
+           <p style={{ color: 'var(--text-muted)' }}>Phòng thí nghiệm phân tích nội dung số đa ngôn ngữ</p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '35% 1fr', gap: '2.5rem' }}>
-          {/* Left Column: Input & Controls */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {/* URL Scanning Box */}
-            <div className="glass-panel" style={{ padding: '1.5rem', border: '1px solid var(--accent-glow)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', paddingBottom: '4rem' }}>
+          
+          {/* TOP BANNER: URL SCANNER */}
+          <div className="glass-panel" style={{ padding: '1.5rem 2rem', border: '1px solid var(--accent-glow)', display: 'flex', gap: '2rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: '300px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem', color: 'var(--accent-main)' }}>
                  <Play size={24} /> <span style={{ fontWeight: 600, fontFamily: 'var(--font-mono)' }}>SCAN VIDEO URL</span>
               </div>
@@ -204,74 +194,44 @@ const YoutubeAnalyzer = () => {
                   placeholder="https://www.youtube.com/watch?v=..." 
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  style={{ 
-                    width: '100%', 
-                    padding: '1rem', 
-                    paddingLeft: '3rem',
-                    background: 'var(--bg-primary)', 
-                    border: '1px solid var(--bg-glass-border)',
-                    borderRadius: '8px',
-                    color: 'var(--text-primary)',
-                    fontFamily: 'var(--font-mono)'
-                  }}
+                  style={{ width: '100%', padding: '1.2rem', paddingLeft: '3.5rem', background: 'var(--bg-primary)', border: '1px solid var(--bg-glass-border)', borderRadius: '8px', color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', fontSize: '1.05rem', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)' }}
                 />
-                <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
+                <Search size={20} style={{ position: 'absolute', left: '1.2rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, color: 'var(--text-primary)' }} />
               </div>
-
-              {thumbnailUrl && (
-                <motion.div 
-                   initial={{ opacity: 0, scale: 0.9 }}
-                   animate={{ opacity: 1, scale: 1 }}
-                   style={{ marginTop: '1.5rem', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--bg-glass-border)' }}
-                >
-                  <img src={thumbnailUrl} alt="Thumbnail" style={{ width: '100%', height: 'auto', display: 'block' }} />
-                </motion.div>
-              )}
             </div>
+            
+            {thumbnailUrl && (
+              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} style={{ width: '320px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--bg-glass-border)', flexShrink: 0, boxShadow: '0 10px 20px rgba(0,0,0,0.2)' }}>
+                <img src={thumbnailUrl} alt="Thumbnail" style={{ width: '100%', height: 'auto', display: 'block' }} />
+              </motion.div>
+            )}
+          </div>
 
-            {/* Control Panel */}
-            <div className="glass-panel" style={{ padding: '1.5rem', flex: 1 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 25%) 1fr', gap: '2rem' }}>
+            {/* LEFT: CONTROLS */}
+            <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', height: 'fit-content', border: '1px solid var(--bg-glass-border)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', color: 'var(--accent-secondary)' }}>
                  <Cpu size={24} /> <span style={{ fontWeight: 600, fontFamily: 'var(--font-mono)' }}>AI OPERATIONS</span>
               </div>
               
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <button 
-                  className="btn-secondary" 
-                  style={{ width: '100%', justifyContent: 'center', gap: '0.5rem' }}
-                  onClick={() => handleProcess('summary')}
-                  disabled={isProcessing}
-                >
-                  <Sparkles size={18} /> TÓM TẮT
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <button className="btn-secondary" style={{ width: '100%', justifyContent: 'center', padding: '1rem 0', gap: '0.5rem', fontSize: '0.95rem' }} onClick={() => handleProcess('summary')} disabled={isProcessing}>
+                  <Sparkles size={18} /> TÓM TẮT CORE
                 </button>
-                <button 
-                   className="btn-secondary" 
-                   style={{ width: '100%', justifyContent: 'center', gap: '0.5rem' }}
-                   onClick={() => handleProcess('vocab')}
-                   disabled={isProcessing}
-                >
+                <button className="btn-secondary" style={{ width: '100%', justifyContent: 'center', padding: '1rem 0', gap: '0.5rem', fontSize: '0.95rem' }} onClick={() => handleProcess('vocab')} disabled={isProcessing}>
                   <BookOpen size={18} /> HỌC TỪ VỰNG
                 </button>
               </div>
 
-              <div style={{ marginTop: '1.5rem' }}>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.8rem', fontFamily: 'var(--font-mono)' }}>DỊCH THUẬT NỘI DUNG</p>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <div style={{ marginTop: '2.5rem' }}>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem', fontFamily: 'var(--font-mono)', letterSpacing: '1px' }}>DỊCH THUẬT AUTO</p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
                   {['vi', 'en', 'jp', 'kr'].map(lang => (
                     <button 
                       key={lang}
                       onClick={() => { setTargetLang(lang); handleProcess('translate', lang); }}
                       disabled={isProcessing}
-                      style={{ 
-                        padding: '0.5rem 1rem', 
-                        background: targetLang === lang ? 'var(--accent-main)' : 'rgba(255,255,255,0.05)',
-                        border: '1px solid var(--bg-glass-border)',
-                        borderRadius: '4px',
-                        color: targetLang === lang ? '#fff' : 'var(--text-primary)',
-                        fontSize: '0.8rem',
-                        cursor: 'pointer',
-                        textTransform: 'uppercase'
-                      }}
+                      style={{ padding: '0.8rem 0', background: targetLang === lang ? 'var(--accent-main)' : 'rgba(255,255,255,0.05)', border: '1px solid var(--bg-glass-border)', borderRadius: '6px', color: targetLang === lang ? '#fff' : 'var(--text-primary)', fontSize: '0.85rem', cursor: 'pointer', textTransform: 'uppercase', fontWeight: targetLang === lang ? 'bold' : 'normal', transition: 'all 0.2s', boxShadow: targetLang === lang ? '0 4px 10px rgba(var(--accent-rgb), 0.3)' : 'none' }}
                     >
                       {lang === 'vi' ? '🇻🇳 VN' : lang === 'en' ? '🇺🇸 EN' : lang === 'jp' ? '🇯🇵 JP' : '🇰🇷 KR'}
                     </button>
@@ -280,50 +240,23 @@ const YoutubeAnalyzer = () => {
               </div>
             </div>
 
-          </div>
-
-          {/* Right Column: Results */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', minHeight: '600px' }}>
-            {/* Results Display */}
-            <div 
-              className="glass-panel" 
-              style={{ 
-                padding: '1.5rem', 
-                flex: 1, 
-                minHeight: '400px',
-                background: 'var(--bg-glass)',
-                backdropFilter: 'blur(10px)',
-                border: '1px solid var(--bg-glass-border)',
-                position: 'relative',
-                overflowY: 'auto'
-              }}
-            >
+            {/* RIGHT: RESULTS */}
+            <div className="glass-panel" style={{ padding: '2.5rem', minHeight: '600px', background: 'var(--bg-glass)', backdropFilter: 'blur(10px)', border: '1px inset var(--bg-glass-border)', position: 'relative', overflowY: 'auto', boxShadow: 'inset 0 0 20px rgba(0,0,0,0.05)' }}>
               <AnimatePresence mode="wait">
                 {isProcessing ? (
-                  <motion.div 
-                    key="loading"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}
-                  >
+                  <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
                     <Loader2 size={48} className="spin" style={{ color: 'var(--accent-main)' }} />
-                    <p style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-main)', fontSize: '0.9rem' }}>ANALYZING CONTENT...</p>
+                    <p style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-main)', fontSize: '0.9rem', letterSpacing: '2px' }}>ANALYZING DATA STREAM...</p>
                   </motion.div>
                 ) : result ? (
-                  <motion.div 
-                    key="result"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="markdown-content"
-                    style={{ fontSize: '0.95rem', lineHeight: '1.7', color: 'var(--text-primary)' }}
-                  >
+                  <motion.div key="result" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="markdown-content" style={{ fontSize: '1.05rem', lineHeight: '1.8', color: 'var(--text-primary)' }}>
                     <ReactMarkdown>{result}</ReactMarkdown>
                   </motion.div>
                 ) : (
-                  <div key="empty" style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.2 }}>
-                    <Cpu size={64} />
-                    <p style={{ marginTop: '1rem', fontFamily: 'var(--font-mono)' }}>READY FOR ANALYSIS</p>
+                  <div key="empty" style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.15 }}>
+                    <Cpu size={80} style={{ marginBottom: '1.5rem', color: 'var(--text-primary)' }} />
+                    <h3 style={{ fontFamily: 'var(--font-mono)', fontSize: '1.4rem', letterSpacing: '3px', color: 'var(--text-primary)' }}>SYSTEM READY</h3>
+                    <p style={{ marginTop: '0.5rem', fontSize: '1rem', color: 'var(--text-primary)' }}>Waiting for Target URL input...</p>
                   </div>
                 )}
               </AnimatePresence>
