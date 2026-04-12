@@ -15,11 +15,12 @@ import {
   Bot,
   Users,
   Home,
-  Activity
+  Activity,
+  Edit,
+  X
 } from 'lucide-react';
 import { db } from '../../firebase';
 import { doc, setDoc, updateDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Link } from 'react-router-dom';
 import { useConfig } from '../../context/ConfigContext';
 import './AdminDashboard.css';
@@ -34,6 +35,7 @@ const AdminDashboard = () => {
   // Users state
   const [usersList, setUsersList] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [userModal, setUserModal] = useState({ isOpen: false, mode: 'add', data: {} });
 
   // API Test states
   const [apiTestStatus, setApiTestStatus] = useState({ gemini: '', deepseek: '' });
@@ -55,8 +57,8 @@ const AdminDashboard = () => {
     try {
       const querySnapshot = await getDocs(collection(db, "users"));
       const usersData = [];
-      querySnapshot.forEach((doc) => {
-        usersData.push({ id: doc.id, ...doc.data() });
+      querySnapshot.forEach((docSnap) => {
+        usersData.push({ id: docSnap.id, ...docSnap.data() });
       });
       setUsersList(usersData);
     } catch (err) {
@@ -67,13 +69,42 @@ const AdminDashboard = () => {
   };
 
   const deleteUserRecord = async (userId) => {
-    if (!window.confirm('Ngài có chắc chắn muốn xoá hồ sơ này khỏi Database? (Thao tác này không xoá trong Firebase Auth, chỉ xoá dữ liệu Profile)')) return;
+    if (!window.confirm('Ngài có chắc chắn muốn xoá hồ sơ này khỏi Database? (Thao tác này không xoá trong Firebase Auth gốc)')) return;
     try {
       await deleteDoc(doc(db, "users", userId));
       setUsersList(prev => prev.filter(u => u.id !== userId));
-      alert("Đã xoá thành công!");
+      alert("Đã xoá hồ sơ thành công!");
     } catch (err) {
       alert("Lỗi khi xoá: " + err.message);
+    }
+  };
+  
+  const saveUserRecord = async (e) => {
+    e.preventDefault();
+    const { id, email, username, firstName, lastName, role, displayName, photoURL } = userModal.data;
+    
+    // Auto-generate avatar if none provided
+    const finalPhotoURL = photoURL || `https://api.dicebear.com/7.x/shapes/svg?seed=${email || Math.random()}`;
+    const finalDisplayName = displayName || (firstName ? `${lastName || ''} ${firstName}`.trim() : 'Người Dùng Tới BCT');
+    
+    const docData = {
+       email: email || '',
+       username: username || '',
+       firstName: firstName || '',
+       lastName: lastName || '',
+       displayName: finalDisplayName,
+       role: role || 'user',
+       photoURL: finalPhotoURL,
+       updatedAt: new Date()
+    };
+    
+    try {
+       const targetId = id || `manual_${Date.now()}`;
+       await setDoc(doc(db, "users", targetId), docData, { merge: true });
+       setUserModal({ isOpen: false, mode: 'add', data: {} });
+       fetchUsers();
+    } catch (err) {
+       alert("Lỗi khi lưu: " + err.message);
     }
   };
 
@@ -83,16 +114,56 @@ const AdminDashboard = () => {
       setApiTestStatus(prev => ({ ...prev, gemini: '⚠️ Lỗi: Chưa điền API Key!' }));
       return;
     }
-    setApiTestStatus(prev => ({ ...prev, gemini: 'Đang kiểm tra...' }));
+    setApiTestStatus(prev => ({ ...prev, gemini: 'Đang kiểm tra bằng REST...' }));
     try {
-      const genAI = new GoogleGenerativeAI(key);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      const result = await model.generateContent("Say 'TEST_OK'");
-      if (result.response.text()) {
+      const payload = {
+        contents: [{ parts: [{ text: "Say 'TEST_OK'" }] }]
+      };
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify(payload)
+      });
+      const data = await response.json();
+      if (response.ok && data.candidates) {
         setApiTestStatus(prev => ({ ...prev, gemini: '✅ KẾT NỐI THÀNH CÔNG!' }));
+      } else {
+        setApiTestStatus(prev => ({ ...prev, gemini: `❌ LỖI: ${data.error?.message || 'Không rõ lỗi'}` }));
       }
     } catch (err) {
-      setApiTestStatus(prev => ({ ...prev, gemini: '❌ LỖI: ' + err.message }));
+      setApiTestStatus(prev => ({ ...prev, gemini: '❌ LỖI MẠNG: ' + err.message }));
+    }
+  };
+  
+  const testDeepseekAPI = async () => {
+    const key = localConfig?.integrations?.deepseekKey;
+    if (!key) {
+      setApiTestStatus(prev => ({ ...prev, deepseek: '⚠️ Lỗi: Chưa điền API Key!' }));
+      return;
+    }
+    setApiTestStatus(prev => ({ ...prev, deepseek: 'Đang gửi Request TCP đến Deepseek...' }));
+    try {
+      const payload = {
+        model: "deepseek-chat",
+        messages: [{ role: "user", content: "Say 'TEST_OK'" }]
+      };
+      // Deepseek allows standard OpenAI drop-in replacements
+      const response = await fetch(`https://api.deepseek.com/chat/completions`, {
+         method: 'POST',
+         headers: { 
+           'Content-Type': 'application/json',
+           'Authorization': `Bearer ${key}`
+         },
+         body: JSON.stringify(payload)
+      });
+      const data = await response.json();
+      if (response.ok && data.choices) {
+        setApiTestStatus(prev => ({ ...prev, deepseek: '✅ KẾT NỐI THÀNH CÔNG!' }));
+      } else {
+        setApiTestStatus(prev => ({ ...prev, deepseek: `❌ LỖI: ${data.error?.message || response.statusText}` }));
+      }
+    } catch (err) {
+      setApiTestStatus(prev => ({ ...prev, deepseek: '❌ LỖI MẠNG: ' + err.message }));
     }
   };
 
@@ -349,7 +420,7 @@ const AdminDashboard = () => {
                 className="config-section"
               >
                 <div className="api-config-alert">
-                  <strong>CHUYÊN MỤC API KEY:</strong> Quản lý các cấu hình nhạy cảm. Lưu ý, React Client App sẽ làm lộ các Key này lên Network Tab nếu ai đó cố ý tìm kiếm.
+                  <strong>CHUYÊN MỤC API KEY:</strong> Đoạn Script Kiểm tra API đã được tối ưu để tránh lỗi CORS từ Trình duyệt. Hãy dán Key thật khớp!
                 </div>
                 
                 <div className="input-group">
@@ -362,14 +433,24 @@ const AdminDashboard = () => {
                   <div style={{ display: 'flex', gap: '1rem' }}>
                     <input style={{ flex: 1 }} type="password" value={localConfig.integrations.geminiKey} onChange={(e) => updateNested('integrations', 'geminiKey', e.target.value)} placeholder="AIza..." />
                     <button onClick={testGeminiAPI} style={{ background: 'var(--bg-primary)', border: '1px solid var(--accent-main)', color: 'var(--accent-main)', padding: '0 1.5rem', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                       <Activity size={16} /> TEST KEY
+                       <Activity size={16} /> TEST GEMINI
                     </button>
                   </div>
                 </div>
                 
                 <div className="input-group" style={{ marginTop: '1.5rem' }}>
-                  <label>DEEPSEEK API KEY (Hiện chưa kết nối SDK)</label>
-                  <input type="password" value={localConfig.integrations.deepseekKey} onChange={(e) => updateNested('integrations', 'deepseekKey', e.target.value)} placeholder="sk-..." />
+                  <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>DEEPSEEK API KEY</span>
+                    {apiTestStatus.deepseek && (
+                       <span style={{ fontSize: '0.8rem', color: apiTestStatus.deepseek.includes('LỖI') ? '#ef4444' : '#10b981' }}>{apiTestStatus.deepseek}</span>
+                    )}
+                  </label>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <input style={{ flex: 1 }} type="password" value={localConfig.integrations.deepseekKey} onChange={(e) => updateNested('integrations', 'deepseekKey', e.target.value)} placeholder="sk-..." />
+                    <button onClick={testDeepseekAPI} style={{ background: 'var(--bg-primary)', border: '1px solid var(--accent-main)', color: 'var(--accent-main)', padding: '0 1.5rem', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                       <Activity size={16} /> TEST DEEPSEEK
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -382,15 +463,21 @@ const AdminDashboard = () => {
               >
                 <div className="manager-header" style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between' }}>
                    <label>CƠ SỞ DỮ LIỆU NGƯỜI DÙNG</label>
-                   <button className="add-btn" onClick={fetchUsers} disabled={loadingUsers}>
-                      {loadingUsers ? 'ĐANG TẢI...' : 'LÀM MỚI DANH SÁCH'}
-                   </button>
+                   <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button className="add-btn" onClick={() => setUserModal({ isOpen: true, mode: 'add', data: { role: 'user' } })}>
+                         <Plus size={14} /> THÊM MỚI
+                      </button>
+                      <button className="add-btn" onClick={fetchUsers} disabled={loadingUsers}>
+                         {loadingUsers ? 'ĐANG TẢI...' : 'LÀM MỚI DANH SÁCH'}
+                      </button>
+                   </div>
                 </div>
                 
                 <div className="glass-panel" style={{ padding: '0', overflow: 'hidden' }}>
                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
                       <thead>
                          <tr style={{ background: 'rgba(255,255,255,0.05)' }}>
+                            <th style={{ padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Avatar</th>
                             <th style={{ padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Email</th>
                             <th style={{ padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>User Details</th>
                             <th style={{ padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Role</th>
@@ -400,14 +487,17 @@ const AdminDashboard = () => {
                       <tbody>
                          {usersList.length === 0 ? (
                            <tr>
-                              <td colSpan="4" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>Mảng dữ liệu Users trống.</td>
+                              <td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>Mảng dữ liệu Users trống.</td>
                            </tr>
                          ) : (
                            usersList.map(user => (
                               <tr key={user.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                 <td style={{ padding: '1rem' }}>{user.email}</td>
                                  <td style={{ padding: '1rem' }}>
-                                    {user.displayName || (user.firstName ? `${user.lastName || ''} ${user.firstName}` : '')}
+                                    <img src={user.photoURL || `https://api.dicebear.com/7.x/shapes/svg?seed=${user.email}`} alt="avatar" style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#fff' }} />
+                                 </td>
+                                 <td style={{ padding: '1rem' }}>{user.email || 'N/A'}</td>
+                                 <td style={{ padding: '1rem' }}>
+                                    {user.displayName || (user.firstName ? `${user.lastName || ''} ${user.firstName}` : '(Chưa đặt tên)')}
                                     <br/>
                                     <small style={{ color: 'var(--text-muted)' }}>@{user.username || 'unknown'}</small>
                                  </td>
@@ -420,8 +510,11 @@ const AdminDashboard = () => {
                                        {user.role?.toUpperCase() || 'USER'}
                                     </span>
                                  </td>
-                                 <td style={{ padding: '1rem', textAlign: 'right' }}>
-                                    <button style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }} onClick={() => deleteUserRecord(user.id)} title="Xóa sơ yếu lý lịch này">
+                                 <td style={{ padding: '1rem', textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                                    <button style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', padding: '0.5rem' }} onClick={() => setUserModal({ isOpen: true, mode: 'edit', data: user })} title="Sửa thông tin hồ sơ">
+                                       <Edit size={16} />
+                                    </button>
+                                    <button style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '0.5rem' }} onClick={() => deleteUserRecord(user.id)} title="Xóa sơ yếu lý lịch này">
                                        <Trash2 size={16} />
                                     </button>
                                  </td>
@@ -580,6 +673,87 @@ const AdminDashboard = () => {
           </AnimatePresence>
         </div>
       </main>
+
+      {/* MODAL USER CRUD */}
+      {userModal.isOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(5px)' }}>
+           <div style={{ background: '#111', width: '90%', maxWidth: '500px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', padding: '2rem', position: 'relative' }}>
+              <button 
+                 onClick={() => setUserModal({ isOpen: false, mode: 'add', data: {} })} 
+                 style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer' }}
+              >
+                  <X size={20} />
+              </button>
+              
+              <h2 style={{ fontFamily: 'var(--font-heading)', color: 'var(--accent-gold)', marginBottom: '1.5rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                 {userModal.mode === 'add' ? 'THÊM MỚI' : 'CHỈNH SỬA'} HỒ SƠ
+              </h2>
+
+              <form onSubmit={saveUserRecord} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                 <div style={{ display: 'flex', gap: '1rem' }}>
+                    <div className="input-group" style={{ flex: 1 }}>
+                       <label>TÊN THẬT (DISPLAY NAME)</label>
+                       <input 
+                          type="text" 
+                          value={userModal.data.displayName || ''} 
+                          onChange={(e) => setUserModal({ ...userModal, data: { ...userModal.data, displayName: e.target.value } })}
+                          required
+                          style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px' }}
+                       />
+                    </div>
+                    <div className="input-group" style={{ width: '120px' }}>
+                       <label>PHÂN QUYỀN</label>
+                       <select 
+                          value={userModal.data.role || 'user'} 
+                          onChange={(e) => setUserModal({ ...userModal, data: { ...userModal.data, role: e.target.value } })}
+                          style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px' }}
+                       >
+                          <option value="user">USER</option>
+                          <option value="admin">ADMIN</option>
+                       </select>
+                    </div>
+                 </div>
+
+                 <div className="input-group">
+                    <label>LIÊN KẾT EMAIL</label>
+                    <input 
+                       type="email" 
+                       value={userModal.data.email || ''} 
+                       onChange={(e) => setUserModal({ ...userModal, data: { ...userModal.data, email: e.target.value } })}
+                       readOnly={userModal.mode === 'edit' && userModal.data.email === 'buicongtoi01@gmail.com'}
+                       required
+                       style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px' }}
+                    />
+                 </div>
+
+                 <div className="input-group">
+                    <label>USERNAME TÙY CHỌN</label>
+                    <input 
+                       type="text" 
+                       value={userModal.data.username || ''} 
+                       onChange={(e) => setUserModal({ ...userModal, data: { ...userModal.data, username: e.target.value } })}
+                       style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px' }}
+                    />
+                 </div>
+
+                 <div className="input-group">
+                    <label>ĐƯỜNG DẪN AVATAR (Mặc định tự gen Nếu Trống)</label>
+                    <input 
+                       type="text" 
+                       value={userModal.data.photoURL || ''} 
+                       onChange={(e) => setUserModal({ ...userModal, data: { ...userModal.data, photoURL: e.target.value } })}
+                       style={{ width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px' }}
+                    />
+                 </div>
+
+                 <button type="submit" className="save-btn" style={{ width: '100%', padding: '1rem', marginTop: '1rem', justifyContent: 'center' }}>
+                    <Save size={18} />
+                    <span>LƯU HỒ SƠ</span>
+                 </button>
+              </form>
+           </div>
+        </div>
+      )}
     </div>
   );
 };

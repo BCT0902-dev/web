@@ -14,6 +14,13 @@ export const ConfigProvider = ({ children }) => {
         accentColor: '#ffb000',
         pixelGlow: 'rgba(255, 154, 61, 0.4)'
       },
+      social_links: [
+        { name: 'Facebook', icon: 'Facebook', url: 'https://facebook.com/bct0902', color: '#1877F2', isVisible: true },
+        { name: 'Github', icon: 'Github', url: 'https://github.com/bct0902', color: '#ffffff', isVisible: true },
+        { name: 'Youtube', icon: 'Youtube', url: 'https://youtube.com/@bct0902', color: '#FF0000', isVisible: true },
+        { name: 'LinkedIn', icon: 'LinkedIn', url: 'https://linkedin.com/in/bct0902', color: '#0A66C2', isVisible: true },
+        { name: 'Messenger', icon: 'MessageSquare', url: 'https://m.me/bct0902', color: '#0084FF', isVisible: true }
+      ],
       socials: {
         facebook: 'https://facebook.com/bct0902',
         github: 'https://github.com/bct0902',
@@ -83,8 +90,18 @@ export const ConfigProvider = ({ children }) => {
         const unsubscribe = onSnapshot(configDocRef, (doc) => {
             if (doc.exists()) {
                 const data = doc.data();
+                
+                // Merge with defaults to prevent array wipeout
+                if (!data.social_links || data.social_links.length === 0) {
+                    data.social_links = defaultConfig.social_links;
+                }
+                
                 setConfig(data);
                 updateDynamicStyles(data.appearance);
+            } else {
+                // If doc doesn't exist, use default
+                setConfig(defaultConfig);
+                updateDynamicStyles(defaultConfig.appearance);
             }
             setLoading(false);
         }, (error) => {

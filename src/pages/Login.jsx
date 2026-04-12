@@ -340,7 +340,7 @@ const Login = () => {
                   </div>
                 )}
 
-                <button type="submit" className="btn-primary" style={{ width: '100%', padding: '1rem', opacity: loading ? 0.7 : 1, marginTop: '0.5rem' }} disabled={loading}>
+                <button type="submit" className="btn-primary" style={{ width: '100%', padding: '1rem', opacity: loading ? 0.7 : 1, marginTop: '0.5rem', fontFamily: "var(--font-heading), 'Chakra Petch', sans-serif", letterSpacing: '1px' }} disabled={loading}>
                   {loading ? 'ĐANG CHẠY TRÌNH KẾT NỐI...' : (authMode === 'login' ? 'XÁC NHẬN TRUY CẬP' : 'KHỞI TẠO TÀI KHOẢN MỚI')}
                 </button>
 
@@ -406,7 +406,7 @@ const Login = () => {
 
                 {error && <p style={{ color: '#ef4444', fontSize: '0.8rem' }}>{error}</p>}
 
-                <button onClick={verify2FA} className="btn-primary" style={{ width: '100%', padding: '1rem' }} disabled={otpCode.length !== 6}>
+                <button onClick={verify2FA} className="btn-primary" style={{ width: '100%', padding: '1rem', fontFamily: "var(--font-heading), 'Chakra Petch', sans-serif", letterSpacing: '1px' }} disabled={otpCode.length !== 6}>
                   XÁC MINH VÀ TIẾP TỤC
                 </button>
               </div>
