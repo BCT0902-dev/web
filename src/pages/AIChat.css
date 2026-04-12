@@ -314,6 +314,7 @@
 .iris-input-area {
   padding: 10px; 
   position: relative;
+  z-index: 10; /* Control elevation here instead */
 }
 
 .iris-input-card {
@@ -327,19 +328,19 @@
   border: 1px solid rgba(0,0,0,0.05);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  z-index: 2;
+  /* z-index removed to prevent internal stacking context leak */
 }
 
-/* The actual LED Border */
+/* The actual LED Border - Sharper and strictly behind */
 .iris-input-card::before {
   content: '';
   position: absolute;
-  inset: -1.5px; /* Extremely sharp outer border */
-  border-radius: 21.5px;
+  inset: -2px; /* Precision edge */
+  border-radius: 22px;
   background: linear-gradient(90deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
   background-size: 400%;
-  z-index: -1;
-  filter: blur(2px); /* High-precision LED border effect */
+  z-index: -1; /* Now truly behind the #ffffff bg because parent has no z-index */
+  filter: blur(2px);
   animation: argb-glow 8s linear infinite;
   opacity: 1;
 }
