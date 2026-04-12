@@ -7,7 +7,7 @@ export function useTheme() {
     if (savedTheme) {
       return savedTheme;
     }
-    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    return 'light'; // Ưu tiên giao diện sáng
   });
 
   useEffect(() => {

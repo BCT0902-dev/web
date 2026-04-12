@@ -1,11 +1,14 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../hooks/useTheme';
-import { Moon, Sun, Globe, User } from 'lucide-react';
+import { Moon, Sun, Globe, User, Bot, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { useConfig } from '../context/ConfigContext';
 
 const Navbar = () => {
+  const { config } = useConfig();
+  const logoUrl = config?.appearance?.logoUrl || '/logobct.png';
   const { t, i18n } = useTranslation();
   const { theme, toggleTheme } = useTheme();
 
@@ -14,7 +17,7 @@ const Navbar = () => {
     i18n.changeLanguage(newLang);
   };
 
-  const navLinks = ['home', 'about', 'skills', 'contact'];
+  const navLinks = ['home', 'about', 'skills'];
 
   return (
     <motion.nav 
@@ -41,13 +44,13 @@ const Navbar = () => {
       <div style={{ flex: '1 1 0', display: 'flex', alignItems: 'center', gap: '1rem', fontFamily: '"Share Tech Mono", monospace', fontSize: '1.6rem', fontWeight: 400, minWidth: 0 }}>
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '1rem', textDecoration: 'none' }} className="text-gradient">
           <div className="logo-glow-effect" style={{ display: 'flex', borderRadius: '50%', padding: '2px' }}>
-            <img src="/logobct.png" alt="Logo" style={{ height: '36px', width: 'auto', borderRadius: '50%', flexShrink: 0 }} />
+            <img src={logoUrl} alt="Logo" style={{ height: '36px', width: 'auto', borderRadius: '50%', flexShrink: 0 }} />
           </div>
           <span style={{ whiteSpace: 'nowrap' }}>BCT0902</span>
         </Link>
       </div>
 
-      <ul style={{ flex: 2, display: 'flex', justifyContent: 'center', gap: '2rem', listStyle: 'none' }}>
+      <ul style={{ flex: 2, display: 'flex', justifyContent: 'center', gap: '2rem', listStyle: 'none', alignItems: 'center' }}>
           {navLinks.map((link) => (
             <li key={link}>
               <a 
@@ -71,6 +74,26 @@ const Navbar = () => {
               </a>
             </li>
           ))}
+          <li>
+            <Link 
+              to="/utilities" 
+              style={{ 
+                fontFamily: 'var(--font-mono)', 
+                fontSize: '0.9rem',
+                textTransform: 'uppercase',
+                opacity: 0.8,
+                color: 'var(--accent-main)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                textDecoration: 'none'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.opacity = 1}
+              onMouseOut={(e) => e.currentTarget.style.opacity = 0.8}
+            >
+              <Zap size={18} /> TIỆN ÍCH
+            </Link>
+          </li>
       </ul>
 
       <div style={{ flex: '1 1 0', display: 'flex', justifyContent: 'flex-end', gap: '1.2rem', alignItems: 'center', minWidth: 0 }}>

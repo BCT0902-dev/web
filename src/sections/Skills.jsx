@@ -30,7 +30,12 @@ const Skills = () => {
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-100px" }}
-        style={{ fontSize: '3rem', marginBottom: '4rem', textAlign: 'center' }}
+        style={{ 
+          fontSize: '3rem', 
+          marginBottom: '4rem', 
+          textAlign: 'center',
+          fontFamily: "'Chakra Petch', sans-serif"
+        }}
       >
         <span className="text-gradient">{t('skills.title')}</span>
       </motion.h2>

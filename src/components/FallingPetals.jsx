@@ -2,10 +2,19 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 const Petal = ({ delay }) => {
-  const randomXInit = Math.random() * 100; // 0% to 100% width
-  const randomDuration = 10 + Math.random() * 20; // 10s to 30s
+  const randomXInit = Math.random() * 100;
+  const randomDuration = 10 + Math.random() * 20;
   const randomScale = 0.5 + Math.random() * 1;
-  const randomXMovement = 50 + Math.random() * 150; // Horizontal drift
+  const petalsColors = [
+    'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)', // Pink
+    'linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%)', // Silver/White
+    'linear-gradient(135deg, #ff9a3d 0%, #ffb000 100%)', // Gold/Orange
+    'linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%)', // Cyan/Blue
+    'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)', // Purple/Violet
+    'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)', // Emerald/Mint
+    'linear-gradient(135deg, var(--accent-main), var(--accent-secondary))' // Theme dynamic
+  ];
+  const randomColor = petalsColors[Math.floor(Math.random() * petalsColors.length)];
 
   return (
     <motion.div
@@ -32,7 +41,7 @@ const Petal = ({ delay }) => {
         position: 'absolute',
         width: '15px',
         height: '20px',
-        background: 'linear-gradient(135deg, var(--accent-main), var(--accent-secondary))',
+        background: randomColor,
         borderRadius: '50% 0 50% 50%',
         filter: 'blur(1px)',
         zIndex: -1,

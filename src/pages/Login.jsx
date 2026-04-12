@@ -1,27 +1,126 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, ShieldCheck, ArrowLeft, KeyRound, Smartphone } from 'lucide-react';
 import { signInWithPopup } from 'firebase/auth';
-import { auth, googleProvider, githubProvider } from '../firebase';
+import { auth, googleProvider, githubProvider, db } from '../firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import * as OTPAuth from 'otpauth';
+import { QRCodeCanvas } from 'qrcode.react';
 
 const Login = () => {
   const navigate = useNavigate();
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  
+  // Login State
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [step, setStep] = useState('login'); // login, 2fa_setup, 2fa_verify
+  
+  // 2FA State
+  const [totpSecret, setTotpSecret] = useState('');
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+
+  const handleManualLogin = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    // Admin Hardcoded Check
+    if (email === 'admin' && password === 'Buicongtoi0902') {
+      try {
+        // 1. Kiểm tra xem đã có Secret Key trong Firestore chưa
+        const adminDoc = await getDoc(doc(db, 'system', 'admin_config'));
+        
+        if (adminDoc.exists() && adminDoc.data().totpSecret) {
+          // Đã có secret -> Chuyển sang bước xác thực
+          setTotpSecret(adminDoc.data().totpSecret);
+          setStep('2fa_verify');
+        } else {
+          // Chưa có secret -> Tạo mới (Setup lần đầu)
+          const secret = new OTPAuth.Secret({ size: 20 });
+          const secretBase32 = secret.base32;
+          
+          const totp = new OTPAuth.TOTP({
+            issuer: 'BCT0902_SYSTEM',
+            label: 'admin',
+            algorithm: 'SHA1',
+            digits: 6,
+            period: 30,
+            secret: secretBase32,
+          });
+
+          setTotpSecret(secretBase32);
+          setQrCodeUrl(totp.toString());
+          setStep('2fa_setup');
+        }
+      } catch (err) {
+        console.error("Lỗi Firestore:", err);
+        // Kiểm tra nếu lỗi do bị chặn bởi AdBlock hoặc mất kết nối
+        if (err.toString().toLowerCase().includes('blocked') || err.code === 'unavailable') {
+          setError("Kết nối bị chặn (ERR_BLOCKED_BY_CLIENT)! Vui lòng tắt AdBlock cho trang này và thử lại.");
+        } else {
+          setError("Lỗi kết nối cơ sở dữ liệu. Vui lòng kiểm tra cấu hình Firebase!");
+        }
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // Normal Login
+    setError("Thông tin đăng nhập không chính xác hoặc chưa được cấp quyền.");
+    setLoading(false);
+  };
+
+  const verify2FA = async () => {
+    setError('');
+    if (otpCode.length !== 6) return;
+
+    try {
+      const totp = new OTPAuth.TOTP({
+        issuer: 'BCT0902_SYSTEM',
+        label: 'admin',
+        algorithm: 'SHA1',
+        digits: 6,
+        period: 30,
+        secret: totpSecret,
+      });
+
+      const delta = totp.validate({
+        token: otpCode,
+        window: 1,
+      });
+      
+      if (delta !== null) {
+        // Nếu là lần đầu setup, lưu secret vào Firestore
+        if (step === '2fa_setup') {
+          await setDoc(doc(db, 'system', 'admin_config'), {
+            totpSecret: totpSecret,
+            updatedAt: new Date()
+          });
+        }
+        
+        // Thành công -> Lưu flag admin vào localStorage và điều hướng
+        localStorage.setItem('bct_admin_session', 'true');
+        navigate('/');
+      } else {
+        setError('Mã xác thực không đúng. Vui lòng kiểm tra lại!');
+      }
+    } catch (err) {
+      setError('Lỗi xác thực: ' + err.message);
+    }
+  };
 
   const handleSocialLogin = async (provider) => {
     try {
       const result = await signInWithPopup(auth, provider);
-      console.log('User signed in:', result.user);
-      // Chuyển hướng về trang chủ sau khi đăng nhập thành công
       navigate('/');
     } catch (err) {
       console.error(err);
       setError('Lỗi xác thực: ' + err.message);
-      // Gợi ý cho người dùng nếu chưa cấu hình API Key
-      if (err.code === 'auth/invalid-api-key' || err.code === 'auth/network-request-failed') {
-        alert('Lưu ý: Bạn cần cấu hình API Key trong file src/firebase.js để đăng nhập thực tế hoạt động.');
-      }
     }
   };
 
@@ -37,196 +136,102 @@ const Login = () => {
       background: 'radial-gradient(circle at center, #111 0%, #050505 100%)'
     }}>
       {/* Background Decorative Elements */}
-      <div style={{
-        position: 'absolute',
-        top: '-10%',
-        right: '-10%',
-        width: '400px',
-        height: '400px',
-        background: 'var(--accent-glow)',
-        filter: 'blur(100px)',
-        opacity: 0.15,
-        pointerEvents: 'none'
-      }} />
-      <div style={{
-        position: 'absolute',
-        bottom: '-10%',
-        left: '-10%',
-        width: '400px',
-        height: '400px',
-        background: 'var(--accent-secondary)',
-        filter: 'blur(100px)',
-        opacity: 0.1,
-        pointerEvents: 'none'
-      }} />
+      <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '400px', height: '400px', background: 'var(--accent-glow)', filter: 'blur(100px)', opacity: 0.15, pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', bottom: '-10%', left: '-10%', width: '400px', height: '400px', background: 'var(--accent-secondary)', filter: 'blur(100px)', opacity: 0.1, pointerEvents: 'none' }} />
 
       <motion.div 
+        layout
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
         className="glass-panel"
-        style={{ 
-          width: '100%', 
-          maxWidth: '450px', 
-          padding: '3rem 2.5rem',
-          position: 'relative',
-          background: 'rgba(10, 10, 12, 0.8)',
-          border: '1px solid rgba(255, 255, 255, 0.15)',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
-        }}
+        style={{ width: '100%', maxWidth: '450px', padding: '3rem 2.5rem', position: 'relative', background: 'rgba(10, 10, 12, 0.82)', border: '1px solid rgba(255, 255, 255, 0.15)', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}
       >
-        <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-          <Link to="/" style={{ display: 'inline-block', marginBottom: '1.5rem', textDecoration: 'none' }}>
-            <h1 style={{ fontSize: '2rem', fontFamily: '"Share Tech Mono", monospace' }} className="text-gradient">
-              BCT0902 // TRUY CẬP
-            </h1>
-          </Link>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontFamily: 'var(--font-mono)' }}>
-            <ShieldCheck size={16} style={{ verticalAlign: 'middle', marginRight: '6px', color: 'var(--success)' }} />
-            YÊU CẦU XÁC MINH DANH TÍNH
-          </p>
-        </div>
+        <AnimatePresence mode="wait">
+          {step === 'login' && (
+            <motion.div key="login" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
+              <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+                <Link to="/" style={{ display: 'inline-block', marginBottom: '1.5rem', textDecoration: 'none' }}>
+                  <h1 style={{ fontSize: '2rem', fontFamily: '"Share Tech Mono", monospace' }} className="text-gradient">
+                    BCT0902 // TRUY CẬP
+                  </h1>
+                </Link>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontFamily: 'var(--font-mono)' }}>
+                  <ShieldCheck size={16} style={{ verticalAlign: 'middle', marginRight: '6px', color: 'var(--success)' }} />
+                  XÁC MINH DANH TÍNH ADMIN
+                </p>
+              </div>
 
-        {error && (
-          <div style={{ 
-            padding: '0.8rem', 
-            background: 'rgba(239, 68, 68, 0.1)', 
-            border: '1px solid rgba(239, 68, 68, 0.2)', 
-            color: '#ef4444', 
-            borderRadius: '8px',
-            fontSize: '0.8rem',
-            marginBottom: '1.5rem',
-            textAlign: 'center'
-          }}>
-            {error}
-          </div>
-        )}
+              {error && <div className="error-box" style={{ padding: '0.8rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', borderRadius: '8px', fontSize: '0.8rem', marginBottom: '1.5rem', textAlign: 'center' }}>{error}</div>}
 
-        <form style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div style={{ position: 'relative' }}>
-            <Mail size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-            <input 
-              type="email" 
-              placeholder="NETWORK_ID@SYSTEM.VN" 
-              style={{
-                width: '100%',
-                padding: '1rem 1rem 1rem 3rem',
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '8px',
-                color: '#fff',
-                fontFamily: 'var(--font-mono)',
-                outline: 'none',
-                transition: 'border-color 0.3s'
-              }}
-              onFocus={(e) => e.target.style.borderColor = 'var(--accent-main)'}
-              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
-            />
-          </div>
+              <form onSubmit={handleManualLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div style={{ position: 'relative' }}>
+                  <Mail size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                  <input type="text" placeholder="NETWORK_ID" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%', padding: '1rem 1rem 1rem 3rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontFamily: 'var(--font-mono)', outline: 'none' }} />
+                </div>
+                <div style={{ position: 'relative' }}>
+                  <Lock size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                  <input type="password" placeholder="MẬT_MÃ" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '1rem 1rem 1rem 3rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontFamily: 'var(--font-mono)', outline: 'none' }} />
+                </div>
+                <button type="submit" className="btn-primary" style={{ width: '100%', padding: '1rem', opacity: loading ? 0.7 : 1 }} disabled={loading}>
+                  {loading ? 'ĐANG PHÂN TÍCH...' : 'XÁC NHẬN TRUY CẬP'}
+                </button>
+              </form>
 
-          <div style={{ position: 'relative' }}>
-            <Lock size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-            <input 
-              type="password" 
-              placeholder="MẬT_MÃ_MÃ_HÓA" 
-              style={{
-                width: '100%',
-                padding: '1rem 1rem 1rem 3rem',
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '8px',
-                color: '#fff',
-                fontFamily: 'var(--font-mono)',
-                outline: 'none',
-                transition: 'border-color 0.3s'
-              }}
-              onFocus={(e) => e.target.style.borderColor = 'var(--accent-main)'}
-              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
-            />
-          </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: '2rem 0' }}>
+                <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>HOẶC</span>
+                <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
+              </div>
 
-          <button className="btn-primary" style={{ width: '100%', padding: '1rem', fontSize: '1rem', letterSpacing: '2px' }} disabled>
-            ĐĂNG NHẬP HỆ THỐNG
-          </button>
-        </form>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <button onClick={() => handleSocialLogin(googleProvider)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.8rem', background: '#fff', color: '#000', borderRadius: '8px', border: 'none', fontWeight: 600, cursor: 'pointer' }}>Google</button>
+                <button onClick={() => handleSocialLogin(githubProvider)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.8rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>GitHub</button>
+              </div>
+            </motion.div>
+          )}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: '2rem 0' }}>
-          <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>HOẶC KẾT NỐI QUA</span>
-          <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
-        </div>
+          {(step === '2fa_setup' || step === '2fa_verify') && (
+            <motion.div key="2fa" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} style={{ textAlign: 'center' }}>
+              <button onClick={() => setStep('login')} style={{ position: 'absolute', left: 0, top: '-2rem', background: 'none', border: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                <ArrowLeft size={16} /> QUAY LẠI
+              </button>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-          <button 
-            type="button"
-            onClick={() => handleSocialLogin(googleProvider)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-              padding: '0.8rem',
-              background: '#fff',
-              color: '#000',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'opacity 0.2s'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.opacity = 0.9}
-            onMouseOut={(e) => e.currentTarget.style.opacity = 1}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24">
-              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-            </svg>
-            Google
-          </button>
-          
-          <button 
-             type="button"
-             onClick={() => handleSocialLogin(githubProvider)}
-             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-              padding: '0.8rem',
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '8px',
-              color: '#fff',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              cursor: 'pointer'
-            }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
-            </svg>
-            GitHub
-          </button>
-        </div>
+              <div style={{ marginBottom: '2rem' }}>
+                <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(var(--accent-rgb), 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', border: '1px solid var(--accent-main)' }}>
+                  <Smartphone className="text-glow" size={30} color="var(--accent-main)" />
+                </div>
+                <h2 style={{ fontFamily: 'var(--font-mono)', letterSpacing: '2px', fontSize: '1.2rem', color: '#fff' }}>
+                  XÁC THỰC 2 LỚP
+                </h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.5rem' }}>
+                  {step === '2fa_setup' ? 'Quét mã QR bằng App Google Authenticator' : 'Nhập mã 6 chữ số từ điện thoại của bạn'}
+                </p>
+              </div>
 
-        <p style={{ marginTop: '2.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-          Thành viên mới? <Link to="/signup" style={{ color: 'var(--accent-main)', textDecoration: 'none' }}>Khởi tạo tài khoản</Link>
-        </p>
+              {step === '2fa_setup' && (
+                <div style={{ background: '#fff', padding: '1rem', borderRadius: '12px', display: 'inline-block', marginBottom: '1.5rem', boxShadow: '0 0 20px rgba(255,255,255,0.1)' }}>
+                  <QRCodeCanvas value={qrCodeUrl} size={150} />
+                </div>
+              )}
 
-        <div style={{ 
-          marginTop: '2rem', 
-          padding: '0.8rem', 
-          border: '1px dashed rgba(16, 185, 129, 0.3)', 
-          background: 'rgba(16, 185, 129, 0.05)',
-          fontSize: '0.7rem',
-          color: 'var(--success)',
-          fontFamily: 'var(--font-mono)',
-          textAlign: 'center'
-        }}>
-          TRẠNG_THÁI_HỆ_THỐNG: [ĐANG_CHỜ_XÁC_THỰC]
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div style={{ position: 'relative' }}>
+                  <KeyRound size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                  <input type="text" maxLength="6" placeholder="000000" value={otpCode} onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))} style={{ width: '100%', padding: '1rem 1rem 1rem 3rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(var(--accent-rgb), 0.3)', borderRadius: '8px', color: 'var(--accent-main)', fontFamily: 'var(--font-mono)', fontSize: '1.4rem', letterSpacing: '8px', textAlign: 'center', outline: 'none' }} />
+                </div>
+
+                {error && <p style={{ color: '#ef4444', fontSize: '0.8rem' }}>{error}</p>}
+
+                <button onClick={verify2FA} className="btn-primary" style={{ width: '100%', padding: '1rem' }} disabled={otpCode.length !== 6}>
+                  XÁC MINH VÀ TIẾP TỤC
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div style={{ marginTop: '2rem', padding: '0.8rem', border: '1px dashed rgba(16, 185, 129, 0.3)', background: 'rgba(16, 185, 129, 0.05)', fontSize: '0.7rem', color: 'var(--success)', fontFamily: 'var(--font-mono)', textAlign: 'center' }}>
+          ADMIN_SHELL_STATUS: [{step.toUpperCase()}]
         </div>
       </motion.div>
     </div>

@@ -1,20 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-const quotes = [
-  "Không có gì quý hơn độc lập, tự do. - Hồ Chí Minh",
-  "Vì lợi ích mười năm thì phải trồng cây, vì lợi ích trăm năm thì phải trồng người. - Hồ Chí Minh",
-  "Đoàn kết, đoàn kết, đại đoàn kết. Thành công, thành công, đại thành công. - Hồ Chí Minh",
-  "Dễ mười lần không dân cũng chịu, khó trăm lần dân liệu cũng xong. - Hồ Chí Minh",
-  "Có tài mà không có đức là người vô dụng, có đức mà không có tài thì làm việc gì cũng khó. - Hồ Chí Minh",
-  "Học hỏi là việc phải tiếp tục suốt đời. - Hồ Chí Minh",
-  "Cần, Kiệm, Liêm, Chính, Chí công vô tư. - Hồ Chí Minh",
-  "Nước Việt Nam là một, dân tộc Việt Nam là một. - Hồ Chí Minh",
-  "Mỗi người tốt, mỗi việc tốt là một bông hoa đẹp, cả dân tộc ta là một rừng hoa đẹp. - Hồ Chí Minh",
-  "Tôi chỉ có một sự ham muốn, ham muốn tột bậc, là làm sao cho nước ta được độc lập toàn diện. - Hồ Chí Minh"
-];
+import { useConfig } from '../context/ConfigContext';
 
 const QuoteCarousel = () => {
+  const { config } = useConfig();
+  const quotes = config?.content?.quotes || [
+    "Không có gì quý hơn độc lập, tự do. - Hồ Chí Minh"
+  ];
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
@@ -22,7 +14,7 @@ const QuoteCarousel = () => {
       setIndex((prev) => (prev + 1) % quotes.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [quotes.length]);
 
   return (
     <div style={{ height: '80px', display: 'flex', alignItems: 'center', position: 'relative', overflow: 'hidden' }}>

@@ -79,7 +79,11 @@ const Hero = () => {
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.4 }}
-          style={{ fontSize: 'clamp(3rem, 8vw, 6rem)', marginBottom: '1rem' }}
+          style={{ 
+            fontSize: 'clamp(3rem, 8vw, 6rem)', 
+            marginBottom: '1rem',
+            fontFamily: "'Chakra Petch', sans-serif"
+          }}
           className="text-gradient"
         >
           Bùi Công Tới

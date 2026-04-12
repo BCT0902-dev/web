@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useConfig } from '../context/ConfigContext';
 
 const apps = [
   { name: "Antigravity", color: "#00d2ff", icon: (props) => (
@@ -80,8 +81,21 @@ const apps = [
 ];
 
 const TrustedApps = () => {
+  const { config } = useConfig();
+  
+  // Use config apps if available, otherwise fallback to static list
+  const displayApps = config?.apps?.length > 0 ? config.apps.map(app => ({
+    ...app,
+    // Map iconType to actual component if it's a string
+    icon: (props) => {
+      if (app.iconUrl) return <img src={app.iconUrl} alt={app.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />;
+      const found = apps.find(a => a.name === app.name);
+      return found ? <found.icon {...props} /> : <img src="/logobct.png" style={{ width: '100%' }} />;
+    }
+  })) : apps;
+
   // Multiply list to create seamless loop
-  const marqueeApps = [...apps, ...apps];
+  const marqueeApps = [...displayApps, ...displayApps];
 
   return (
     <section id="trusted-apps" style={{ padding: '6rem 0', overflow: 'hidden', position: 'relative' }}>
@@ -91,7 +105,11 @@ const TrustedApps = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          style={{ fontSize: '2.5rem', marginBottom: '1.5rem' }}
+          style={{ 
+            fontSize: '2.5rem', 
+            marginBottom: '1.5rem',
+            fontFamily: "'Chakra Petch', sans-serif"
+          }}
           className="text-gradient"
         >
           Ứng dụng tôi tin dùng
