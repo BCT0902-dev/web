@@ -31,10 +31,16 @@ const Login = () => {
   const [otpCode, setOtpCode] = useState('');
 
   const handleError = (err) => {
-    if (err.toString().toLowerCase().includes('blocked') || err?.code === 'unavailable') {
+    const errorStr = err.toString().toLowerCase();
+    console.error("Auth Error Object:", err);
+    
+    // Check for explicit "blocked" or "offline" markers
+    if (errorStr.includes('blocked') || err?.code === 'unavailable') {
       setShowAdblockModal(true);
+    } else if (err?.code === 'auth/unauthorized-domain') {
+      setError("Domain này chưa được cấp phép trong Firebase Console. Vui lòng liên hệ Admin!");
     } else {
-      setError('Lỗi: ' + (err.message || err.toString()));
+      setError('Lỗi kết nối: ' + (err.message || err.toString()));
     }
   };
 
@@ -328,9 +334,13 @@ const Login = () => {
                </h2>
                
                <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '1.05rem', marginBottom: '2.5rem', fontFamily: 'system-ui, sans-serif' }}>
-                 Hệ thống bảo vệ (AdBlock / Shields) trên trình duyệt của ngài đang ngăn chặn tác phẩm này giao tiếp với máy chủ kho lưu trữ.
+                 Hệ thống bảo vệ (AdBlock / Shields) hoặc cấu hình mạng đang ngăn chặn tác phẩm này giao tiếp với máy chủ kho lưu trữ.
                  <br/><br/>
-                 Để chiêm ngưỡng và tham gia giao tiếp với toàn bộ không gian nghệ thuật tại đây, hệ thống xin ngài vui lòng <b style={{ color: '#fff' }}>hạ khiên bảo vệ (Tắt trình chặn quảng cáo)</b> áp dụng riêng cho miền này.
+                 <span style={{ fontSize: '0.9rem', color: 'var(--accent-gold)', opacity: 0.8 }}>
+                   * Nếu ngài KHÔNG dùng AdBlock, hãy kiểm tra xem Domain này đã được "Authorized" trong Firebase Console chưa.
+                 </span>
+                 <br/><br/>
+                 Để chiêm ngưỡng và tham gia giao tiếp với toàn bộ không gian nghệ thuật tại đây, hệ thống xin ngài vui lòng <b style={{ color: '#fff' }}>hạ khiên bảo vệ</b> hoặc kiểm tra lại kết nối mạng.
                </p>
 
                <button 
