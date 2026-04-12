@@ -1,6 +1,7 @@
 .ai-chat-container {
   display: flex;
-  height: 100vh;
+  height: calc(100vh - 80px);
+  margin-top: 80px;
   /* Light Museum Marble Background */
   background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.9) 0%, rgba(245, 245, 240, 1) 100%),
               url('https://www.transparenttextures.com/patterns/p-6.png');
@@ -8,7 +9,6 @@
   overflow: hidden;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   position: relative;
-  padding-top: 80px;
 }
 
 /* Central Spotlight Effect (Light) */

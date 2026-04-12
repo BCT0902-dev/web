@@ -122,7 +122,7 @@ const AdminDashboard = () => {
         contents: [{ parts: [{ text: "Say 'TEST_OK'" }] }]
       };
       // Fixed: Using v1 instead of v1beta and ensuring model name is correct
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${key}`, {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify(payload)
@@ -563,6 +563,16 @@ const AdminDashboard = () => {
                   <div style={{ display: 'flex', gap: '1rem' }}>
                     <input style={{ flex: 1 }} type="password" value={localConfig.integrations.deepseekKey} onChange={(e) => updateNested('integrations', 'deepseekKey', e.target.value)} />
                     <button className="add-btn" onClick={testDeepseekAPI}><Activity size={16} /> TEST</button>
+                  </div>
+                </div>
+                <div className="input-group" style={{ marginTop: '1.5rem' }}>
+                  <label style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>GROQ API KEY (Llama 3)</span>
+                    <span style={{ fontSize: '0.8rem', color: apiTestStatus.groq?.includes('LỖI') ? '#ef4444' : '#10b981' }}>{apiTestStatus.groq}</span>
+                  </label>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <input style={{ flex: 1 }} type="password" value={localConfig.integrations.groqKey || ''} onChange={(e) => updateNested('integrations', 'groqKey', e.target.value)} />
+                    <button className="add-btn" onClick={testGroqAPI}><Activity size={16} /> TEST GROQ</button>
                   </div>
                 </div>
               </motion.div>

@@ -123,7 +123,7 @@ const YoutubeAnalyzer = () => {
       let resultText = '';
 
       if (selectedModel === 'gemini') {
-          const genModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+          const genModel = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
           const result = await genModel.generateContent(prompt);
           resultText = await result.response.text();
       } else if (selectedModel === 'groq') {

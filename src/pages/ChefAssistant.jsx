@@ -89,7 +89,7 @@ const ChefAssistant = () => {
             let resultText = '';
 
             if (selectedModel === 'gemini') {
-                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
                 const result = await model.generateContent(prompt);
                 resultText = result.response.text();
             } else if (selectedModel === 'groq') {
