@@ -92,8 +92,50 @@
     "notice_back": "Quay lại bằng PC"
   },
   "testimonials": {
-    "title": "ĐƯỢC TIN TƯỞNG BỞI CÁC NHÀ ĐỔI MỚI",
-    "subtitle": "Mọi người đang nói gì về trải nghiệm với IRIS AI."
+    "title": "< ĐƯỢC TIN TƯỞNG />",
+    "subtitle": "Mọi người đang nói gì về trải nghiệm với IRIS AI.",
+    "list": {
+      "1": {
+        "name": "Alex Johnson",
+        "role": "Senior Developer @ TechCorp",
+        "content": "IRIS AI đã thay đổi hoàn toàn cách nhóm chúng tôi tiếp cận gỡ lỗi. Logic của Chef Assistant là một bước đột phá."
+      },
+      "2": {
+        "name": "Sarah Chen",
+        "role": "Nhà thiết kế UI/UX",
+        "content": "Thẩm mỹ của hệ sinh thái IRIS là vô song. Thật hiếm khi thấy một bộ công cụ AI vừa đẹp vừa hiệu quả như vậy."
+      },
+      "3": {
+        "name": "Marco Rossi",
+        "role": "Chuyên gia E-learning",
+        "content": "Youtube Smart Analyzer đã giúp tôi tiết kiệm hàng trăm giờ chép lời thủ công. Chính xác, nhanh chóng và trực quan."
+      },
+      "4": {
+        "name": "David Miller",
+        "role": "CTO @ InnovateAI",
+        "content": "Khả năng suy luận ngôn ngữ của IRIS vượt xa mong đợi. Đây là một đối tác kỹ thuật số thực thụ cho mọi lập trình viên."
+      },
+      "5": {
+        "name": "Elena Petrova",
+        "role": "Quản lý sản phẩm",
+        "content": "Tôi yêu sự tỉ mỉ trong từng chi tiết giao diện. IRIS không chỉ là công cụ, nó là một tác phẩm nghệ thuật kỹ thuật số."
+      },
+      "6": {
+        "name": "Kaito Tanaka",
+        "role": "Kỹ sư Full Stack",
+        "content": "Từ logic Backend đến sự mượt mà của Frontend, IRIS thể hiện một trình độ hoàn thiện cực kỳ cao. Rất ấn tượng!"
+      }
+    }
+  },
+  "chronicles": {
+    "title": "< Hành_Trình_Cá_Nhân />",
+    "subtitle": "Trình tự thời gian về sự trưởng thành và phát triển chuyên môn.",
+    "m1": { "year": "2006", "title": "Cấp 1", "desc": "Học tại Trường Tiểu học Tân Thanh 1. Những năm tháng đầu đời làm quen với con chữ." },
+    "m2": { "year": "2011", "title": "Cấp 2", "desc": "Theo học tại THCS Tân Thanh. Bắt đầu hình thành tư duy học tập độc lập." },
+    "m3": { "year": "2015", "title": "Cấp 3", "desc": "Học tại THPT Huỳnh Thúc Kháng. Giai đoạn quan trọng chuẩn bị cho tương lai." },
+    "m4": { "year": "2019", "title": "Đại học", "desc": "Sinh viên Đại học Lạc Hồng. Nơi kiến thức chuyên môn bắt đầu được tích lũy." },
+    "m5": { "year": "2023", "title": "Thực tập", "desc": "Thực tập tại tập đoàn FPT. Trải nghiệm môi trường làm việc chuyên nghiệp hàng đầu." },
+    "m6": { "year": "2023 - Nay", "title": "Công việc chính thức", "desc": "Làm việc tại Công ty Chính Nam Biên Hòa. Đã gắn bó được 1 năm 7 tháng trong môi trường thực tiễn." }
   },
   "blog": {
     "title": "AI INSIGHTS",

@@ -92,8 +92,50 @@
     "notice_back": "Return on PC"
   },
   "testimonials": {
-    "title": "TRUSTED BY INNOVATORS",
-    "subtitle": "What people are saying about their IRIS AI experience."
+    "title": "< TRUSTED_VOICES />",
+    "subtitle": "What people are saying about their IRIS AI experience.",
+    "list": {
+      "1": {
+        "name": "Alex Johnson",
+        "role": "Senior Developer @ TechCorp",
+        "content": "IRIS AI has completely transformed how our team approaches debugging. The Chef Assistant logic is a game changer."
+      },
+      "2": {
+        "name": "Sarah Chen",
+        "role": "UI/UX Designer",
+        "content": "The aesthetic of the IRIS ecosystem is unparalleled. It's rare to see an AI suite that looks as good as it performs."
+      },
+      "3": {
+        "name": "Marco Rossi",
+        "role": "E-learning Specialist",
+        "content": "Youtube Smart Analyzer saved me hundreds of hours of manual transcription. Accurate, fast, and incredibly intuitive."
+      },
+      "4": {
+        "name": "David Miller",
+        "role": "CTO @ InnovateAI",
+        "content": "The linguistic reasoning capabilities of IRIS go beyond expectations. It's a true digital partner for every coder."
+      },
+      "5": {
+        "name": "Elena Petrova",
+        "role": "Product Manager",
+        "content": "I love the attention to every interface detail. IRIS is not just a tool; it's a digital masterpiece."
+      },
+      "6": {
+        "name": "Kaito Tanaka",
+        "role": "Full Stack Engineer",
+        "content": "From Backend logic to Frontend fluidity, IRIS demonstrates an extremely high level of polish. Very impressed!"
+      }
+    }
+  },
+  "chronicles": {
+    "title": "< Personal_Chronicles />",
+    "subtitle": "A chronological sequence of growth and professional development.",
+    "m1": { "year": "2006", "title": "Elementary School", "desc": "Studied at Tan Thanh 1 Primary School. The first steps in the educational journey." },
+    "m2": { "year": "2011", "title": "Middle School", "desc": "Attended Tan Thanh Secondary School. Began developing independent learning habits." },
+    "m3": { "year": "2015", "title": "High School", "desc": "Studied at Huynh Thuc Khang High School. A critical stage in preparing for the future." },
+    "m4": { "year": "2019", "title": "University", "desc": "Student at Lac Hong University. Where professional IT knowledge began to accumulate." },
+    "m5": { "year": "2023", "title": "Internship", "desc": "Interned at FPT Corporation. Experienced a top-tier professional working environment." },
+    "m6": { "year": "2023 - Pres", "title": "Official Employment", "desc": "Working at Chinh Nam Bien Hoa Company. Celebrating 1 year and 7 months of real-world impact." }
   },
   "blog": {
     "title": "AI INSIGHTS",
