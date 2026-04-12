@@ -8,9 +8,12 @@ import Skills from './sections/Skills';
 import TrustedApps from './sections/TrustedApps';
 import Footer from './components/Footer';
 import Testimonials from './sections/Testimonials';
+import HistoryTimeline from './sections/HistoryTimeline';
+import MobileBlocker from './components/MobileBlocker';
 import Background from './components/Background';
 import Login from './pages/Login';
 import Utilities from './pages/Utilities';
+import UtilityHub from './pages/UtilityHub';
 import FloatingChatBtn from './components/FloatingChatBtn';
 import { ConfigProvider } from './context/ConfigContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -26,6 +29,7 @@ const Home = () => (
   <>
     <Hero />
     <About />
+    <HistoryTimeline />
     <FilmStrip />
     <Skills />
     <TrustedApps />
@@ -45,6 +49,7 @@ function AppRoutes() {
 
   return (
     <>
+      <MobileBlocker />
       <AnimatePresence>
         {isInitialLoading && (
           <LoadingScreen onComplete={() => setIsInitialLoading(false)} />

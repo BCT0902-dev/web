@@ -10,7 +10,8 @@
     "theme_dark": "Dark",
     "admin": "Admin",
     "profile_settings": "Profile Settings",
-    "logout": "Logout"
+    "logout": "Logout",
+    "blog": "Insights"
   },
   "hero": {
     "greeting": "HELLO _ // THIS IS",
@@ -80,8 +81,15 @@
     "scroll_up": "Scroll up to see more or click those cute social icons above.",
     "security_notice": "Data secured with Firebase Firestore"
   },
-  "nav": {
-     "blog": "Insights"
+  "sections": {
+    "memories_title": "< Digital_Memories />",
+    "memories_subtitle": "Lenses through time capturing the technical journey.",
+    "timeline_title": "< Iris_Chronicles />"
+  },
+  "mobile": {
+    "notice_title": "EXHIBIT UNDER MAINTENANCE",
+    "notice_desc": "BCT0902 is working hard on the Mobile UI. Currently, IRIS AI is optimized for the full PC experience only. Please bear with us!",
+    "notice_back": "Return on PC"
   },
   "testimonials": {
     "title": "TRUSTED BY INNOVATORS",

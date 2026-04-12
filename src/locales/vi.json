@@ -10,7 +10,8 @@
     "theme_dark": "Tối",
     "admin": "Quản trị",
     "profile_settings": "Cài đặt hồ sơ",
-    "logout": "Đăng xuất"
+    "logout": "Đăng xuất",
+    "blog": "Bài viết"
   },
   "hero": {
     "greeting": "XIN CHÀO _ // ĐÂY LÀ",
@@ -80,8 +81,15 @@
     "scroll_up": "Hãy lướt lên để xem kỹ hơn hoặc bấm vào các icon social xinh xinh bên trên.",
     "security_notice": "Dữ liệu được bảo mật với Firebase Firestore"
   },
-  "nav": {
-     "blog": "Bài viết"
+  "sections": {
+    "memories_title": "< Ký_Ức_Digital />",
+    "memories_subtitle": "Những lăng kính thời gian lưu giữ hành trình công nghệ.",
+    "timeline_title": "< Lịch_Sử_Iris />"
+  },
+  "mobile": {
+    "notice_title": "BẢO TRÌ PHÒNG TRƯNG BÀY",
+    "notice_desc": "BCT0902 đang cật lực phát triển giao diện Mobile. Hiện tại, IRIS AI chỉ sẵn sàng cho trải nghiệm hoàn hảo trên Máy tính. Vui lòng chờ xíu nhé!",
+    "notice_back": "Quay lại bằng PC"
   },
   "testimonials": {
     "title": "ĐƯỢC TIN TƯỞNG BỞI CÁC NHÀ ĐỔI MỚI",

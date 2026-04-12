@@ -1,8 +1,11 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { motion } from 'framer-motion';
 import './FilmStrip.css';
 import { useConfig } from '../context/ConfigContext';
 
 const FilmStrip = () => {
+  const { t } = useTranslation();
   const { config } = useConfig();
   const images = config?.content?.filmStripImages || [];
   const speed = config?.content?.filmStripSpeed || 45;
@@ -12,10 +15,30 @@ const FilmStrip = () => {
   const duplicatedImages = [...images, ...images, ...images];
 
   return (
-    <section className="film-strip-container">
-      <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-        <h2 style={{ fontFamily: "'Chakra Petch', sans-serif", fontSize: '2.5rem', letterSpacing: '2px', color: 'var(--text-primary)' }}>KỸ THUẬT SỐ & KÝ ỨC</h2>
-        <p style={{ color: 'var(--text-muted)' }}>Những lăng kính thời gian lưu giữ hành trình</p>
+    <section className="film-strip-container" style={{ padding: '8rem 0' }}>
+      <div style={{ textAlign: 'center', marginBottom: '5rem' }}>
+        <motion.h2 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          style={{ 
+            fontFamily: "'Chakra Petch', sans-serif", 
+            fontSize: 'var(--section-title-size, 3rem)', 
+            letterSpacing: '2px', 
+            color: 'var(--accent-main)' 
+          }}
+        >
+          {t('sections.memories_title', '< Digital_Memories />')}
+        </motion.h2>
+        <motion.p 
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.2 }}
+          style={{ color: 'var(--text-secondary)', marginTop: '1rem', fontSize: '1.2rem' }}
+        >
+          {t('sections.memories_subtitle', 'Lenses through time capturing the technical journey.')}
+        </motion.p>
       </div>
       <div className="film-marquee-wrapper">
         <div className="film-marquee" style={{ animationDuration: `${speed}s` }}>
