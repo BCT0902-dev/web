@@ -161,23 +161,34 @@ const WaterReminder = () => {
   };
 
   return (
-    <div className="water-reminder-container" style={{ padding: '2rem', height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+    <div className="water-reminder-container" style={{ 
+      padding: '80px 2rem 2rem', // Increased top padding to avoid navbar overlap
+      height: '100%', 
+      overflowY: 'auto', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      gap: '2rem',
+      position: 'relative',
+      zIndex: 1
+    }}>
+      {/* Background Overlay for better contrast */}
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: -1, pointerEvents: 'none' }} />
       
       {/* Sync Modal */}
       <AnimatePresence>
         {showSyncModal && (
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(20px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
           >
             <motion.div 
               initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
-              style={{ width: '100%', maxWidth: '400px', background: 'rgba(30, 30, 35, 0.95)', padding: '2.5rem', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
+              style={{ width: '100%', maxWidth: '400px', background: '#1a1a1f', padding: '2.5rem', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8)' }}
             >
               <Bot size={48} color="var(--accent-main)" style={{ marginBottom: '1.5rem' }} />
               <h2 style={{ color: '#fff', fontSize: '1.5rem', marginBottom: '1rem' }}>Lấy ID Zalo</h2>
               
-              <p style={{ color: 'var(--text-muted)', fontSize: '1rem', marginBottom: '2rem', lineHeight: '1.6' }}>
+              <p style={{ color: '#aaa', fontSize: '1rem', marginBottom: '2rem', lineHeight: '1.6' }}>
                 Hệ thống sẽ mở Zalo Bot.<br/>
                 Ngài chỉ cần nhắn chữ <strong>"ID"</strong>,<br/>
                 Bot sẽ tự động gửi mã ID cho ngài.
@@ -188,16 +199,12 @@ const WaterReminder = () => {
                   href={zaloBotId ? `https://zalo.me/${zaloBotId}` : '#'} 
                   target="_blank" rel="noreferrer"
                   style={{ background: '#0068ff', color: '#fff', padding: '1.2rem', borderRadius: '14px', textDecoration: 'none', fontWeight: 'bold', fontSize: '1.1rem' }}
-                  onClick={() => {
-                    // Start sync in background if they happen to use a code from history,
-                    // but primarily we expect them to copy-paste.
-                  }}
                 >
                   MỞ ZALO & NHẮN "ID"
                 </a>
                 <button 
                   onClick={() => setShowSyncModal(false)} 
-                  style={{ color: 'rgba(255,255,255,0.4)', background: 'transparent', border: 'none', fontSize: '0.9rem', marginTop: '1rem', cursor: 'pointer' }}
+                  style={{ color: 'rgba(255,255,255,0.6)', background: 'transparent', border: 'none', fontSize: '0.9rem', marginTop: '1rem', cursor: 'pointer' }}
                 >
                   ĐÃ CÓ ID, QUAY LẠI NHẬP
                 </button>
@@ -208,54 +215,71 @@ const WaterReminder = () => {
       </AnimatePresence>
 
       {/* Header Section */}
-      <div className="water-header glass-panel" style={{ padding: '2rem', borderRadius: '24px', position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, rgba(30,144,255,0.1), rgba(0,191,255,0.05))', border: '1px solid rgba(255,255,255,0.1)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '1rem' }}>
-          <div className="icon-badge" style={{ background: 'var(--accent-main)', color: '#fff', padding: '1rem', borderRadius: '16px', boxShadow: '0 0 20px rgba(var(--accent-rgb), 0.4)' }}>
-            <Droplets size={32} />
+      <div className="water-header glass-panel" style={{ 
+        padding: '2.5rem', 
+        borderRadius: '32px', 
+        position: 'relative', 
+        overflow: 'hidden', 
+        background: 'rgba(30, 144, 255, 0.08)',
+        border: '1px solid rgba(255,255,255,0.15)',
+        backdropFilter: 'blur(30px)' 
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginBottom: '1rem' }}>
+          <div className="icon-badge" style={{ background: 'var(--accent-main)', color: '#fff', padding: '1.2rem', borderRadius: '20px', boxShadow: '0 0 30px rgba(var(--accent-rgb), 0.5)' }}>
+            <Droplets size={40} />
           </div>
           <div>
-            <h1 style={{ fontSize: '2rem', fontFamily: 'Chakra Petch', letterSpacing: '2px', color: '#fff' }}>NHẮC NHỞ UỐNG NƯỚC AI</h1>
-            <p style={{ color: 'var(--text-secondary)' }}>Tối ưu hóa sức khỏe bản thân cùng IRIS Hyper-Hydration.</p>
+            <h1 style={{ fontSize: '2.5rem', fontFamily: 'Chakra Petch', letterSpacing: '4px', color: '#fff', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>NHẮC NHỞ UỐNG NƯỚC AI</h1>
+            <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '1.1rem' }}>Tối ưu hóa sức khỏe bản thân cùng IRIS Hyper-Hydration.</p>
           </div>
         </div>
         
         {status && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ padding: '0.8rem 1.2rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', fontSize: '0.9rem', color: 'var(--accent-main)', border: '1px solid rgba(255,255,255,0.1)', display: 'inline-block' }}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ padding: '0.8rem 1.2rem', background: 'rgba(var(--accent-rgb), 0.1)', borderRadius: '12px', fontSize: '0.9rem', color: 'var(--accent-main)', border: '1px solid var(--accent-main)', display: 'inline-block' }}>
             {status}
           </motion.div>
         )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: result ? '1fr 1.5fr' : '1fr', gap: '2rem', flex: 1 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: result ? '1fr 1.2fr' : '1fr', gap: '2rem', flex: 1 }}>
         
         {/* Step 1: Input Form */}
-        <div className="glass-panel" style={{ padding: '2rem', borderRadius: '24px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <h3 style={{ fontFamily: 'var(--font-mono)', fontSize: '1.1rem', color: 'var(--accent-main)', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '1rem' }}>1. THÔNG TIN CƠ THỂ</h3>
+        <div className="glass-panel" style={{ 
+          padding: '2.5rem', 
+          borderRadius: '32px', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '2rem', 
+          background: 'rgba(0,0,0,0.4)', 
+          backdropFilter: 'blur(40px)',
+          border: '1px solid rgba(255,255,255,0.1)'
+        }}>
+          <h3 style={{ fontFamily: 'var(--font-mono)', fontSize: '1.2rem', color: 'var(--accent-main)', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1.2rem', letterSpacing: '2px' }}>1. THÔNG TIN CƠ THỂ</h3>
           
           <div className="input-group-modern">
-            <label><User size={14} /> TÊN CỦA NGÀI</label>
-            <input type="text" placeholder="Nhập tên..." value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', padding: '1rem', borderRadius: '12px', color: '#fff' }} />
+            <label style={{ color: '#fff', fontWeight: 'bold' }}><User size={14} /> TÊN CỦA NGÀI</label>
+            <input type="text" placeholder="Nhập tên..." value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', padding: '1.2rem', borderRadius: '16px', color: '#fff', fontSize: '1rem', backdropFilter: 'blur(10px)' }} />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
             <div className="input-group-modern">
-               <label>CHIỀU CAO (CM)</label>
-               <input type="number" placeholder="170" value={formData.height} onChange={e => setFormData({...formData, height: e.target.value})} style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', padding: '1rem', borderRadius: '12px', color: '#fff' }} />
+               <label style={{ color: '#fff', fontWeight: 'bold' }}>CHIỀU CAO (CM)</label>
+               <input type="number" placeholder="170" value={formData.height} onChange={e => setFormData({...formData, height: e.target.value})} style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', padding: '1.2rem', borderRadius: '16px', color: '#fff', fontSize: '1rem', backdropFilter: 'blur(10px)' }} />
             </div>
             <div className="input-group-modern">
-               <label>CÂN NẶNG (KG)</label>
-               <input type="number" placeholder="65" value={formData.weight} onChange={e => setFormData({...formData, weight: e.target.value})} style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', padding: '1rem', borderRadius: '12px', color: '#fff' }} />
+               <label style={{ color: '#fff', fontWeight: 'bold' }}>CÂN NẶNG (KG)</label>
+               <input type="number" placeholder="65" value={formData.weight} onChange={e => setFormData({...formData, weight: e.target.value})} style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', padding: '1.2rem', borderRadius: '16px', color: '#fff', fontSize: '1rem', backdropFilter: 'blur(10px)' }} />
             </div>
           </div>
 
           <div className="input-group-modern" style={{ marginTop: '1rem' }}>
-            <label style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <label style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontWeight: 'bold' }}>
                <span>ZALO CHAT ID</span>
-               <button onClick={() => setShowSyncModal(true)} style={{ background: 'transparent', border: 'none', color: 'var(--accent-secondary)', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                 <Bot size={14} /> LẤY ID TỪ BOT
+               <button onClick={() => setShowSyncModal(true)} style={{ background: 'transparent', border: 'none', color: 'var(--accent-secondary)', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'bold' }}>
+                 <Bot size={16} /> LẤY ID TỪ BOT
                </button>
             </label>
-            <input type="text" placeholder="Dán ID Bot gửi vào đây..." value={formData.chat_id} onChange={e => setFormData({...formData, chat_id: e.target.value})} style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', padding: '1rem', borderRadius: '12px', color: formData.chat_id ? '#fff' : '#666' }} />
+            <input type="text" placeholder="Dán ID Bot gửi vào đây..." value={formData.chat_id} onChange={e => setFormData({...formData, chat_id: e.target.value})} style={{ width: '100%', background: 'rgba(var(--accent-rgb), 0.05)', border: '1px solid var(--accent-main)', padding: '1.2rem', borderRadius: '16px', color: '#fff', fontWeight: 'bold', fontSize: '1.1rem', letterSpacing: '1px' }} />
           </div>
 
           <button 
@@ -263,22 +287,24 @@ const WaterReminder = () => {
             onClick={calculateHydration}
             disabled={isLoading}
             style={{ 
-              marginTop: '1rem', 
-              padding: '1.2rem', 
-              borderRadius: '16px', 
+              marginTop: '1.5rem', 
+              padding: '1.4rem', 
+              borderRadius: '20px', 
               background: 'var(--accent-main)', 
               color: '#fff', 
               border: 'none', 
               fontWeight: 'bold', 
+              fontSize: '1.1rem',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '0.8rem',
-              boxShadow: '0 10px 30px rgba(var(--accent-rgb), 0.3)'
+              gap: '1rem',
+              boxShadow: '0 15px 40px rgba(var(--accent-rgb), 0.4)',
+              transition: 'all 0.3s ease'
             }}
           >
-            {isLoading ? <Activity className="spin" size={20} /> : <Droplets size={20} />}
+            {isLoading ? <Activity className="spin" size={24} /> : <Droplets size={24} />}
             LẬP KẾ HOẠCH AI
           </button>
         </div>
@@ -290,50 +316,61 @@ const WaterReminder = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               className="glass-panel"
-              style={{ padding: '2rem', borderRadius: '24px', background: 'rgba(255,255,255,0.02)', display: 'flex', flexDirection: 'column', gap: '2rem' }}
+              style={{ 
+                padding: '2.5rem', 
+                borderRadius: '32px', 
+                background: 'rgba(20, 20, 25, 0.6)', 
+                backdropFilter: 'blur(40px)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: '2.5rem' 
+              }}
             >
                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                 <h3 style={{ fontFamily: 'var(--font-mono)', fontSize: '1.1rem', color: 'var(--accent-secondary)' }}>2. KẾ HOẠCH HYDRATION</h3>
+                 <h3 style={{ fontFamily: 'var(--font-mono)', fontSize: '1.2rem', color: 'var(--accent-secondary)', letterSpacing: '2px' }}>2. KẾ HOẠCH HYDRATION</h3>
                  <div style={{ textAlign: 'right' }}>
-                    <span style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent-main)' }}>{result.total}</span>
-                    <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginLeft: '0.5rem' }}>LÍT / NGÀY</span>
+                    <span style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'var(--accent-main)' }}>{result.total}</span>
+                    <span style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.6)', marginLeft: '0.6rem' }}>LÍT / NGÀY</span>
                  </div>
                </div>
 
-               <div className="schedule-list" style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+               <div className="schedule-list" style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.2rem', paddingRight: '0.5rem' }}>
                   {result.schedule.map((item, id) => (
-                    <div key={id} style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', background: 'rgba(255,255,255,0.03)', padding: '1.2rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                       <div style={{ minWidth: '70px', color: 'var(--accent-main)', fontWeight: 'bold', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <Clock size={16} /> {item.time}
+                    <div key={id} style={{ display: 'flex', alignItems: 'center', gap: '2rem', background: 'rgba(255,255,255,0.04)', padding: '1.4rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                       <div style={{ minWidth: '80px', color: 'var(--accent-main)', fontWeight: 'bold', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                          <Clock size={18} /> {item.time}
                        </div>
                        <div style={{ flex: 1 }}>
-                          <div style={{ color: '#fff', fontWeight: 600 }}>{item.amount}</div>
-                          <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{item.note}</div>
+                          <div style={{ color: '#fff', fontWeight: 700, fontSize: '1.1rem' }}>{item.amount}</div>
+                          <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', marginTop: '0.2rem' }}>{item.note}</div>
                        </div>
                     </div>
                   ))}
                </div>
 
-               <div style={{ display: 'flex', gap: '1rem' }}>
+               <div style={{ display: 'flex', gap: '1.5rem' }}>
                   <button 
                     className="zalo-push-btn" 
                     onClick={sendToZalo}
                     style={{ 
                       flex: 1, 
-                      padding: '1.2rem', 
-                      borderRadius: '16px', 
+                      padding: '1.4rem', 
+                      borderRadius: '20px', 
                       background: isSent ? '#10b981' : '#0068ff', 
                       color: '#fff', 
                       border: 'none', 
                       fontWeight: 'bold', 
+                      fontSize: '1.1rem',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '0.8rem'
+                      gap: '1rem',
+                      boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
                     }}
                   >
-                    {isSent ? <CheckCircle size={20} /> : <Bot size={20} />}
+                    {isSent ? <CheckCircle size={24} /> : <Bot size={24} />}
                     {isSent ? 'ĐÃ GỬI ZALO' : 'KÍCH HOẠT NHẮC NHỞ ZALO'}
                   </button>
                </div>
@@ -345,8 +382,12 @@ const WaterReminder = () => {
       <style>{`
         .spin { animation: spin 2s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .input-group-modern { display: flex; flex-direction: column; gap: 0.5rem; }
-        .input-group-modern label { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+        .input-group-modern { display: flex; flex-direction: column; gap: 0.8rem; }
+        .input-group-modern label { font-size: 0.9rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; }
+        
+        .schedule-list::-webkit-scrollbar { width: 6px; }
+        .schedule-list::-webkit-scrollbar-track { background: transparent; }
+        .schedule-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); borderRadius: 10px; }
       `}</style>
     </div>
   );
