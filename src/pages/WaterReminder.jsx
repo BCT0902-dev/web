@@ -175,36 +175,33 @@ const WaterReminder = () => {
               style={{ width: '100%', maxWidth: '400px', background: 'rgba(30, 30, 35, 0.95)', padding: '2.5rem', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
             >
               <Bot size={48} color="var(--accent-main)" style={{ marginBottom: '1.5rem' }} />
-              <h2 style={{ color: '#fff', fontSize: '1.5rem', marginBottom: '1rem' }}>Xác thực Zalo</h2>
+              <h2 style={{ color: '#fff', fontSize: '1.5rem', marginBottom: '1rem' }}>Lấy ID Zalo</h2>
               
-              {syncStatus === 'pending' ? (
-                <>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '2rem' }}>
-                    Mở ứng dụng Zalo và gửi tin nhắn sau cho Bot:
-                  </p>
-                  <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1.5rem', borderRadius: '16px', border: '1px dashed var(--accent-main)', marginBottom: '2rem' }}>
-                    <span style={{ fontSize: '2.5rem', fontWeight: '800', letterSpacing: '8px', color: 'var(--accent-main)', fontFamily: 'var(--font-mono)' }}>{syncCode}</span>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <a 
-                      href={zaloBotId ? `https://zalo.me/${zaloBotId}` : '#'} 
-                      target="_blank" rel="noreferrer"
-                      style={{ background: '#0068ff', color: '#fff', padding: '1rem', borderRadius: '14px', textDecoration: 'none', fontWeight: 'bold' }}
-                    >
-                      MỞ ZALO BOT
-                    </a>
-                    <button onClick={() => setShowSyncModal(false)} style={{ color: 'rgba(255,255,255,0.4)', background: 'transparent', border: 'none', fontSize: '0.9rem' }}>HỦY BỎ</button>
-                  </div>
-                </>
-              ) : (
-                <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}>
-                   <div style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', padding: '2rem', borderRadius: '20px', border: '1px solid rgba(16,185,129,0.2)' }}>
-                      <CheckCircle size={48} style={{ marginBottom: '1rem' }} />
-                      <h3 style={{ fontSize: '1.2rem' }}>KẾT NỐI THÀNH CÔNG!</h3>
-                      <p style={{ fontSize: '0.85rem', marginTop: '0.5rem', opacity: 0.8 }}>IRIS đã nhận dạng được tài khoản Zalo của ngài.</p>
-                   </div>
-                </motion.div>
-              )}
+              <p style={{ color: 'var(--text-muted)', fontSize: '1rem', marginBottom: '2rem', lineHeight: '1.6' }}>
+                Hệ thống sẽ mở Zalo Bot.<br/>
+                Ngài chỉ cần nhắn chữ <strong>"ID"</strong>,<br/>
+                Bot sẽ tự động gửi mã ID cho ngài.
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <a 
+                  href={zaloBotId ? `https://zalo.me/${zaloBotId}` : '#'} 
+                  target="_blank" rel="noreferrer"
+                  style={{ background: '#0068ff', color: '#fff', padding: '1.2rem', borderRadius: '14px', textDecoration: 'none', fontWeight: 'bold', fontSize: '1.1rem' }}
+                  onClick={() => {
+                    // Start sync in background if they happen to use a code from history,
+                    // but primarily we expect them to copy-paste.
+                  }}
+                >
+                  MỞ ZALO & NHẮN "ID"
+                </a>
+                <button 
+                  onClick={() => setShowSyncModal(false)} 
+                  style={{ color: 'rgba(255,255,255,0.4)', background: 'transparent', border: 'none', fontSize: '0.9rem', marginTop: '1rem', cursor: 'pointer' }}
+                >
+                  ĐÃ CÓ ID, QUAY LẠI NHẬP
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -254,11 +251,11 @@ const WaterReminder = () => {
           <div className="input-group-modern" style={{ marginTop: '1rem' }}>
             <label style={{ display: 'flex', justifyContent: 'space-between' }}>
                <span>ZALO CHAT ID</span>
-               <button onClick={startSync} style={{ background: 'transparent', border: 'none', color: 'var(--accent-secondary)', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                 <Bot size={14} /> NHẤN ĐỂ LẤY ID
+               <button onClick={() => setShowSyncModal(true)} style={{ background: 'transparent', border: 'none', color: 'var(--accent-secondary)', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                 <Bot size={14} /> LẤY ID TỪ BOT
                </button>
             </label>
-            <input type="text" placeholder="Trống (Nhấn nút trên để lấy tự động)" value={formData.chat_id} readOnly style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', padding: '1rem', borderRadius: '12px', color: formData.chat_id ? '#10b981' : '#666', fontWeight: 'bold' }} />
+            <input type="text" placeholder="Dán ID Bot gửi vào đây..." value={formData.chat_id} onChange={e => setFormData({...formData, chat_id: e.target.value})} style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', padding: '1rem', borderRadius: '12px', color: formData.chat_id ? '#fff' : '#666' }} />
           </div>
 
           <button 

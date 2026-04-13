@@ -15,11 +15,11 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // 1. Authenticate with Zalo Secret Token (optional but recommended)
+  // 1. Authenticate with Zalo Secret Token (MANDATORY per user request)
   const secretToken = req.headers['x-bot-api-secret-token'];
-  const VALID_SECRET = process.env.ZALO_WEBHOOK_SECRET;
+  const VALID_SECRET = '12345678'; // Hardcoded as per user request
   
-  if (VALID_SECRET && secretToken !== VALID_SECRET) {
+  if (secretToken !== VALID_SECRET) {
     console.warn("Unauthorized webhook attempt");
     return res.status(403).json({ ok: false, description: 'Unauthorized' });
   }
@@ -28,7 +28,6 @@ export default async function handler(req, res) {
   console.log("Received Zalo Webhook:", JSON.stringify(payload));
 
   // 2. Extract Message Info
-  // Expected structure based on docs: { result: { event_name: '...', message: { text: '...', from: { id: '...' } } } }
   const event = payload.result;
   if (!event || event.event_name !== 'message.text.received') {
     return res.status(200).json({ ok: true, description: 'Event ignored' });
@@ -37,9 +36,10 @@ export default async function handler(req, res) {
   const messageText = event.message.text.trim();
   const fromUid = event.message.from.id;
   const displayName = event.message.from.display_name || 'Người dùng';
+  const BOT_TOKEN = process.env.ZALO_BOT_TOKEN;
 
-  // 3. Logic: Check for Sync Code pattern "Nhập ID {code}" or just "{code}"
-  // Example: "ID 123456"
+  // 3. Logic: Check for General "ID" Keyword OR Specific Sync Code
+  const isGeneralIdRequest = messageText.toLowerCase().includes('id');
   const syncMatch = messageText.match(/ID\s?(\d{6})/i) || messageText.match(/^(\d{6})$/);
   
   if (syncMatch) {
@@ -48,7 +48,6 @@ export default async function handler(req, res) {
     const doc = await syncRef.get();
 
     if (doc.exists && doc.data().status === 'pending') {
-      // Update Firestore to complete sync
       await syncRef.update({
         status: 'completed',
         chat_id: fromUid,
@@ -56,22 +55,31 @@ export default async function handler(req, res) {
         linked_at: admin.firestore.FieldValue.serverTimestamp()
       });
 
-      // 4. Send confirmation back to user via Zalo
-      // We need the Bot Token for this (stored in Env or fetched from config)
-      const BOT_TOKEN = process.env.ZALO_BOT_TOKEN;
       if (BOT_TOKEN) {
         await fetch(`https://bot-api.zaloplatforms.com/bot${BOT_TOKEN}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             chat_id: fromUid,
-            text: `✅ Nhập ID thành công!\nChào ${displayName}, tài khoản Zalo của bạn đã được liên kết với IRIS AI.\nHãy quay lại trình duyệt để tiếp tục.`
+            text: `✅ Nhập ID thành công!\nChào ${displayName}, IRIS đã nhận dạng được ID của bạn.\nHãy quay lại trình duyệt để tiếp tục.`
           })
         });
       }
-
       return res.status(200).json({ ok: true, result: 'Sync completed' });
     }
+  }
+
+  // Handle general "Any message with ID" as requested
+  if (isGeneralIdRequest && BOT_TOKEN) {
+    await fetch(`https://bot-api.zaloplatforms.com/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: fromUid,
+        text: `✅ Nhập ID thành công!\nChào ${displayName},\nID Zalo của ngài là: ${fromUid}\n\nHãy sao chép mã này dán vào website IRIS AI để hoàn tất thiết lập.`
+      })
+    });
+    return res.status(200).json({ ok: true, result: 'ID Sent' });
   }
 
   // Default response (acknowledge receipt)
