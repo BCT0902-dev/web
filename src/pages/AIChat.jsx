@@ -180,6 +180,12 @@ const AIChat = () => {
                   }
 
                   const data = await response.json();
+
+                  if (data.error?.message?.toLowerCase().includes('expired')) {
+                    aiResponseContent = "⚠️ API KEY ĐÃ HẾT HẠN: Vui lòng lấy Key mới từ Google AI Studio và cập nhật trong Dashboard.";
+                    success = false;
+                    break; 
+                  }
                   if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
                     aiResponseContent = data.candidates[0].content.parts[0].text;
                     success = true;

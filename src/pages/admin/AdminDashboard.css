@@ -8,12 +8,15 @@
 
 .admin-sidebar {
   width: 280px;
+  height: 100vh;
   background: rgba(10, 10, 12, 0.95);
   border-right: 1px solid var(--bg-glass-border);
   display: flex;
   flex-direction: column;
   padding: 2rem 0;
   z-index: 10;
+  position: sticky;
+  top: 0;
 }
 
 .admin-brand {
@@ -139,24 +142,51 @@
   text-align: center;
 }
 
-.admin-content {
-  flex: 1;
-  padding: 3rem 5%;
-  overflow-y: auto;
-  background: radial-gradient(circle at top right, rgba(var(--accent-rgb), 0.05), transparent);
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.save-btn-top {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.8rem 1.5rem;
+  background: var(--accent-main);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.save-btn-top:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px var(--accent-glow);
 }
 
 .admin-header h1 {
-  font-size: 2rem;
+  font-size: 1.8rem;
   letter-spacing: 4px;
   font-family: var(--font-mono);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.3rem;
   color: var(--accent-main);
   text-transform: uppercase;
 }
 
+.admin-header p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
 .admin-frame {
-  padding: 3rem;
+  padding: 2rem;
   min-height: 500px;
 }
 

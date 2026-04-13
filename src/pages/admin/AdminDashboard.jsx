@@ -211,6 +211,11 @@ const AdminDashboard = () => {
           });
           const data = await response.json();
           
+          if (data.error?.message?.toLowerCase().includes('expired')) {
+            setApiTestStatus(prev => ({ ...prev, gemini: '⚠️ LỖI: API KEY ĐÃ HẾT HẠN! Hãy lấy Key mới từ Google AI Studio.' }));
+            return;
+          }
+
           if (response.ok && data.candidates) {
             setApiTestStatus(prev => ({ ...prev, gemini: `✅ THÀNH CÔNG: Đã xác minh ${t.ver}/${t.model}!` }));
             success = true;
@@ -573,8 +578,17 @@ const AdminDashboard = () => {
 
       <main className="admin-content">
         <header className="admin-header">
-          <h1>{tabs.find(t => t.id === activeTab)?.label}</h1>
-          <p>Thiết lập hệ thống BCT0902 - Core Console.</p>
+          <div className="admin-header-main">
+            <h1>{tabs.find(t => t.id === activeTab)?.label}</h1>
+            <p>Thiết lập hệ thống BCT0902 - Core Console.</p>
+          </div>
+          
+          <div className="admin-header-actions">
+            <button className="save-btn-top shadow-glow" onClick={handleSave} disabled={isSaving}>
+              <Save size={18} />
+              <span>{isSaving ? 'ĐANG LƯU...' : 'LƯU CẤU HÌNH'}</span>
+            </button>
+          </div>
         </header>
 
         <div className="admin-frame glass-panel">
