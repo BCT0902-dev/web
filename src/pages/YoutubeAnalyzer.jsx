@@ -126,25 +126,33 @@ const YoutubeAnalyzer = () => {
       if (selectedModel === 'gemini') {
           const payload = { contents: [{ parts: [{ text: prompt }] }] };
           
-          // Using robust v1 endpoint with fallback
-          let response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
-             method: 'POST',
-             headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify(payload)
-          });
-          
-          let data = await response.json();
-          
-          if (!response.ok || data.error) {
-            response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiKey}`, {
-               method: 'POST',
-               headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify(payload)
-            });
-            data = await response.json();
+          // ROBUST FALLBACK LOOP
+          const configs = [
+            { ver: 'v1', model: 'gemini-1.5-flash' },
+            { ver: 'v1beta', model: 'gemini-1.5-flash' },
+            { ver: 'v1', model: 'gemini-pro' }
+          ];
+
+          let success = false;
+          for (const cfg of configs) {
+            try {
+              const response = await fetch(`https://generativelanguage.googleapis.com/${cfg.ver}/models/${cfg.model}:generateContent?key=${geminiKey}`, {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify(payload)
+              });
+              const data = await response.json();
+              if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+                resultText = data.candidates[0].content.parts[0].text;
+                success = true;
+                break;
+              }
+            } catch (e) {
+              console.warn(`YT retry fail: ${cfg.model}`);
+            }
           }
-          
-          resultText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Lỗi phản hồi từ Gemini.";
+
+          if (!success) resultText = "Lỗi phản hồi từ Gemini sau khi thử các model.";
       } else if (selectedModel === 'groq') {
           if (!groq) throw new Error('Chưa cấu hình Groq Key!');
           const completion = await groq.chat.completions.create({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }] });

@@ -140,26 +140,58 @@ const AIChat = () => {
         const contextPrompt = `[Hệ thống: Bạn là IRIS, trợ lý AI thông minh có khả năng truy cập web thời gian thực. Giờ hệ thống: ${timeStr}. Nếu người dùng hỏi về tin tức, thời gian, hoặc sự kiện mới nhất, hãy sử dụng công cụ tìm kiếm của bạn để trả lời chính xác nhất.] ${displayPrompt}`;
 
         if (selectedModel === 'gemini') {
-          const payload = { 
-            contents: [{ parts: [{ text: contextPrompt }] }],
-            tools: [{ 
-              google_search_retrieval: { 
-                dynamic_retrieval_config: { 
-                  mode: "DYNAMIC", 
-                  dynamic_threshold: 0.1 
-                } 
-              } 
-            }]
-          };
-          
-          // Grounding requires v1beta
-          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
-             method: 'POST',
-             headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify(payload)
-          });
-          const data = await response.json();
-          aiResponseContent = data.candidates?.[0]?.content?.parts?.[0]?.text || "Lỗi phản hồi từ Gemini.";
+          // MULTI-MODEL AUTO-FALLBACK LOOP
+          const testConfigs = [
+            // Preferred: v1beta with Search Grounding
+            { 
+              ver: 'v1beta', 
+              model: 'gemini-1.5-flash',
+              payload: { 
+                contents: [{ parts: [{ text: contextPrompt }] }],
+                tools: [{ google_search_retrieval: { dynamic_retrieval_config: { mode: "DYNAMIC", dynamic_threshold: 0.1 } } }]
+              }
+            },
+            // Fallback 1: v1beta without grounding (in case tool is rejected)
+            { 
+              ver: 'v1beta', 
+              model: 'gemini-1.5-flash',
+              payload: { contents: [{ parts: [{ text: contextPrompt }] }] }
+            },
+            // Fallback 2: stable v1 (widest compatibility)
+            { 
+              ver: 'v1', 
+              model: 'gemini-1.5-flash',
+              payload: { contents: [{ parts: [{ text: contextPrompt }] }] }
+            },
+            // Fallback 3: legacy pro model
+            { 
+              ver: 'v1', 
+              model: 'gemini-pro',
+              payload: { contents: [{ parts: [{ text: contextPrompt }] }] }
+            }
+          ];
+
+          let success = false;
+          for (const config of testConfigs) {
+            try {
+              const response = await fetch(`https://generativelanguage.googleapis.com/${config.ver}/models/${config.model}:generateContent?key=${geminiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config.payload)
+              });
+              const data = await response.json();
+              
+              if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+                aiResponseContent = data.candidates[0].content.parts[0].text;
+                success = true;
+                break;
+              }
+            } catch (e) {
+              console.warn(`Retry loop: ${config.ver}/${config.model} failed, trying next...`);
+            }
+          }
+
+          if (!success) aiResponseContent = "❌ Lỗi: Hệ thống không thể kết nối với bất kỳ Model Gemini nào. Vui lòng kiểm tra API Key trong Dashboard.";
         } else if (selectedModel === 'groq') {
           const completion = await groq.chat.completions.create({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: contextPrompt }] });
           aiResponseContent = completion.choices[0].message.content;

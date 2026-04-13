@@ -188,39 +188,45 @@ const AdminDashboard = () => {
       return;
     }
     
-    setApiTestStatus(prev => ({ ...prev, gemini: 'Đang kiểm tra kết nối (v1/gemini-1.5-flash)...' }));
+    setApiTestStatus(prev => ({ ...prev, gemini: '🔍 Đang quét các Model khả dụng...' }));
     
+    const testCases = [
+      { ver: 'v1', model: 'gemini-1.5-flash' },
+      { ver: 'v1beta', model: 'gemini-1.5-flash' },
+      { ver: 'v1', model: 'gemini-pro' },
+      { ver: 'v1beta', model: 'gemini-pro' },
+      { ver: 'v1beta', model: 'gemini-1.5-flash-latest' }
+    ];
+
+    let success = false;
+
     try {
-      const payload = { contents: [{ parts: [{ text: "Say 'OK'" }] }] };
-      
-      // First attempt: stable v1
-      let response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      let data = await response.json();
-
-      // Second attempt: v1beta fallback if v1 fails or model not found
-      if (!response.ok || data.error) {
-        setApiTestStatus(prev => ({ ...prev, gemini: 'đang thử fallback v1beta...' }));
-        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${key}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        data = await response.json();
+      for (const t of testCases) {
+        setApiTestStatus(prev => ({ ...prev, gemini: `⏳ Đang thử ${t.ver}/${t.model}...` }));
+        try {
+          const payload = { contents: [{ parts: [{ text: "Say 'OK'" }] }] };
+          const response = await fetch(`https://generativelanguage.googleapis.com/${t.ver}/models/${t.model}:generateContent?key=${key}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await response.json();
+          
+          if (response.ok && data.candidates) {
+            setApiTestStatus(prev => ({ ...prev, gemini: `✅ THÀNH CÔNG: Đã xác minh ${t.ver}/${t.model}!` }));
+            success = true;
+            break;
+          }
+        } catch (e) {
+          console.error(`Test failed for ${t.ver}/${t.model}:`, e);
+        }
       }
 
-      if (response.ok && data.candidates) {
-        setApiTestStatus(prev => ({ ...prev, gemini: '✅ KẾT NỐI THÀNH CÔNG!' }));
-      } else {
-        const errorMsg = data.error?.message || 'Không rõ lỗi';
-        setApiTestStatus(prev => ({ ...prev, gemini: `❌ LỖI: ${errorMsg}` }));
+      if (!success) {
+        setApiTestStatus(prev => ({ ...prev, gemini: '❌ LỖI: Tất cả các Model thử nghiệm đều thất bại. Hãy kiểm tra lại Key.' }));
       }
     } catch (err) {
-      setApiTestStatus(prev => ({ ...prev, gemini: '❌ LỖI MẠNG: ' + err.message }));
+      setApiTestStatus(prev => ({ ...prev, gemini: '❌ LỖI HỆ THỐNG: ' + err.message }));
     }
   };
   
