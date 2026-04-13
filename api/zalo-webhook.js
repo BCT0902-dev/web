@@ -21,22 +21,13 @@ export default async function handler(req, res) {
   
   if (secretToken !== VALID_SECRET) {
     console.warn("Unauthorized webhook attempt");
-    return res.status(403).json({ ok: false, description: 'Unauthorized' });
+    return res.status(403).json({ ok: false, description: 'Unauthorized secret' });
   }
 
   const payload = req.body;
   console.log("--- ZALO WEBHOOK START ---");
   console.log("Headers:", JSON.stringify(req.headers));
   console.log("Payload:", JSON.stringify(payload));
-
-  // 1. Authenticate with Zalo Secret Token (MANDATORY)
-  const secretToken = req.headers['x-bot-api-secret-token'];
-  const VALID_SECRET = '12345678'; 
-  
-  if (secretToken !== VALID_SECRET) {
-    console.warn("Unauthorized webhook attempt: secret mismatch");
-    return res.status(403).json({ ok: false, description: 'Unauthorized secret' });
-  }
 
   // 2. Extract Event Info (Handling multiple Zalo payload variants)
   // Variant A: { result: { event_name, message: { text, from: { id } } } }
