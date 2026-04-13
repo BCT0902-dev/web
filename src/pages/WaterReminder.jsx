@@ -273,13 +273,42 @@ const WaterReminder = () => {
           </div>
 
           <div className="input-group-modern" style={{ marginTop: '1rem' }}>
-            <label style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontWeight: 'bold' }}>
-               <span>ZALO CHAT ID</span>
-               <button onClick={() => setShowSyncModal(true)} style={{ background: 'transparent', border: 'none', color: 'var(--accent-secondary)', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'bold' }}>
-                 <Bot size={16} /> LẤY ID TỪ BOT
-               </button>
-            </label>
-            <input type="text" placeholder="Dán ID Bot gửi vào đây..." value={formData.chat_id} onChange={e => setFormData({...formData, chat_id: e.target.value})} style={{ width: '100%', background: 'rgba(var(--accent-rgb), 0.05)', border: '1px solid var(--accent-main)', padding: '1.2rem', borderRadius: '16px', color: '#fff', fontWeight: 'bold', fontSize: '1.1rem', letterSpacing: '1px' }} />
+            <label style={{ color: '#fff', fontWeight: 'bold' }}>ZALO CHAT ID</label>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'stretch' }}>
+              <div style={{ position: 'relative', flex: 1 }}>
+                <input 
+                  type="text" 
+                  placeholder="Dán mã ID vào đây..." 
+                  value={formData.chat_id} 
+                  onChange={e => setFormData({...formData, chat_id: e.target.value})} 
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--accent-main)', padding: '1.2rem 4rem 1.2rem 1.2rem', borderRadius: '16px', color: '#fff', fontWeight: 'bold', fontSize: '1.1rem', letterSpacing: '1px' }} 
+                />
+                <button 
+                  onClick={async () => {
+                    try {
+                      const text = await navigator.clipboard.readText();
+                      setFormData(prev => ({ ...prev, chat_id: text }));
+                    } catch (err) {
+                      console.error("Paste failed", err);
+                    }
+                  }}
+                  style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--accent-main)', padding: '0.5rem 1rem', borderRadius: '10px', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 'bold' }}
+                >
+                  <Save size={14} /> DÁN
+                </button>
+              </div>
+              
+              <button 
+                onClick={() => startSync()} 
+                style={{ background: '#0068ff', color: '#fff', border: 'none', padding: '0 1.5rem', borderRadius: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.8rem', fontWeight: 'bold', minWidth: '160px', transition: 'all 0.3s ease', boxShadow: '0 10px 20px rgba(0,104,255,0.2)' }}
+                title="Yêu cầu Bot gửi ID cho ngài qua Zalo"
+              >
+                <Bot size={20} /> LẤY ID
+              </button>
+            </div>
+            <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Info size={14} /> Nếu chưa có ID, hãy nhấn <b>LẤY ID</b> để nhắn tin cho Bot.
+            </p>
           </div>
 
           <button 
