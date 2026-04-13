@@ -352,6 +352,37 @@ const AdminDashboard = () => {
     }
   };
 
+  const testOpenAIAPI = async () => {
+    const key = localConfig?.integrations?.openaiKey;
+    if (!key) {
+      setApiTestStatus(prev => ({ ...prev, openai: '⚠️ Lỗi: Chưa điền API Key!' }));
+      return;
+    }
+    setApiTestStatus(prev => ({ ...prev, openai: 'Đang xác thực với OpenAI Trust Server...' }));
+    try {
+      const payload = {
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: "Say 'TEST_OK'" }]
+      };
+      const response = await fetch(`https://api.openai.com/v1/chat/completions`, {
+         method: 'POST',
+         headers: { 
+           'Content-Type': 'application/json',
+           'Authorization': `Bearer ${key}`
+         },
+         body: JSON.stringify(payload)
+      });
+      const data = await response.json();
+      if (response.ok && data.choices) {
+        setApiTestStatus(prev => ({ ...prev, openai: '✅ KẾT NỐI THÀNH CÔNG!' }));
+      } else {
+        setApiTestStatus(prev => ({ ...prev, openai: `❌ LỖI: ${data.error?.message || response.statusText}` }));
+      }
+    } catch (err) {
+      setApiTestStatus(prev => ({ ...prev, openai: '❌ LỖI MẠNG: ' + err.message }));
+    }
+  };
+
   const compressImage = (base64) => {
     return new Promise((resolve) => {
       const img = new Image();

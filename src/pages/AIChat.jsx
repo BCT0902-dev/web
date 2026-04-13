@@ -60,10 +60,12 @@ const AIChat = () => {
   const geminiKey = config?.integrations?.geminiKey || import.meta.env.VITE_GEMINI_API_KEY;
   const deepseekKey = config?.integrations?.deepseekKey || import.meta.env.VITE_DEEPSEEK_API_KEY;
   const groqKey = config?.integrations?.groqKey;
+  const openaiKey = config?.integrations?.openaiKey;
 
   const genAI = new GoogleGenerativeAI(geminiKey || 'dummy_key');
   const groq = groqKey ? new OpenAI({ apiKey: groqKey, baseURL: 'https://api.groq.com/openai/v1', dangerouslyAllowBrowser: true }) : null;
   const deepseek = new OpenAI({ apiKey: deepseekKey || 'dummy_key', baseURL: 'https://api.deepseek.com', dangerouslyAllowBrowser: true });
+  const chatgpt = openaiKey ? new OpenAI({ apiKey: openaiKey, dangerouslyAllowBrowser: true }) : null;
 
   const getUserDisplayName = () => {
     if (currentUser?.displayName) return currentUser.displayName;
@@ -208,9 +210,15 @@ const AIChat = () => {
             aiResponseContent = "❌ Lỗi: Không thể kết nối với IRIS Core. Hãy đảm bảo ngài đã nhấn LƯU CẤU HÌNH trong Admin Dashboard sau khi TEST thành công.";
           }
         } else if (selectedModel === 'groq') {
+          if (!groq) throw new Error('Chưa cấu hình Groq Key!');
           const completion = await groq.chat.completions.create({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: contextPrompt }] });
           aiResponseContent = completion.choices[0].message.content;
+        } else if (selectedModel === 'chatgpt') {
+          if (!chatgpt) throw new Error('Chưa cấu hình OpenAI Key!');
+          const completion = await chatgpt.chat.completions.create({ model: "gpt-4o-mini", messages: [{ role: "user", content: contextPrompt }] });
+          aiResponseContent = completion.choices[0].message.content;
         } else {
+          if (!deepseek) throw new Error('Chưa cấu hình Deepseek Key!');
           const completion = await deepseek.chat.completions.create({ model: "deepseek-chat", messages: [{ role: "user", content: contextPrompt }] });
           aiResponseContent = completion.choices[0].message.content;
         }
@@ -328,10 +336,10 @@ const AIChat = () => {
                         className={`action-chip model-selector-btn ${selectedModel}`} 
                         onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
                         style={{ 
-                          background: selectedModel === 'gemini' ? '#4285F4' : (selectedModel === 'groq' ? '#F4511E' : '#673AB7'),
+                          background: selectedModel === 'gemini' ? '#4285F4' : (selectedModel === 'chatgpt' ? '#10a37f' : (selectedModel === 'groq' ? '#F4511E' : '#673AB7')),
                           color: '#fff',
                           fontWeight: 'bold',
-                          boxShadow: `0 0 15px ${selectedModel === 'gemini' ? 'rgba(66, 133, 244, 0.4)' : (selectedModel === 'groq' ? 'rgba(244, 81, 30, 0.4)' : 'rgba(103, 58, 183, 0.4)')}`
+                          boxShadow: `0 0 15px ${selectedModel === 'gemini' ? 'rgba(66, 133, 244, 0.4)' : (selectedModel === 'chatgpt' ? 'rgba(16, 163, 127, 0.4)' : (selectedModel === 'groq' ? 'rgba(244, 81, 30, 0.4)' : 'rgba(103, 58, 183, 0.4)'))}`
                         }}
                       >
                          <Cpu size={16} /> {selectedModel.toUpperCase()} <ChevronDown size={14} />
@@ -339,9 +347,10 @@ const AIChat = () => {
                       
                       {isModelDropdownOpen && (
                          <div className="model-dropdown-menu">
-                            {['gemini', 'deepseek', 'groq'].map(m => (
+                            {['gemini', 'chatgpt', 'deepseek', 'groq'].map(m => (
                                <div key={m} className={`dropdown-item ${selectedModel === m ? 'active' : ''}`} onClick={() => { setSelectedModel(m); setIsModelDropdownOpen(false); }}>
                                   {m === 'gemini' && <Sparkles size={14} color="#4285F4" />}
+                                  {m === 'chatgpt' && <Bot size={14} color="#10a37f" />}
                                   {m === 'deepseek' && <Brain size={14} color="#673AB7" />}
                                   {m === 'groq' && <Zap size={14} color="#F4511E" />}
                                   {m.toUpperCase()}
