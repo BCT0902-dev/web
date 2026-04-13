@@ -1270,6 +1270,74 @@ const AdminDashboard = () => {
                  </div>
               </motion.div>
             )}
+
+            {activeTab === 'maintenance' && (
+              <motion.div key="maintenance" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="config-section">
+                <div className="manager-header" style={{ marginBottom: '2.5rem' }}>
+                   <div style={{ display: 'flex', gap: '0.8rem', color: 'var(--accent-main)', alignItems: 'center' }}>
+                      <Lock size={24} /> <h3>QUẢN LÝ TRẠNG THÁI TRANG (LOCK SYSTEM)</h3>
+                   </div>
+                   <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Bật "Bảo trì" để tạm thời khóa quyền truy cập của khách vào các trang cụ thể.</p>
+                </div>
+
+                <div className="glass-panel" style={{ padding: '2rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                    {[
+                      'chat', 'youtube', 'chef', 'water', 'blog', 'chronicles', 'about', 'skills'
+                    ].map(key => (
+                      <div key={key} style={{ 
+                        background: 'rgba(255,255,255,0.02)', 
+                        padding: '1.5rem', 
+                        borderRadius: '16px', 
+                        border: '1px solid rgba(255,255,255,0.05)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '1rem'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: '0.8rem', letterSpacing: '1px' }}>
+                            {key === 'chat' ? 'IRIS AI CHAT' : 
+                             key === 'youtube' ? 'YOUTUBE ANALYZER' :
+                             key === 'chef' ? 'CHEF ASSISTANT' :
+                             key === 'water' ? 'WATER REMINDER' :
+                             key === 'blog' ? 'BLOG SYSTEM' :
+                             key === 'chronicles' ? 'PERSONAL CHRONICLES' : 
+                             key.toUpperCase()}
+                          </span>
+                          {(localConfig.maintenance && localConfig.maintenance[key]) ? <Lock size={16} color="var(--danger)" /> : <Unlock size={16} color="var(--success)" />}
+                        </div>
+                        
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <button 
+                            onClick={() => {
+                              const currentVal = (localConfig.maintenance && localConfig.maintenance[key]) || false;
+                              updateNested('maintenance', key, !currentVal);
+                            }}
+                            style={{ 
+                              flex: 1,
+                              padding: '0.8rem',
+                              borderRadius: '12px',
+                              background: (localConfig.maintenance && localConfig.maintenance[key]) ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                              color: (localConfig.maintenance && localConfig.maintenance[key]) ? '#ef4444' : '#10b981',
+                              border: `1px solid ${(localConfig.maintenance && localConfig.maintenance[key]) ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)'}`,
+                              fontWeight: 'bold',
+                              fontSize: '0.75rem',
+                              transition: 'all 0.3s ease'
+                            }}
+                          >
+                            {(localConfig.maintenance && localConfig.maintenance[key]) ? 'ĐANG KHÓA (BẢO TRÌ)' : 'ĐANG CÔNG KHAI'}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="api-config-alert" style={{ marginTop: '2rem', borderLeft: '4px solid var(--accent-main)' }}>
+                  <strong>LƯU Ý:</strong> Admin (là ngài) vẫn có thể truy cập các trang bị khóa để kiểm tra. Khách vãng lai sẽ thấy trang thông báo bảo trì.
+                </div>
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
       </main>
