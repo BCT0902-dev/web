@@ -17,85 +17,78 @@ export default async function handler(req, res) {
   }
 
   const payload = req.body || {};
-  console.log("--- ZALO WEBHOOK INCOMING ---");
-  console.log("Headers:", JSON.stringify(req.headers));
-  console.log("Body:", JSON.stringify(payload));
+  console.log("--- ZALO DEEP SCAN START ---");
+  console.log("Full Payload:", JSON.stringify(payload));
 
-  // 1. Authenticate (Loosened for debugging, supports both header variants)
-  const secretToken = req.headers['x-bot-api-secret-token'] || req.headers['x-zevents-signature'];
-  console.log("Secret/Signature received:", secretToken);
+  // 1. Hàm tự động tìm ID trong mọi ngóc ngách của dữ liệu
+  const findId = (obj) => {
+    if (!obj || typeof obj !== 'object') return null;
+    
+    // Thử các tên biến phổ biến trước
+    const commonKeys = ['id', 'uid', 'user_id', 'sender_id', 'from_id', 'from'];
+    for (let key of commonKeys) {
+      if (obj[key] && typeof obj[key] === 'string' && obj[key].length > 10) return obj[key];
+      if (obj[key] && typeof obj[key] === 'object' && obj[key].id) return obj[key].id;
+    }
 
-  // 2. EXTREME RESILIENT EXTRACTION
-  // Lùng sục mọi ngóc ngách để tìm ID người gửi
-  let fromUid = payload.sender?.id || 
-                payload.result?.message?.from?.id || 
-                payload.user_id || 
-                payload.sender_id || 
-                payload.from_id ||
-                payload.uid;
+    // Nếu không thấy, lùng sục toàn bộ object
+    for (let key in obj) {
+      if (typeof obj[key] === 'object') {
+        const found = findId(obj[key]);
+        if (found) return found;
+      } else if (typeof obj[key] === 'string' && obj[key].length > 10 && /^\d+$/.test(obj[key])) {
+        // Nếu là một chuỗi số dài, khả năng cao là ID
+        return obj[key];
+      }
+    }
+    return null;
+  };
 
-  let messageText = (payload.message?.text || 
-                     payload.result?.message?.text || 
-                     payload.message || 
-                     "").toString().trim();
+  const fromUid = findId(payload);
+  
+  let messageText = (
+    payload.message?.text || 
+    payload.result?.message?.text || 
+    payload.message || 
+    ""
+  ).toString().trim();
 
-  let eventName = payload.event_name || payload.result?.event_name || "unknown";
+  console.log(`DEEP SCAN RESULT -> Found ID: ${fromUid}, Msg: "${messageText}"`);
 
-  console.log(`EXTRACTED DATA -> UID: ${fromUid}, Msg: "${messageText}", Event: ${eventName}`);
-
-  // 3. Early Exit if we still can't find an ID
   if (!fromUid) {
-    console.error("FAILED TO LOCATE SENDER ID IN PAYLOAD");
-    return res.status(200).json({ ok: true, error: 'could_not_locate_id' });
+    console.error("CRITICAL: STILL CANNOT FIND ID IN PAYLOAD!");
+    return res.status(200).json({ ok: true, error: 'id_not_found_even_in_deep_scan' });
   }
 
   const BOT_TOKEN = process.env.ZALO_BOT_TOKEN;
   
-  // Helper to respond
   const reply = async (text) => {
-    if (!BOT_TOKEN) {
-      console.error("MISSING ZALO_BOT_TOKEN");
-      return;
-    }
+    if (!BOT_TOKEN) return console.error("MISSING BOT TOKEN");
     console.log(`Replying to ${fromUid}...`);
     try {
-      const response = await fetch(`https://bot-api.zaloplatforms.com/bot${BOT_TOKEN}/sendMessage`, {
+      await fetch(`https://bot-api.zaloplatforms.com/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: fromUid, text })
       });
-      const data = await response.json();
-      console.log("Zalo API Reply Result:", JSON.stringify(data));
-    } catch (e) {
-      console.error("Fetch Error:", e);
-    }
+    } catch (e) { console.error("Reply Error:", e); }
   };
 
-  // Logic match
-  const isIdReq = messageText.toLowerCase().includes('id');
-  const syncMatch = messageText.match(/(\d{6})/);
-
-  if (syncMatch) {
-    const code = syncMatch[1];
-    const syncRef = db.collection('zalo_sync').doc(code);
-    const snap = await syncRef.get();
-    if (snap.exists && snap.data().status === 'pending') {
-      await syncRef.update({
+  // Logic phản hồi
+  if (messageText.toLowerCase().includes('id') || messageText.match(/\d{6}/)) {
+    const syncMatch = messageText.match(/(\d{6})/);
+    if (syncMatch) {
+      const code = syncMatch[1];
+      await db.collection('zalo_sync').doc(code).update({
         status: 'completed',
         chat_id: fromUid,
         linked_at: admin.firestore.FieldValue.serverTimestamp()
-      });
-      await reply(`✅ KẾT NỐI THÀNH CÔNG!\nID của ngài đã được IRIS lưu trữ.\nChúc ngài một ngày tràn đầy năng lượng! 💧`);
-      return res.status(200).json({ ok: true });
+      }).catch(() => {});
+      await reply(`✅ THIẾT LẬP THÀNH CÔNG!\nIRIS đã kết nối với tài khoản của ngài.\nGiờ đây ngài có thể nhận lời nhắc uống nước tự động.`);
+    } else {
+      await reply(`✅ XÁC NHẬN KẾT NỐI\nID Zalo của ngài là: ${fromUid}\n\nNgài hãy dán mã này vào website IRIS AI để bắt đầu.`);
     }
   }
 
-  if (isIdReq) {
-    await reply(`✅ THÔNG TIN ĐỊNH DANH\nID Zalo của ngài là: ${fromUid}\n\nNgài hãy dán mã này vào website để hoàn tất thiết lập nhắc nhở AI.`);
-    return res.status(200).json({ ok: true });
-  }
-
-  // Acknowledge all other events
-  console.log("Unhandled event type or content.");
   return res.status(200).json({ ok: true });
 }
