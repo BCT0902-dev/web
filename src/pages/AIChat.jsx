@@ -143,10 +143,10 @@ const AIChat = () => {
 
         if (selectedModel === 'gemini') {
           // ROBUST KEY VALIDATION
+          let success = false;
           const activeKey = geminiKey?.trim();
           if (!activeKey || activeKey === 'dummy_key') {
             aiResponseContent = "⚠️ CHƯA CẤU HÌNH API KEY: Vui lòng vào Dashboard, điền Gemini Key và nhấn LƯU để bắt đầu chat.";
-            success = false;
           } else {
             const testConfigs = [
               { ver: 'v1beta', model: 'gemini-flash-latest', useGrounding: true },
