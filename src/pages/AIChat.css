@@ -499,3 +499,44 @@
     height: calc(100% - 3rem);
   }
 }
+
+/* IRIS Mode Group Styles */
+.iris-mode-group {
+  display: flex;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 4px;
+  border-radius: 14px;
+  gap: 4px;
+}
+
+.iris-mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Chakra Petch', sans-serif;
+}
+
+.iris-mode-btn:hover {
+  background: rgba(0, 0, 0, 0.03);
+  color: #1a1a1a;
+}
+
+.iris-mode-btn.active {
+  background: white;
+  color: #1a1a1a;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.iris-mode-btn.active svg {
+  color: #3b82f6;
+  filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.4));
+}

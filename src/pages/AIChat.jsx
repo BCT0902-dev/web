@@ -45,11 +45,11 @@ const AIChat = () => {
   const [isDeepThink, setIsDeepThink] = useState(false);
   const [isImageMode, setIsImageMode] = useState(false);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('groq');
-  const [chatHistory, setChatHistory] = useState([]);
   const [activeChatId, setActiveChatId] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
+  const [chatMode, setChatMode] = useState('fast'); // 'fast' | 'reasoning'
+  const [routingInfo, setRoutingInfo] = useState('');
   
   const messagesEndRef = useRef(null);
   const { currentUser: authUser, isAdmin } = useAuth();
@@ -108,6 +108,44 @@ const AIChat = () => {
     return () => unsubscribe();
   }, [currentUser, activeChatId]);
 
+  const classifyIntent = async (prompt) => {
+    if (!groq) return 'GENERAL';
+    try {
+      const completion = await groq.chat.completions.create({
+        model: "llama-3.3-70b-versatile",
+        messages: [{ 
+          role: "system", 
+          content: "Classify user intent: 'SEARCH' (current events/news), 'REASONING' (code/math/complex), 'GENERAL' (greetings/simple). Return ONLY the token." 
+        }, { 
+          role: "user", 
+          content: prompt 
+        }],
+        max_tokens: 5
+      });
+      const intent = completion.choices[0].message.content.trim().toUpperCase();
+      return intent.includes('SEARCH') ? 'SEARCH' : (intent.includes('REASONING') ? 'REASONING' : 'GENERAL');
+    } catch (e) {
+      return 'GENERAL';
+    }
+  };
+
+  const executePawanRequest = async (prompt, controller) => {
+    const activeKey = pawanKey?.trim();
+    if (!activeKey) throw new Error('No Pawan Key');
+    const response = await fetch(`https://api.pawan.krd/v1/chat/completions`, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${activeKey}` },
+      body: JSON.stringify({
+        model: config?.integrations?.pawanModel || "openai/gpt-oss-20b",
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error?.message || 'Pawan Error');
+    return data.choices[0].message.content;
+  };
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
     
@@ -115,6 +153,7 @@ const AIChat = () => {
     const tempInput = input;
     setInput('');
     setIsLoading(true);
+    setRoutingInfo('IRIS đang phân tích yêu cầu...');
 
     if (currentUser && activeChatId) {
       await addDoc(collection(db, 'users', currentUser.uid, 'chats', activeChatId, 'messages'), userMsg);
@@ -125,128 +164,85 @@ const AIChat = () => {
     try {
       let aiResponseContent = '';
       let imageUrl = '';
-      let displayPrompt = tempInput;
       
-      if (isDeepThink) {
-        displayPrompt = `[DEEP THINK MODE - Hãy phân tích sâu và tìm kiếm thông tin mới nhất] ${tempInput}`;
-      }
-
       if (isImageMode) {
-        // IMAGE GENERATION SIMULATION (IRIS Visual Studio)
-        await new Promise(r => setTimeout(r, 2000)); // Simulate GPU processing
+        setRoutingInfo('Đang chuyển hướng sang IRIS Visual Studio...');
+        await new Promise(r => setTimeout(r, 2000));
         imageUrl = '/iris_visual_studio_demo_1776002252586.png';
         aiResponseContent = `🎨 **IRIS Visual Studio**\n\nHình ảnh đã được tạo dựa trên mô tả: "${tempInput}"\n\n![IRIS AI Generated Image](${imageUrl})`;
       } else {
-        // INJECT FORCEFUL RESEARCHER CONTEXT & GROUNDING 
+        const intent = await classifyIntent(tempInput);
         const now = new Date();
         const timeStr = now.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
-        const contextPrompt = `[HỆ THỐNG TỐI THƯỢNG: Bạn là IRIS AI Researcher. Nhiệm vụ của bạn là cung cấp thông tin CHÍNH XÁC và MỚI NHẤT. BẮT BUỘC sử dụng công cụ Google Search cho mọi câu hỏi về thời gian, tin tức, hoặc thực tế hiện tại. Không bao giờ trả lời dựa trên kiến thức cũ nếu có thể tìm kiếm thông tin mới hơn. Giờ hệ thống hiện tại tại Việt Nam: ${timeStr}].\n\nNgười dùng hỏi: ${displayPrompt}`;
+        
+        let depthInstruction = isDeepThink 
+          ? "PHÂN TÍCH CHUYÊN SÂU: Trả lời cực kỳ chi tiết, giải thích rõ ràng và cung cấp thêm thông tin hữu ích." 
+          : "TỐI ƯU TỐC ĐỘ: Trả lời cực kỳ ngắn gọn, đơn giản, tập trung vào sự chính xác tuyệt đối.";
 
-        if (selectedModel === 'gemini') {
-          // ROBUST KEY VALIDATION
-          let success = false;
+        const contextPrompt = `[HỆ THỐNG IRIS: ${depthInstruction}. Giờ hệ thống: ${timeStr}].\n\nNgười dùng hỏi: ${tempInput}`;
+
+        // ROUTING LOGIC
+        if (intent === 'SEARCH') {
+          setRoutingInfo('Phát hiện nhu cầu tìm kiếm thực tế -> Điều phối Gemini...');
           const activeKey = geminiKey?.trim();
           if (!activeKey || activeKey === 'dummy_key') {
-            aiResponseContent = "⚠️ CHƯA CẤU HÌNH API KEY: Vui lòng vào Dashboard, điền Gemini Key và nhấn LƯU để bắt đầu chat.";
+            aiResponseContent = "⚠️ CHƯA CẤU HÌNH GEMINI KEY: Cần Gemini để thực hiện tìm kiếm mạng.";
           } else {
-            const testConfigs = [
-              { ver: 'v1beta', model: 'gemini-flash-latest', useGrounding: true },
-              { ver: 'v1beta', model: 'gemini-pro-latest', useGrounding: true },
-              { ver: 'v1beta', model: 'gemini-flash-latest', useGrounding: false },
-              { ver: 'v1', model: 'gemini-1.5-flash', useGrounding: false }
-            ];
-
-            for (const cfg of testConfigs) {
-              // Exponential backoff retry for transient errors (like 503)
-              for (let attempt = 0; attempt < 2; attempt++) {
-                try {
-                  const payload = {
-                    contents: [{ parts: [{ text: contextPrompt }] }]
-                  };
-                  if (cfg.useGrounding) {
-                    payload.tools = [{ 
-                      google_search_retrieval: { 
-                        dynamic_retrieval_config: { mode: "DYNAMIC", dynamic_threshold: 0 } 
-                      } 
-                    }];
-                  }
-
-                  const response = await fetch(`https://generativelanguage.googleapis.com/${cfg.ver}/models/${cfg.model}:generateContent?key=${activeKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                  });
-                  
-                  if (response.status === 503) {
-                    await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
-                    continue; 
-                  }
-
-                  const data = await response.json();
-
-                  if (data.error?.message?.toLowerCase().includes('expired')) {
-                    aiResponseContent = "⚠️ API KEY ĐÃ HẾT HẠN: Vui lòng lấy Key mới từ Google AI Studio và cập nhật trong Dashboard.";
-                    success = false;
-                    break; 
-                  }
-                  if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
-                    aiResponseContent = data.candidates[0].content.parts[0].text;
-                    success = true;
-                    break;
-                  } else {
-                    // Log error detail locally for potential remote debugging
-                    console.error(`Gemini Error (${cfg.model}):`, data.error || 'Unknown error');
-                    break;
-                  }
-                } catch (e) {
-                  console.error(`Network error:`, e);
-                  break; 
-                }
-              }
-              if (success) break;
-            }
-          }
-
-          if (!success && !aiResponseContent) {
-            aiResponseContent = "❌ Lỗi: Không thể kết nối với IRIS Core. Hãy đảm bảo ngài đã nhấn LƯU CẤU HÌNH trong Admin Dashboard sau khi TEST thành công.";
-          }
-        } else if (selectedModel === 'groq') {
-          if (!groq) throw new Error('Chưa cấu hình Groq Key!');
-          const completion = await groq.chat.completions.create({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: contextPrompt }] });
-          aiResponseContent = completion.choices[0].message.content;
-        } else if (selectedModel === 'chatgpt') {
-          if (!chatgpt) throw new Error('Chưa cấu hình OpenAI Key!');
-          const completion = await chatgpt.chat.completions.create({ model: "gpt-4o-mini", messages: [{ role: "user", content: contextPrompt }] });
-          aiResponseContent = completion.choices[0].message.content;
-        } else if (selectedModel === 'pawan') {
-          const activeKey = pawanKey?.trim();
-          if (!activeKey) {
-            aiResponseContent = "⚠️ CHƯA CẤU HÌNH PAWAN API KEY: Vui lòng vào Admin Dashboard để điền Key.";
-          } else {
-            const response = await fetch(`https://api.pawan.krd/v1/chat/completions`, {
+            const payload = {
+              contents: [{ parts: [{ text: contextPrompt }] }],
+              tools: [{ google_search_retrieval: { dynamic_retrieval_config: { mode: "DYNAMIC", dynamic_threshold: 0 } } }]
+            };
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${activeKey}`, {
               method: 'POST',
-              headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${activeKey}`
-              },
-              body: JSON.stringify({
-                model: config?.integrations?.pawanModel || "openai/gpt-oss-20b",
-                messages: [{ role: "user", content: contextPrompt }]
-              })
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
             });
             const data = await response.json();
-            if (response.ok && data.choices?.[0]?.message?.content) {
-              aiResponseContent = data.choices[0].message.content;
-            } else {
-              aiResponseContent = `❌ Lỗi Pawan API: ${data.error?.message || response.statusText}`;
-            }
+            aiResponseContent = data.candidates?.[0]?.content?.parts?.[0]?.text || "❌ Lỗi tìm kiếm thực tế.";
           }
-        } else {
-          if (!deepseek) throw new Error('Chưa cấu hình Deepseek Key!');
-          const completion = await deepseek.chat.completions.create({ model: "deepseek-chat", messages: [{ role: "user", content: contextPrompt }] });
+        } else if (chatMode === 'reasoning' || intent === 'REASONING') {
+          setRoutingInfo('Phát hiện nhu cầu suy luận sâu -> Điều phối DeepSeek-V3...');
+          if (!deepseekKey) throw new Error('Chưa cấu hình Deepseek Key!');
+          const completion = await deepseek.chat.completions.create({ 
+            model: "deepseek-chat", 
+            messages: [{ role: "user", content: contextPrompt }] 
+          });
           aiResponseContent = completion.choices[0].message.content;
+        } else {
+          // RACE MODE for Fast Response
+          setRoutingInfo('Chế độ Nhanh -> Đang đua tốc độ giữa các IRIS Node...');
+          const controller = new AbortController();
+          
+          const requests = [];
+          if (groq) requests.push(groq.chat.completions.create({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: contextPrompt }] }).then(res => res.choices[0].message.content));
+          if (pawanKey) requests.push(executePawanRequest(contextPrompt, controller));
+          if (deepseekKey) requests.push(deepseek.chat.completions.create({ model: "deepseek-chat", messages: [{ role: "user", content: contextPrompt }] }).then(res => res.choices[0].message.content));
+
+          try {
+            aiResponseContent = await Promise.any(requests);
+            controller.abort(); // Cancel others
+          } catch (e) {
+            aiResponseContent = "❌ Tất cả các Node đều gặp sự cố. Vui lòng kiểm tra lại API.";
+          }
         }
       }
+
+      const aiMsg = { role: 'assistant', content: aiResponseContent, imageUrl, timestamp: serverTimestamp() };
+      if (currentUser && activeChatId) {
+        await addDoc(collection(db, 'users', currentUser.uid, 'chats', activeChatId, 'messages'), aiMsg);
+        await updateDoc(doc(db, 'users', currentUser.uid, 'chats', activeChatId), { lastUpdate: serverTimestamp() });
+      } else {
+        setMessages(prev => [...prev, aiMsg]);
+      }
+    } catch (error) {
+      console.error(error);
+      setMessages(prev => [...prev, { role: 'assistant', content: `❌ Lỗi hệ thống: ${error.message}`, timestamp: serverTimestamp() }]);
+    } finally {
+      setIsLoading(false);
+      setIsImageMode(false);
+      setRoutingInfo('');
+    }
+  };
 
       const aiMsg = { 
         role: 'assistant', 
@@ -350,7 +346,7 @@ const AIChat = () => {
                   <span></span><span></span><span></span>
                 </div>
                 <span className="thinking-text">
-                  {isDeepThink ? "IRIS đang nghiên cứu chuyên sâu..." : (isImageMode ? "IRIS Visual Studio đang vẽ..." : "IRIS đang tư duy...")}
+                  {routingInfo || (isImageMode ? "IRIS Visual Studio đang vẽ..." : (isDeepThink ? "IRIS đang nghiên cứu chuyên sâu..." : "IRIS đang tư duy..."))}
                 </span>
               </div>
             </motion.div>
@@ -375,35 +371,20 @@ const AIChat = () => {
              
              <div className="iris-input-actions">
                 <div className="action-left">
-                   <div className="model-dropdown-wrapper">
-                      <button 
-                        className={`action-chip model-selector-btn ${selectedModel}`} 
-                        onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-                         style={{ 
-                          background: selectedModel === 'gemini' ? '#4285F4' : (selectedModel === 'chatgpt' ? '#10a37f' : (selectedModel === 'pawan' ? '#00f0ff' : (selectedModel === 'groq' ? '#F4511E' : '#673AB7'))),
-                          color: selectedModel === 'pawan' ? '#000' : '#fff',
-                          fontWeight: 'bold',
-                          boxShadow: `0 0 15px ${selectedModel === 'gemini' ? 'rgba(66, 133, 244, 0.4)' : (selectedModel === 'chatgpt' ? 'rgba(16, 163, 127, 0.4)' : (selectedModel === 'pawan' ? 'rgba(0, 240, 255, 0.6)' : (selectedModel === 'groq' ? 'rgba(244, 81, 30, 0.4)' : 'rgba(103, 58, 183, 0.4)')))}`
-                        }}
-                      >
-                         <Cpu size={16} /> {selectedModel === 'pawan' ? 'IRIS GPT' : selectedModel.toUpperCase()} <ChevronDown size={14} />
-                      </button>
-                      
-                      {isModelDropdownOpen && (
-                         <div className="model-dropdown-menu">
-                            {['gemini', 'chatgpt', 'pawan', 'deepseek', 'groq'].map(m => (
-                               <div key={m} className={`dropdown-item ${selectedModel === m ? 'active' : ''}`} onClick={() => { setSelectedModel(m); setIsModelDropdownOpen(false); }}>
-                                  {m === 'gemini' && <Sparkles size={14} color="#4285F4" />}
-                                  {m === 'chatgpt' && <Bot size={14} color="#10a37f" />}
-                                  {m === 'pawan' && <Zap size={14} color="#00f0ff" />}
-                                  {m === 'deepseek' && <Brain size={14} color="#673AB7" />}
-                                  {m === 'groq' && <Zap size={14} color="#F4511E" />}
-                                  {m === 'pawan' ? 'IRIS GPT (PRO)' : m.toUpperCase()}
-                               </div>
-                            ))}
-                         </div>
-                      )}
-                   </div>
+                    <div className="iris-mode-group">
+                       <button 
+                         className={`iris-mode-btn ${chatMode === 'fast' ? 'active' : ''}`}
+                         onClick={() => setChatMode('fast')}
+                       >
+                         <Zap size={14} /> IRIS (NHANH)
+                       </button>
+                       <button 
+                         className={`iris-mode-btn ${chatMode === 'reasoning' ? 'active' : ''}`}
+                         onClick={() => setChatMode('reasoning')}
+                       >
+                         <Brain size={14} /> IRIS (SUY LUẬN)
+                       </button>
+                    </div>
 
                     <div 
                        className={`action-chip ${isDeepThink ? 'active' : ''}`}
