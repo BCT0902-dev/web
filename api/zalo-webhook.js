@@ -10,17 +10,23 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
+export default async function handler(req, res) {
+  // Only allow POST
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
   const payload = req.body || {};
   console.log("--- ZALO WEBHOOK INCOMING ---");
   console.log("Headers:", JSON.stringify(req.headers));
   console.log("Body:", JSON.stringify(payload));
 
-  // 1. Authenticate (Loosened for initial sync/debugging)
+  // 1. Authenticate (Loosened for debugging, supports both header variants)
   const secretToken = req.headers['x-bot-api-secret-token'] || req.headers['x-zevents-signature'];
   console.log("Secret/Signature received:", secretToken);
 
   // 2. EXTREME RESILIENT EXTRACTION
-  // Try to find ANY ID-like field if standard ones fail
+  // Lùng sục mọi ngóc ngách để tìm ID người gửi
   let fromUid = payload.sender?.id || 
                 payload.result?.message?.from?.id || 
                 payload.user_id || 
