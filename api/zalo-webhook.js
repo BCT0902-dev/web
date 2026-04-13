@@ -88,6 +88,9 @@ export default async function handler(req, res) {
     } else {
       await reply(`✅ XÁC NHẬN KẾT NỐI\nID Zalo của ngài là: ${fromUid}\n\nNgài hãy dán mã này vào website IRIS AI để bắt đầu.`);
     }
+  } else {
+    // FALLBACK: When user sends random message and it's not an ID request
+    await reply(`🤖 Chào ngài, IRIS AI đã nhận được tin nhắn.\n\nĐể liên kết Zalo Bot và nhận nhắc nhở tự động, ngài hãy truy cập trang web: https://www.bct0902.top của Bùi Công Tới để thực hiện lập kế hoạch AI nhé! 💧`);
   }
 
   return res.status(200).json({ ok: true });

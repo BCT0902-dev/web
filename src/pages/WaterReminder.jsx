@@ -139,7 +139,7 @@ const WaterReminder = () => {
       const scheduleStr = result.schedule.map(s => `🔹 ${s.time}: ${s.amount} (${s.note})`).join('\n');
       const message = `💧 BẢN TIN HYDRATION - IRIS AI\n\nChào ${formData.name},\nTổng lượng nước cần nạp hôm nay: ${result.total} Lít.\n\nLỊCH TRÌNH:\n${scheduleStr}\n\nChúc bạn một ngày làm việc tràn đầy năng lượng! 🚀`;
 
-      const response = await fetch(`https://bot-api.zaloplatforms.com/bot${zaloToken}/sendMessage`, {
+      const response = await fetch('/api/send-notif', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
