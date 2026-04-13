@@ -40,6 +40,20 @@ const Home = () => (
 function AppRoutes() {
   const [isInitialLoading, setIsInitialLoading] = React.useState(true);
   const location = useLocation();
+  
+  // Fix for cross-page navigation to home sections
+  React.useEffect(() => {
+    if (location.hash && location.pathname === '/') {
+      const id = location.hash.replace('#', '');
+      setTimeout(() => {
+        const element = document.getElementById(id);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 300); // Wait for page transition
+    }
+  }, [location]);
+
   const isLoginPage = location.pathname === '/login';
   const isAdminPage = location.pathname.startsWith('/admin');
   const isUtilitiesPage = location.pathname.startsWith('/utilities');

@@ -56,6 +56,8 @@ const AdminDashboard = () => {
   // Newsletter Logic
   const [newsletterContent, setNewsletterContent] = useState('');
   const [newsletterLoading, setNewsletterLoading] = useState(false);
+  const [isSyncingNews, setIsSyncingNews] = useState(false);
+  const [syncStatus, setSyncStatus] = useState('');
 
   // Analytics Logic
   const [analyticsData, setAnalyticsData] = useState([]);
@@ -185,13 +187,13 @@ const AdminDashboard = () => {
       setApiTestStatus(prev => ({ ...prev, gemini: '⚠️ Lỗi: Chưa điền API Key!' }));
       return;
     }
-      setApiTestStatus(prev => ({ ...prev, gemini: 'Đang kiểm tra bằng REST v1/gemini-1.5-flash...' }));
+      setApiTestStatus(prev => ({ ...prev, gemini: 'Đang kiểm tra bằng REST v1beta/gemini-1.5-flash...' }));
       try {
         const payload = {
           contents: [{ parts: [{ text: "Say 'TEST_OK'" }] }]
         };
-        // Use v1 (GA) for maximum stability with gemini-1.5-flash
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`, {
+        // Use v1beta for better compatibility with gemini-1.5-flash
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
            method: 'POST',
            headers: { 'Content-Type': 'application/json' },
            body: JSON.stringify(payload)
@@ -207,6 +209,62 @@ const AdminDashboard = () => {
     }
   };
   
+  const triggerAINewsSync = async () => {
+    const key = localConfig?.integrations?.geminiKey;
+    if (!key) {
+        setSyncStatus('⚠️ Lỗi: Thiếu API Key!');
+        return;
+    }
+
+    setIsSyncingNews(true);
+    setSyncStatus('🔍 Đang thu thập tin tức công nghệ mới nhất...');
+
+    try {
+        const prompt = `Bạn là biên tập viên tin tức công nghệ. Hãy tìm và tổng hợp 3 tin tức công nghệ mới nhất (tháng 4/2026) tại Việt Nam và Thế giới. 
+        Mỗi tin tức cần: Tiêu đề lôi cuốn, Tóm tắt ngắn gọn, Nội dung chi tiết (khoảng 200 chữ), Danh mục (AI, Web, Hardware, hoặc Software), và từ khóa.
+        Trả về kết quả dưới dạng JSON mảng các đối tượng: 
+        [ { "title": "...", "excerpt": "...", "content": "...", "category": "...", "keywords": ["..."] } ] 
+        Lưu ý: Chỉ trả về JSON, không kèm văn bản khác.`;
+
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+
+        const data = await response.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        
+        if (!text) throw new Error('Không nhận được phản hồi từ AI');
+        
+        // Extract JSON from potential code blocks
+        const jsonMatch = text.match(/\[[\s\S]*\]/);
+        const newsArray = JSON.parse(jsonMatch ? jsonMatch[0] : text);
+
+        setSyncStatus('🚀 Đang đăng bài lên Bảng tin...');
+
+        for (const news of newsArray) {
+            const docId = `ai-news-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+            const blogRef = doc(db, 'blog_posts', docId);
+            await setDoc(blogRef, {
+                ...news,
+                date: new Date().toLocaleDateString('vi-VN'),
+                author: 'IRIS Intelligence AI',
+                thumbnail: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=800', 
+                published: true
+            });
+        }
+
+        setSyncStatus('✅ THÀNH CÔNG! Đã cập nhật 3 bản tin mới.');
+        setTimeout(() => setSyncStatus(''), 5000);
+    } catch (err) {
+        console.error(err);
+        setSyncStatus(`❌ THẤT BẠI: ${err.message}`);
+    } finally {
+        setIsSyncingNews(false);
+    }
+  };
+
   const testDeepseekAPI = async () => {
     const key = localConfig?.integrations?.deepseekKey;
     if (!key) {
@@ -446,7 +504,8 @@ const AdminDashboard = () => {
     { id: 'integrations', label: 'TÍCH HỢP AI', icon: <Key size={18} /> },
     { id: 'newsletter', label: 'BẢN TIN AI', icon: <Mail size={18} /> },
     { id: 'analytics', label: 'THỐNG KÊ TRAFFIC', icon: <BarChart3 size={18} /> },
-    { id: 'users', label: 'QUẢN LÝ TÀI KHOẢN', icon: <Users size={18} /> }
+    { id: 'users', label: 'QUẢN LÝ TÀI KHOẢN', icon: <Users size={18} /> },
+    { id: 'ai-intelligence', label: 'HỆ THỐNG AI', icon: <Brain size={18} /> }
   ];
 
   if (loading || !localConfig) {
@@ -936,6 +995,68 @@ const AdminDashboard = () => {
                        )}
                      </tbody>
                    </table>
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === 'ai-intelligence' && (
+              <motion.div key="ai-intelligence" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="config-section">
+                <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--accent-main)' }}>
+                  <Brain size={64} className="text-glow" style={{ marginBottom: '1.5rem', color: 'var(--accent-main)' }} />
+                  <h2 style={{ fontSize: '2rem', marginBottom: '1rem', fontFamily: 'Chakra Petch' }}>HỆ THỐNG TRÍ TUỆ NHÂN TẠO IRIS</h2>
+                  <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto 2.5rem' }}>
+                    Kích hoạt AI để tự động nghiên cứu xu hướng công nghệ toàn cầu, tổng hợp tin tức từ các nguồn uy tín tại Việt Nam và Thế giới, sau đó tự động biên tập bài viết lên Bảng tin.
+                  </p>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
+                    <button 
+                      className="save-btn" 
+                      style={{ padding: '1.2rem 3rem', fontSize: '1.1rem', borderRadius: '50px', background: 'var(--accent-main)', color: '#fff' }}
+                      onClick={triggerAINewsSync}
+                      disabled={isSyncingNews}
+                    >
+                      {isSyncingNews ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                          <Zap className="spin" size={20} /> ĐANG ĐỒNG BỘ...
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                          <Sparkles size={20} /> ĐỒNG BỘ BẢN TIN AI NGAY
+                        </div>
+                      )}
+                    </button>
+
+                    {syncStatus && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        style={{ 
+                          padding: '1rem 2rem', 
+                          borderRadius: '8px', 
+                          background: syncStatus.includes('✅') ? 'rgba(0,255,0,0.1)' : 'rgba(255,255,255,0.05)',
+                          color: syncStatus.includes('❌') ? '#ff4d4d' : 'inherit',
+                          fontSize: '0.9rem',
+                          fontFamily: 'var(--font-mono)',
+                          border: '1px solid rgba(255,255,255,0.1)'
+                        }}
+                      >
+                        {syncStatus}
+                      </motion.div>
+                    )}
+                  </div>
+
+                  <div className="admin-divider" style={{ margin: '3rem 0' }}></div>
+
+                  <div style={{ textAlign: 'left' }}>
+                    <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Activity size={18} color="var(--accent-main)" /> NHẬT KÝ HOẠT ĐỘNG AI
+                    </h3>
+                    <div className="glass-panel" style={{ background: 'rgba(0,0,0,0.5)', padding: '1.5rem', maxHeight: '200px', overflowY: 'auto', fontSize: '0.8rem', fontFamily: 'var(--font-mono)', opacity: 0.7 }}>
+                      <div>[SYSTEM] IRIS Core Ready.</div>
+                      <div>[INFO] Waiting for manual sync trigger...</div>
+                      {syncStatus && <div>[{new Date().toLocaleTimeString()}] {syncStatus}</div>}
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             )}
