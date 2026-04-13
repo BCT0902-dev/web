@@ -110,6 +110,10 @@ const AIChat = () => {
   }, [currentUser, activeChatId]);
 
   const classifyIntent = async (prompt) => {
+    const p = prompt.toLowerCase();
+    if (p.includes('vẽ') || p.includes('tạo ảnh') || p.includes('hình ảnh') || p.includes('generate image') || p.includes('draw')) {
+      return 'IMAGE';
+    }
     if (!groq) return 'GENERAL';
     try {
       const completion = await groq.chat.completions.create({
@@ -198,19 +202,21 @@ const AIChat = () => {
       let aiResponseContent = '';
       let imageUrl = '';
       
-      if (isImageMode) {
+      const intent = await classifyIntent(tempInput);
+      const isDrawingIntent = isImageMode || intent === 'IMAGE';
+
+      if (isDrawingIntent) {
         setRoutingInfo('IRIS Visual Studio đang sáng tạo nghệ thuật...');
         // Real Free Image Generation via Pollinations AI
         const seed = Math.floor(Math.random() * 1000000);
-        const encodedPrompt = encodeURIComponent(tempInput);
+        const encodedPrompt = encodeURIComponent(tempInput.replace(/vẽ|tạo ảnh|hình ảnh|draw|generate image/gi, '').trim() || tempInput);
         imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${seed}`;
         
         // Wait bit for "processing" feel
-        await new Promise(r => setTimeout(r, 1500));
+        await new Promise(r => setTimeout(r, 2000));
         
         aiResponseContent = `🎨 **IRIS Visual Studio (Free Engine)**\n\nHình ảnh đã được tạo cho: "${tempInput}"\n\n![IRIS AI Generated Image](${imageUrl})`;
       } else {
-        const intent = await classifyIntent(tempInput);
         const now = new Date();
         const timeStr = now.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
         

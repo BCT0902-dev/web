@@ -112,7 +112,7 @@ const Maintenance = () => {
           </h1>
           <p style={{ 
             color: 'var(--text-secondary)', 
-            maxWidth: '400px', 
+            maxWidth: '550px', 
             margin: '0 auto',
             fontSize: '1.1rem',
             lineHeight: 1.6
