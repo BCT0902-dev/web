@@ -22,6 +22,12 @@ const Milestone = ({ milestone, index, isLast, image }) => {
   ];
 
   const isEven = index % 2 === 0;
+  
+  // 3D Transform values based on scroll
+  const rotateY = useTransform(scrollYProgress, [0, 1], [isEven ? -15 : 15, 0]);
+  const translateZ = useTransform(scrollYProgress, [0, 1], [-100, 0]);
+  const opacity = useTransform(scrollYProgress, [0, 0.5, 1], [0, 0.5, 1]);
+  const scale = useTransform(scrollYProgress, [0, 1], [0.8, 1]);
 
   return (
     <div 
@@ -32,62 +38,85 @@ const Milestone = ({ milestone, index, isLast, image }) => {
         justifyContent: isEven ? 'flex-start' : 'flex-end',
         paddingBottom: isLast ? 0 : '12rem',
         paddingLeft: isEven ? '0' : '5%',
-        paddingRight: isEven ? '5%' : '0'
+        paddingRight: isEven ? '5%' : '0',
+        perspective: '1200px' // Local perspective for card rotation
       }}
     >
-      {/* Content Card */}
+      {/* Content Card with 3D Transforms */}
       <motion.div 
         style={{ 
-            width: '45%',
-            opacity: useTransform(scrollYProgress, [0, 1], [0, 1]),
-            x: useTransform(scrollYProgress, [0, 1], [isEven ? -50 : 50, 0])
-        }}
-        className="glass-panel"
-        style={{ 
+          width: '45%',
+          opacity,
+          rotateY,
+          z: translateZ,
+          scale,
+          transformStyle: 'preserve-3d',
           padding: '2.5rem', 
           background: 'var(--bg-glass)', 
-          border: '1px solid rgba(255,255,255,0.05)',
+          border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: '24px',
           position: 'relative',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
           gap: '1.5rem',
-          zIndex: 5
+          zIndex: 5,
+          boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
         }}
+        className="glass-panel"
       >
+        {/* Depth Layer (Subtle 3D glow background) */}
+        <div style={{ 
+          position: 'absolute', 
+          inset: 0, 
+          background: `radial-gradient(circle at ${isEven ? 'top left' : 'top right'}, rgba(var(--accent-rgb), 0.1), transparent)`,
+          pointerEvents: 'none',
+          zIndex: -1
+        }} />
+
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <motion.span 
             style={{ 
                 fontFamily: 'var(--font-mono)', 
                 fontSize: '1.2rem', 
                 color: 'var(--accent-main)',
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                textShadow: '0 0 10px rgba(var(--accent-rgb), 0.5)'
             }}
             >
             {milestone.year}
             </motion.span>
-            <div style={{ color: 'var(--accent-secondary)' }}>{icons[index]}</div>
+            <div style={{ color: 'var(--accent-secondary)', filter: 'drop-shadow(0 0 5px var(--accent-secondary))' }}>{icons[index]}</div>
         </div>
 
-        <div style={{ flex: 1 }}>
-            <h3 style={{ fontFamily: 'Chakra Petch', fontSize: '1.4rem', color: '#fff', marginBottom: '1rem' }}>{milestone.title}</h3>
+        <div style={{ flex: 1, transform: 'translateZ(20px)' }}> {/* Content pops forward slightly */}
+            <h3 style={{ fontFamily: 'Chakra Petch', fontSize: '1.4rem', color: '#fff', marginBottom: '1rem', letterSpacing: '1px' }}>{milestone.title}</h3>
             <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>{milestone.desc}</p>
         </div>
 
         {image && (
-            <div style={{ width: '100%', height: '220px', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <motion.div 
+              style={{ 
+                width: '100%', 
+                height: '240px', 
+                borderRadius: '16px', 
+                overflow: 'hidden', 
+                border: '1px solid rgba(255,255,255,0.1)',
+                transform: 'translateZ(10px)',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+              }}
+            >
                 <img src={image} alt={milestone.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            </div>
+            </motion.div>
         )}
         
         {/* Subtle background icon */}
-        <div style={{ position: 'absolute', right: '-20px', bottom: '-20px', opacity: 0.03, transform: 'rotate(-15deg)' }}>
-            {icons[index] && React.cloneElement(icons[index], { size: 120 })}
+        <div style={{ position: 'absolute', right: '-20px', bottom: '-20px', opacity: 0.05, transform: 'rotate(-15deg) translateZ(-10px)' }}>
+            {icons[index] && React.cloneElement(icons[index], { size: 140 })}
         </div>
       </motion.div>
 
-      {/* Connection Node */}
+      {/* Connection Node - Upgraded to 3D Sphere */}
       <div 
         style={{ 
             position: 'absolute', 
@@ -99,13 +128,28 @@ const Milestone = ({ milestone, index, isLast, image }) => {
       >
         <motion.div 
             style={{
-                width: '16px',
-                height: '16px',
+                width: '24px',
+                height: '24px',
                 borderRadius: '50%',
-                backgroundColor: 'var(--accent-main)',
-                boxShadow: '0 0 20px var(--accent-main)',
-                scale: useTransform(scrollYProgress, [0, 1], [0.5, 1.2])
+                background: 'radial-gradient(circle at 30% 30%, var(--accent-main), #000)',
+                boxShadow: '0 0 30px var(--accent-main), inset -2px -2px 5px rgba(255,255,255,0.3)',
+                scale: useTransform(scrollYProgress, [0, 1], [0.6, 1.2]),
+                border: '1px solid rgba(255,255,255,0.2)'
             }}
+        />
+        {/* Orbit Ring for better 3D look */}
+        <motion.div 
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: '40px',
+            height: '40px',
+            border: '1px solid rgba(var(--accent-rgb), 0.3)',
+            borderRadius: '50%',
+            transform: 'translate(-50%, -50%) rotateX(70deg)',
+            opacity: useTransform(scrollYProgress, [0, 1], [0, 0.8])
+          }}
         />
       </div>
     </div>
@@ -135,16 +179,17 @@ const CurvyPath = ({ scrollYProgress }) => {
             <path 
                 d="M50,0 C70,100 30,200 50,300 C70,400 30,500 50,600 C70,700 30,800 50,900 C70,950 50,1000 50,1100"
                 fill="none"
-                stroke="rgba(255,255,255,0.05)"
-                strokeWidth="0.5"
+                stroke="rgba(255,255,255,0.03)"
+                strokeWidth="0.3"
             />
             <motion.path 
                 d="M50,0 C70,100 30,200 50,300 C70,400 30,500 50,600 C70,700 30,800 50,900 C70,950 50,1000 50,1100"
                 fill="none"
                 stroke="var(--accent-main)"
-                strokeWidth="0.8"
+                strokeWidth="1.2"
                 style={{ pathLength: pathLength }}
-                filter="drop-shadow(0 0 8px var(--accent-main))"
+                filter="drop-shadow(0 0 12px var(--accent-main))"
+                opacity={0.6}
             />
         </svg>
     );
