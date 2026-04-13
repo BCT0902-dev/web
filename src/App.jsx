@@ -26,6 +26,8 @@ import Blog from './pages/blog/Blog'; // Assuming I move it to pages/blog/Blog.j
 import BlogPost from './pages/blog/BlogPost';
 import Chronicles from './pages/Chronicles';
 
+import PageGuard from './components/PageGuard';
+
 const Home = () => (
   <>
     <Hero />
@@ -78,9 +80,21 @@ function AppRoutes() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/utilities/*" element={<Utilities />} />
-          <Route path="/blog" element={<Blog />} />
-          <Route path="/blog/:id" element={<BlogPost />} />
-          <Route path="/chronicles" element={<Chronicles />} />
+          <Route path="/blog" element={
+            <PageGuard pageId="blog">
+              <Blog />
+            </PageGuard>
+          } />
+          <Route path="/blog/:id" element={
+            <PageGuard pageId="blog">
+              <BlogPost />
+            </PageGuard>
+          } />
+          <Route path="/chronicles" element={
+            <PageGuard pageId="chronicles">
+              <Chronicles />
+            </PageGuard>
+          } />
           <Route path="/admin" element={isAdmin ? <AdminDashboard /> : <Login />} />
         </Routes>
         {!isAdminPage && <FloatingChatBtn />}

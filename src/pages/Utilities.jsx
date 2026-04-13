@@ -6,7 +6,7 @@ import UtilityHub from './UtilityHub';
 import YoutubeAnalyzer from './YoutubeAnalyzer';
 import ChefAssistant from './ChefAssistant';
 import WaterReminder from './WaterReminder';
-import { useConfig } from '../context/ConfigContext';
+import PageGuard from '../components/PageGuard';
 import './Utilities.css';
 
 const Utilities = () => {
@@ -28,10 +28,26 @@ const Utilities = () => {
         <div className="utility-canvas">
           <Routes>
             <Route path="/" element={<UtilityHub />} />
-            <Route path="/chat" element={<AIChat />} />
-            <Route path="/youtube" element={<YoutubeAnalyzer />} />
-            <Route path="/chef" element={<ChefAssistant />} />
-            <Route path="/water" element={<WaterReminder />} />
+            <Route path="/chat" element={
+              <PageGuard pageId="chat">
+                <AIChat />
+              </PageGuard>
+            } />
+            <Route path="/youtube" element={
+              <PageGuard pageId="youtube">
+                <YoutubeAnalyzer />
+              </PageGuard>
+            } />
+            <Route path="/chef" element={
+              <PageGuard pageId="chef">
+                <ChefAssistant />
+              </PageGuard>
+            } />
+            <Route path="/water" element={
+              <PageGuard pageId="water">
+                <WaterReminder />
+              </PageGuard>
+            } />
             <Route path="/settings" element={
               <div className="settings-placeholder" style={{ background: 'var(--bg-primary)', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                 <Settings size={64} opacity={0.1} />

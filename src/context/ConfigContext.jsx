@@ -79,7 +79,17 @@ export const ConfigProvider = ({ children }) => {
         { name: "VS Code", color: "#007ACC" },
         { name: "OBS", color: "#ffffff" },
         { name: "VM Ware", color: "#607078" }
-      ]
+      ],
+      maintenance: {
+        chat: false,
+        youtube: false,
+        chef: false,
+        water: false,
+        blog: false,
+        chronicles: false,
+        about: false,
+        skills: false
+      }
     };
 
     const [config, setConfig] = useState(defaultConfig);

@@ -27,7 +27,9 @@ import {
   Sparkles,
   Crop,
   Mail,
-  BarChart3
+  BarChart3,
+  Lock,
+  Unlock
 } from 'lucide-react';
 import { db } from '../../firebase';
 import { doc, setDoc, updateDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
@@ -610,6 +612,7 @@ const AdminDashboard = () => {
     { id: 'apps', label: 'ỨNG DỤNG TIN DÙNG', icon: <Zap size={18} /> },
     { id: 'content', label: 'NỘI DUNG KHÁC', icon: <FileText size={18} /> },
     { id: 'integrations', label: 'TÍCH HỢP AI', icon: <Key size={18} /> },
+    { id: 'maintenance', label: 'QUẢN LÝ TRẠNG THÁI TRANG', icon: <Lock size={18} /> },
     { id: 'newsletter', label: 'BẢN TIN AI', icon: <Mail size={18} /> },
     { id: 'analytics', label: 'THỐNG KÊ TRAFFIC', icon: <BarChart3 size={18} /> },
     { id: 'users', label: 'QUẢN LÝ TÀI KHOẢN', icon: <Users size={18} /> },
