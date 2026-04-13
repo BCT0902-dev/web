@@ -184,22 +184,34 @@ const AIChat = () => {
 
         // ROUTING LOGIC
         if (intent === 'SEARCH') {
-          setRoutingInfo('Phát hiện nhu cầu tìm kiếm thực tế -> Điều phối Gemini...');
+          setRoutingInfo('IRIS đang tìm kiếm thông tin thực tế mới nhất...');
           const activeKey = geminiKey?.trim();
           if (!activeKey || activeKey === 'dummy_key') {
             aiResponseContent = "⚠️ CHƯA CẤU HÌNH GEMINI KEY: Cần Gemini để thực hiện tìm kiếm mạng.";
           } else {
+            // Enhanced Smart Instruction for search
+            const smartPrompt = `[HƯỚNG DẪN THÔNG MINH: Nếu người dùng hỏi về thời gian tại một quốc gia lớn có nhiều múi giờ (như Mỹ, Nga, Úc), hãy liệt kê các múi giờ phổ biến nhất và giờ tại các thành phố tiêu biểu. Đừng từ chối trả lời.]\n\n${contextPrompt}`;
+            
             const payload = {
-              contents: [{ parts: [{ text: contextPrompt }] }],
+              contents: [{ parts: [{ text: smartPrompt }] }],
               tools: [{ google_search_retrieval: { dynamic_retrieval_config: { mode: "DYNAMIC", dynamic_threshold: 0 } } }]
             };
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${activeKey}`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
-            });
-            const data = await response.json();
-            aiResponseContent = data.candidates?.[0]?.content?.parts?.[0]?.text || "❌ Lỗi tìm kiếm thực tế.";
+            
+            try {
+              const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${activeKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+              });
+              const data = await response.json();
+              if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+                aiResponseContent = data.candidates[0].content.parts[0].text;
+              } else {
+                aiResponseContent = `❌ Lỗi tìm kiếm thực tế: ${data.error?.message || "IRIS không thể truy cập dữ liệu thời gian thực lúc này."}`;
+              }
+            } catch (err) {
+              aiResponseContent = "❌ Lỗi mạng khi tìm kiếm thực tế.";
+            }
           }
         } else if (chatMode === 'reasoning' || intent === 'REASONING') {
           setRoutingInfo('Phát hiện nhu cầu suy luận sâu -> Điều phối DeepSeek-V3...');
