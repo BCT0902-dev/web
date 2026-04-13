@@ -311,6 +311,26 @@ const AIChat = () => {
               </motion.div>
             ))
           )}
+
+          {isLoading && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="message-wrapper assistant thinking"
+            >
+              <div className="message-avatar">
+                <Bot size={20} className="pulse-icon" />
+              </div>
+              <div className="message-content thinking-bubble">
+                <div className="thinking-dots">
+                  <span></span><span></span><span></span>
+                </div>
+                <span className="thinking-text">
+                  {isDeepThink ? "IRIS đang nghiên cứu chuyên sâu..." : (isImageMode ? "IRIS Visual Studio đang vẽ..." : "IRIS đang tư duy...")}
+                </span>
+              </div>
+            </motion.div>
+          )}
           <div ref={messagesEndRef} />
         </div>
 
