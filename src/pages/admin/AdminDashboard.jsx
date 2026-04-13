@@ -181,28 +181,43 @@ const AdminDashboard = () => {
     }
   };
 
-  const testGeminiAPI = async () => {
+   const testGeminiAPI = async () => {
     const key = localConfig?.integrations?.geminiKey;
     if (!key) {
       setApiTestStatus(prev => ({ ...prev, gemini: '⚠️ Lỗi: Chưa điền API Key!' }));
       return;
     }
-      setApiTestStatus(prev => ({ ...prev, gemini: 'Đang kiểm tra bằng REST v1beta/gemini-1.5-flash...' }));
-      try {
-        const payload = {
-          contents: [{ parts: [{ text: "Say 'TEST_OK'" }] }]
-        };
-        // Use v1beta for better compatibility with gemini-1.5-flash
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
-           method: 'POST',
-           headers: { 'Content-Type': 'application/json' },
-           body: JSON.stringify(payload)
+    
+    setApiTestStatus(prev => ({ ...prev, gemini: 'Đang kiểm tra kết nối (v1/gemini-1.5-flash)...' }));
+    
+    try {
+      const payload = { contents: [{ parts: [{ text: "Say 'OK'" }] }] };
+      
+      // First attempt: stable v1
+      let response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      let data = await response.json();
+
+      // Second attempt: v1beta fallback if v1 fails or model not found
+      if (!response.ok || data.error) {
+        setApiTestStatus(prev => ({ ...prev, gemini: 'đang thử fallback v1beta...' }));
+        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${key}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
         });
-      const data = await response.json();
+        data = await response.json();
+      }
+
       if (response.ok && data.candidates) {
         setApiTestStatus(prev => ({ ...prev, gemini: '✅ KẾT NỐI THÀNH CÔNG!' }));
       } else {
-        setApiTestStatus(prev => ({ ...prev, gemini: `❌ LỖI: ${data.error?.message || 'Không rõ lỗi'}` }));
+        const errorMsg = data.error?.message || 'Không rõ lỗi';
+        setApiTestStatus(prev => ({ ...prev, gemini: `❌ LỖI: ${errorMsg}` }));
       }
     } catch (err) {
       setApiTestStatus(prev => ({ ...prev, gemini: '❌ LỖI MẠNG: ' + err.message }));

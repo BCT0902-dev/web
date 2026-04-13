@@ -134,13 +134,25 @@ const AIChat = () => {
         imageUrl = '/iris_visual_studio_demo_1776002252586.png';
         aiResponseContent = `🎨 **IRIS Visual Studio**\n\nHình ảnh đã được tạo dựa trên mô tả: "${tempInput}"\n\n![IRIS AI Generated Image](${imageUrl})`;
       } else {
-        // INJECT REAL-TIME CONTEXT
+        // INJECT REAL-TIME CONTEXT & GROUNDING TOOLS
         const now = new Date();
         const timeStr = now.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
-        const contextPrompt = `[Bối cảnh hiện tại: Việt Nam, Giờ hệ thống: ${timeStr}] ${displayPrompt}`;
+        const contextPrompt = `[Hệ thống: Bạn là IRIS, trợ lý AI thông minh có khả năng truy cập web thời gian thực. Giờ hệ thống: ${timeStr}. Nếu người dùng hỏi về tin tức, thời gian, hoặc sự kiện mới nhất, hãy sử dụng công cụ tìm kiếm của bạn để trả lời chính xác nhất.] ${displayPrompt}`;
 
         if (selectedModel === 'gemini') {
-          const payload = { contents: [{ parts: [{ text: contextPrompt }] }] };
+          const payload = { 
+            contents: [{ parts: [{ text: contextPrompt }] }],
+            tools: [{ 
+              google_search_retrieval: { 
+                dynamic_retrieval_config: { 
+                  mode: "DYNAMIC", 
+                  dynamic_threshold: 0.1 
+                } 
+              } 
+            }]
+          };
+          
+          // Grounding requires v1beta
           const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
              method: 'POST',
              headers: { 'Content-Type': 'application/json' },

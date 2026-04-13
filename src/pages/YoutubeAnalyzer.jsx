@@ -125,12 +125,25 @@ const YoutubeAnalyzer = () => {
 
       if (selectedModel === 'gemini') {
           const payload = { contents: [{ parts: [{ text: prompt }] }] };
-          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+          
+          // Using robust v1 endpoint with fallback
+          let response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
              method: 'POST',
              headers: { 'Content-Type': 'application/json' },
              body: JSON.stringify(payload)
           });
-          const data = await response.json();
+          
+          let data = await response.json();
+          
+          if (!response.ok || data.error) {
+            response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiKey}`, {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify(payload)
+            });
+            data = await response.json();
+          }
+          
           resultText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Lỗi phản hồi từ Gemini.";
       } else if (selectedModel === 'groq') {
           if (!groq) throw new Error('Chưa cấu hình Groq Key!');
