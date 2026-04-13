@@ -7,6 +7,7 @@ import YoutubeAnalyzer from './YoutubeAnalyzer';
 import ChefAssistant from './ChefAssistant';
 import WaterReminder from './WaterReminder';
 import PageGuard from '../components/PageGuard';
+import { useConfig } from '../context/ConfigContext';
 import './Utilities.css';
 
 const Utilities = () => {
