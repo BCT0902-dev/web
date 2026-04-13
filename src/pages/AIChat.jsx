@@ -147,6 +147,38 @@ const AIChat = () => {
     return data.choices[0].message.content;
   };
 
+  const executeSmartSearch = async (contextPrompt) => {
+    const activeKey = geminiKey?.trim();
+    if (!activeKey || activeKey === 'dummy_key') return "⚠️ CHƯA CẤU HÌNH GEMINI KEY.";
+
+    const models = ['gemini-1.5-flash-latest', 'gemini-1.5-pro-latest', 'gemini-1.5-flash'];
+    let lastError = '';
+
+    for (const model of models) {
+      try {
+        setRoutingInfo(`Đang kết nối Node dự phòng: ${model.includes('pro') ? 'IRIS Pro' : 'IRIS Flash'}...`);
+        const smartPrompt = `[HƯỚNG DẪN THÔNG MINH: Nếu hỏi về thời gian tại quốc gia lớn, hãy liệt kê các múi giờ chính & thành phố lớn. Đừng từ chối.]\n\n${contextPrompt}`;
+        const payload = {
+          contents: [{ parts: [{ text: smartPrompt }] }],
+          tools: [{ google_search_retrieval: { dynamic_retrieval_config: { mode: "DYNAMIC", dynamic_threshold: 0 } } }]
+        };
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+          return data.candidates[0].content.parts[0].text;
+        }
+        lastError = data.error?.message || "Không có phản hồi từ Node.";
+      } catch (err) {
+        lastError = err.message;
+      }
+    }
+    throw new Error(`Tất cả các Node Search đều gặp sự cố: ${lastError}`);
+  };
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
     
@@ -167,10 +199,16 @@ const AIChat = () => {
       let imageUrl = '';
       
       if (isImageMode) {
-        setRoutingInfo('Đang chuyển hướng sang IRIS Visual Studio...');
-        await new Promise(r => setTimeout(r, 2000));
-        imageUrl = '/iris_visual_studio_demo_1776002252586.png';
-        aiResponseContent = `🎨 **IRIS Visual Studio**\n\nHình ảnh đã được tạo dựa trên mô tả: "${tempInput}"\n\n![IRIS AI Generated Image](${imageUrl})`;
+        setRoutingInfo('IRIS Visual Studio đang sáng tạo nghệ thuật...');
+        // Real Free Image Generation via Pollinations AI
+        const seed = Math.floor(Math.random() * 1000000);
+        const encodedPrompt = encodeURIComponent(tempInput);
+        imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${seed}`;
+        
+        // Wait bit for "processing" feel
+        await new Promise(r => setTimeout(r, 1500));
+        
+        aiResponseContent = `🎨 **IRIS Visual Studio (Free Engine)**\n\nHình ảnh đã được tạo cho: "${tempInput}"\n\n![IRIS AI Generated Image](${imageUrl})`;
       } else {
         const intent = await classifyIntent(tempInput);
         const now = new Date();
@@ -182,36 +220,18 @@ const AIChat = () => {
 
         const contextPrompt = `[HỆ THỐNG IRIS: ${depthInstruction}. Giờ hệ thống: ${timeStr}].\n\nNgười dùng hỏi: ${tempInput}`;
 
-        // ROUTING LOGIC
+        // ROUTING LOGIC WITH ROBUST FALLBACK
         if (intent === 'SEARCH') {
-          setRoutingInfo('IRIS đang tìm kiếm thông tin thực tế mới nhất...');
-          const activeKey = geminiKey?.trim();
-          if (!activeKey || activeKey === 'dummy_key') {
-            aiResponseContent = "⚠️ CHƯA CẤU HÌNH GEMINI KEY: Cần Gemini để thực hiện tìm kiếm mạng.";
-          } else {
-            // Enhanced Smart Instruction for search
-            const smartPrompt = `[HƯỚNG DẪN THÔNG MINH: Nếu người dùng hỏi về thời gian tại một quốc gia lớn có nhiều múi giờ (như Mỹ, Nga, Úc), hãy liệt kê các múi giờ phổ biến nhất và giờ tại các thành phố tiêu biểu. Đừng từ chối trả lời.]\n\n${contextPrompt}`;
-            
-            const payload = {
-              contents: [{ parts: [{ text: smartPrompt }] }],
-              tools: [{ google_search_retrieval: { dynamic_retrieval_config: { mode: "DYNAMIC", dynamic_threshold: 0 } } }]
-            };
-            
-            try {
-              const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${activeKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-              });
-              const data = await response.json();
-              if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
-                aiResponseContent = data.candidates[0].content.parts[0].text;
-              } else {
-                aiResponseContent = `❌ Lỗi tìm kiếm thực tế: ${data.error?.message || "IRIS không thể truy cập dữ liệu thời gian thực lúc này."}`;
-              }
-            } catch (err) {
-              aiResponseContent = "❌ Lỗi mạng khi tìm kiếm thực tế.";
-            }
+          try {
+            aiResponseContent = await executeSmartSearch(contextPrompt);
+          } catch (err) {
+            setRoutingInfo('Cảnh báo: Tất cả Node tìm kiếm gặp sự cố. Đang dùng trí tuệ nội tại...');
+            // Final fallback to a stable reasoning model if search fails
+            const completion = await groq.chat.completions.create({ 
+              model: "llama-3.3-70b-versatile", 
+              messages: [{ role: "user", content: `[LƯU Ý: Search Node đang bảo trì. Hãy trả lời dựa trên kiến thức hiện có].\n\n${contextPrompt}` }] 
+            });
+            aiResponseContent = `⚠️ (IRIS đang ở chế độ Offline) ${completion.choices[0].message.content}`;
           }
         } else if (chatMode === 'reasoning' || intent === 'REASONING') {
           setRoutingInfo('Phát hiện nhu cầu suy luận sâu -> Điều phối DeepSeek-V3...');
