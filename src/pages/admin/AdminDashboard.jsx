@@ -1034,7 +1034,7 @@ const AdminDashboard = () => {
 
                 <div className="input-group" style={{ marginTop: '1.5rem' }}>
                    <label>ZALO BOT ID (Ví dụ: 351...)</label>
-                   <input type="text" value={localConfig.integrations.zaloBotId || '3704367167928975433'} onChange={(e) => updateNested('integrations', 'zaloBotId', e.target.value)} placeholder="Nhập ID Bot để tạo link liên kết nhanh..." />
+                   <input type="text" value={localConfig.integrations.zaloBotId || '2374048838780370931'} onChange={(e) => updateNested('integrations', 'zaloBotId', e.target.value)} placeholder="Nhập ID Bot để tạo link liên kết nhanh..." />
                 </div>
 
                 <div className="api-config-alert" style={{ marginTop: '1.5rem', background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', borderColor: 'rgba(59, 130, 246, 0.2)' }}>
