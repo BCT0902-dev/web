@@ -45,6 +45,15 @@ const UtilityHub = () => {
       status: 'LOCKED',
       path: '#',
       metadata: 'SECURED | TYPE: ROOT_ACCESS'
+    },
+    {
+      id: 'water',
+      title: 'AI HYDRATION',
+      description: t('utilities.water_desc', 'Uống đủ nước là chìa khóa của sức khỏe. Hãy để AI tính toán và nhắc nhở ngài qua Zalo mỗi ngày.'),
+      image: '/thumbnails/water_ai.png',
+      status: 'ACTIVE',
+      path: '/utilities/water',
+      metadata: 'VER: 1.0.0 | TYPE: HEALTH_AI'
     }
   ];
 

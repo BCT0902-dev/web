@@ -5,6 +5,7 @@ import AIChat from './AIChat';
 import UtilityHub from './UtilityHub';
 import YoutubeAnalyzer from './YoutubeAnalyzer';
 import ChefAssistant from './ChefAssistant';
+import WaterReminder from './WaterReminder';
 import { useConfig } from '../context/ConfigContext';
 import './Utilities.css';
 
@@ -30,6 +31,7 @@ const Utilities = () => {
             <Route path="/chat" element={<AIChat />} />
             <Route path="/youtube" element={<YoutubeAnalyzer />} />
             <Route path="/chef" element={<ChefAssistant />} />
+            <Route path="/water" element={<WaterReminder />} />
             <Route path="/settings" element={
               <div className="settings-placeholder" style={{ background: 'var(--bg-primary)', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                 <Settings size={64} opacity={0.1} />

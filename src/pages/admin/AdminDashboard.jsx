@@ -383,6 +383,28 @@ const AdminDashboard = () => {
     }
   };
 
+  const testZaloBotAPI = async () => {
+    const token = localConfig?.integrations?.zaloBotToken;
+    if (!token) {
+      setApiTestStatus(prev => ({ ...prev, zalo: '⚠️ Lỗi: Chưa điền Token!' }));
+      return;
+    }
+    setApiTestStatus(prev => ({ ...prev, zalo: 'Đang kiểm tra Zalo Bot Auth...' }));
+    try {
+      const response = await fetch(`https://bot-api.zaloplatforms.com/bot${token}/getMe`, {
+         method: 'GET'
+      });
+      const data = await response.json();
+      if (data.ok) {
+        setApiTestStatus(prev => ({ ...prev, zalo: `✅ OK: Bot ${data.result?.first_name || 'IRIS'}!` }));
+      } else {
+        setApiTestStatus(prev => ({ ...prev, zalo: `❌ LỖI: ${data.description || 'Token không hợp lệ'}` }));
+      }
+    } catch (err) {
+      setApiTestStatus(prev => ({ ...prev, zalo: '❌ LỖI MẠNG: ' + err.message }));
+    }
+  };
+
   const compressImage = (base64) => {
     return new Promise((resolve) => {
       const img = new Image();
@@ -985,6 +1007,28 @@ const AdminDashboard = () => {
                   <div style={{ display: 'flex', gap: '1rem' }}>
                     <input style={{ flex: 1 }} type="password" value={localConfig.integrations.groqKey || ''} onChange={(e) => updateNested('integrations', 'groqKey', e.target.value)} />
                     <button className="add-btn" onClick={testGroqAPI}><Activity size={16} /> TEST GROQ</button>
+                  </div>
+                </div>
+
+                <div className="input-group" style={{ marginTop: '1.5rem' }}>
+                  <label style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>OPENAI API KEY (ChatGPT)</span>
+                    <span style={{ fontSize: '0.8rem', color: apiTestStatus.openai?.includes('LỖI') ? '#ef4444' : '#10b981' }}>{apiTestStatus.openai}</span>
+                  </label>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <input style={{ flex: 1 }} type="password" value={localConfig.integrations.openaiKey || ''} onChange={(e) => updateNested('integrations', 'openaiKey', e.target.value)} />
+                    <button className="add-btn" onClick={testOpenAIAPI}><Activity size={16} /> TEST OPENAI</button>
+                  </div>
+                </div>
+
+                <div className="input-group" style={{ marginTop: '1.5rem' }}>
+                  <label style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>ZALO BOT TOKEN (zaloplatforms.com)</span>
+                    <span style={{ fontSize: '0.8rem', color: apiTestStatus.zalo?.includes('LỖI') ? '#ef4444' : '#10b981' }}>{apiTestStatus.zalo}</span>
+                  </label>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <input style={{ flex: 1 }} type="password" value={localConfig.integrations.zaloBotToken || ''} onChange={(e) => updateNested('integrations', 'zaloBotToken', e.target.value)} />
+                    <button className="add-btn" onClick={testZaloBotAPI}><Activity size={16} /> TEST ZALO</button>
                   </div>
                 </div>
               </motion.div>
