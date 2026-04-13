@@ -117,7 +117,7 @@ const Maintenance = () => {
             fontSize: '1.1rem',
             lineHeight: 1.6
           }}>
-            Trang web này hiện đang được nâng cấp hoặc tạm khóa bởi Quản trị viên. Vui lòng quay lại sau nhé!
+            Trang web này hiện đang được nâng cấp hoặc tạm khóa bởi <strong>Bùi Công Tới</strong>. Vui lòng quay lại sau nhé!
           </p>
         </div>
 
