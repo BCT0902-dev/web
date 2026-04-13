@@ -139,9 +139,9 @@ const ChefAssistant = () => {
                 
                 // ROBUST FALLBACK LOOP
                 const configs = [
-                  { ver: 'v1', model: 'gemini-1.5-flash' },
-                  { ver: 'v1beta', model: 'gemini-1.5-flash' },
-                  { ver: 'v1', model: 'gemini-pro' }
+                  { ver: 'v1beta', model: 'gemini-flash-latest' },
+                  { ver: 'v1beta', model: 'gemini-pro-latest' },
+                  { ver: 'v1', model: 'gemini-1.5-flash' }
                 ];
 
                 let success = false;

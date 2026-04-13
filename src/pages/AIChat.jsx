@@ -145,28 +145,31 @@ const AIChat = () => {
             // Preferred: v1beta with Search Grounding
             { 
               ver: 'v1beta', 
-              model: 'gemini-1.5-flash',
+              model: 'gemini-flash-latest',
               payload: { 
                 contents: [{ parts: [{ text: contextPrompt }] }],
                 tools: [{ google_search_retrieval: { dynamic_retrieval_config: { mode: "DYNAMIC", dynamic_threshold: 0.1 } } }]
               }
             },
-            // Fallback 1: v1beta without grounding (in case tool is rejected)
+            // Fallback 1: v1beta pro latest
             { 
               ver: 'v1beta', 
-              model: 'gemini-1.5-flash',
+              model: 'gemini-pro-latest',
+              payload: { 
+                contents: [{ parts: [{ text: contextPrompt }] }],
+                tools: [{ google_search_retrieval: { dynamic_retrieval_config: { mode: "DYNAMIC", dynamic_threshold: 0.1 } } }]
+              }
+            },
+            // Fallback 2: v1beta without grounding
+            { 
+              ver: 'v1beta', 
+              model: 'gemini-flash-latest',
               payload: { contents: [{ parts: [{ text: contextPrompt }] }] }
             },
-            // Fallback 2: stable v1 (widest compatibility)
+            // Fallback 3: stable v1
             { 
               ver: 'v1', 
               model: 'gemini-1.5-flash',
-              payload: { contents: [{ parts: [{ text: contextPrompt }] }] }
-            },
-            // Fallback 3: legacy pro model
-            { 
-              ver: 'v1', 
-              model: 'gemini-pro',
               payload: { contents: [{ parts: [{ text: contextPrompt }] }] }
             }
           ];

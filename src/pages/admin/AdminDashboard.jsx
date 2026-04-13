@@ -191,11 +191,10 @@ const AdminDashboard = () => {
     setApiTestStatus(prev => ({ ...prev, gemini: '🔍 Đang quét các Model khả dụng...' }));
     
     const testCases = [
-      { ver: 'v1', model: 'gemini-1.5-flash' },
+      { ver: 'v1beta', model: 'gemini-flash-latest' },
+      { ver: 'v1beta', model: 'gemini-pro-latest' },
       { ver: 'v1beta', model: 'gemini-1.5-flash' },
-      { ver: 'v1', model: 'gemini-pro' },
-      { ver: 'v1beta', model: 'gemini-pro' },
-      { ver: 'v1beta', model: 'gemini-1.5-flash-latest' }
+      { ver: 'v1', model: 'gemini-1.5-flash' }
     ];
 
     let success = false;
