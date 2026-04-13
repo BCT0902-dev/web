@@ -541,23 +541,25 @@ const AdminDashboard = () => {
         </div>
         
         <nav className="admin-nav">
-          {tabs.map(tab => (
-            <button 
-              key={tab.id}
-              className={`nav-item ${activeTab === tab.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              {tab.icon}
-              <span>{tab.label}</span>
-            </button>
-          ))}
-          
-          <div className="admin-divider" style={{ margin: '1rem 0' }}></div>
-          
-          <Link to="/" className="nav-item-link">
+          <Link to="/" className="nav-item-link home-link-top">
             <Home size={18} />
             <span>VỀ TRANG CHỦ</span>
           </Link>
+
+          <div className="admin-divider" style={{ margin: '0.5rem 0 1rem 0' }}></div>
+
+          <div className="admin-nav-scroll">
+            {tabs.map(tab => (
+              <button 
+                key={tab.id}
+                className={`nav-item ${activeTab === tab.id ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.icon}
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
         </nav>
 
         <div className="admin-footer-btn">

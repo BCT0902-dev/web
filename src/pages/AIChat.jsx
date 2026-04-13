@@ -140,57 +140,67 @@ const AIChat = () => {
         const contextPrompt = `[HỆ THỐNG TỐI THƯỢNG: Bạn là IRIS AI Researcher. Nhiệm vụ của bạn là cung cấp thông tin CHÍNH XÁC và MỚI NHẤT. BẮT BUỘC sử dụng công cụ Google Search cho mọi câu hỏi về thời gian, tin tức, hoặc thực tế hiện tại. Không bao giờ trả lời dựa trên kiến thức cũ nếu có thể tìm kiếm thông tin mới hơn. Giờ hệ thống hiện tại tại Việt Nam: ${timeStr}].\n\nNgười dùng hỏi: ${displayPrompt}`;
 
         if (selectedModel === 'gemini') {
-          const testConfigs = [
-            { ver: 'v1beta', model: 'gemini-flash-latest', useGrounding: true },
-            { ver: 'v1beta', model: 'gemini-pro-latest', useGrounding: true },
-            { ver: 'v1beta', model: 'gemini-flash-latest', useGrounding: false },
-            { ver: 'v1', model: 'gemini-1.5-flash', useGrounding: false }
-          ];
+          // ROBUST KEY VALIDATION
+          const activeKey = geminiKey?.trim();
+          if (!activeKey || activeKey === 'dummy_key') {
+            aiResponseContent = "⚠️ CHƯA CẤU HÌNH API KEY: Vui lòng vào Dashboard, điền Gemini Key và nhấn LƯU để bắt đầu chat.";
+            success = false;
+          } else {
+            const testConfigs = [
+              { ver: 'v1beta', model: 'gemini-flash-latest', useGrounding: true },
+              { ver: 'v1beta', model: 'gemini-pro-latest', useGrounding: true },
+              { ver: 'v1beta', model: 'gemini-flash-latest', useGrounding: false },
+              { ver: 'v1', model: 'gemini-1.5-flash', useGrounding: false }
+            ];
 
-          let success = false;
-          for (const cfg of testConfigs) {
-            // Exponential backoff retry for transient errors (like 503)
-            for (let attempt = 0; attempt < 2; attempt++) {
-              try {
-                const payload = {
-                  contents: [{ parts: [{ text: contextPrompt }] }]
-                };
-                if (cfg.useGrounding) {
-                  payload.tools = [{ 
-                    google_search_retrieval: { 
-                      dynamic_retrieval_config: { mode: "DYNAMIC", dynamic_threshold: 0 } 
-                    } 
-                  }];
-                }
+            for (const cfg of testConfigs) {
+              // Exponential backoff retry for transient errors (like 503)
+              for (let attempt = 0; attempt < 2; attempt++) {
+                try {
+                  const payload = {
+                    contents: [{ parts: [{ text: contextPrompt }] }]
+                  };
+                  if (cfg.useGrounding) {
+                    payload.tools = [{ 
+                      google_search_retrieval: { 
+                        dynamic_retrieval_config: { mode: "DYNAMIC", dynamic_threshold: 0 } 
+                      } 
+                    }];
+                  }
 
-                const response = await fetch(`https://generativelanguage.googleapis.com/${cfg.ver}/models/${cfg.model}:generateContent?key=${geminiKey}`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(payload)
-                });
-                
-                if (response.status === 503) {
-                  await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
-                  continue; 
-                }
+                  const response = await fetch(`https://generativelanguage.googleapis.com/${cfg.ver}/models/${cfg.model}:generateContent?key=${activeKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                  });
+                  
+                  if (response.status === 503) {
+                    await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+                    continue; 
+                  }
 
-                const data = await response.json();
-                if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
-                  aiResponseContent = data.candidates[0].content.parts[0].text;
-                  success = true;
-                  break;
-                } else {
-                  break; // Move to next model config if 400/404
+                  const data = await response.json();
+                  if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+                    aiResponseContent = data.candidates[0].content.parts[0].text;
+                    success = true;
+                    break;
+                  } else {
+                    // Log error detail locally for potential remote debugging
+                    console.error(`Gemini Error (${cfg.model}):`, data.error || 'Unknown error');
+                    break;
+                  }
+                } catch (e) {
+                  console.error(`Network error:`, e);
+                  break; 
                 }
-              } catch (e) {
-                console.error(`Retry attempt ${attempt} failed:`, e);
-                break; 
               }
+              if (success) break;
             }
-            if (success) break;
           }
 
-          if (!success) aiResponseContent = "❌ Lỗi: Hệ thống không thể kết nối ổn định với IRIS Core (Gemini) sau nhiều lần thử lại. Vui lòng kiểm tra lại Key hoặc thử lại sau vài giây.";
+          if (!success && !aiResponseContent) {
+            aiResponseContent = "❌ Lỗi: Không thể kết nối với IRIS Core. Hãy đảm bảo ngài đã nhấn LƯU CẤU HÌNH trong Admin Dashboard sau khi TEST thành công.";
+          }
         } else if (selectedModel === 'groq') {
           const completion = await groq.chat.completions.create({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: contextPrompt }] });
           aiResponseContent = completion.choices[0].message.content;
