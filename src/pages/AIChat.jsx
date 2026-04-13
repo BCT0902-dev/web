@@ -45,6 +45,7 @@ const AIChat = () => {
   const [isDeepThink, setIsDeepThink] = useState(false);
   const [isImageMode, setIsImageMode] = useState(false);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+  const [chatHistory, setChatHistory] = useState([]);
   const [activeChatId, setActiveChatId] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
@@ -244,26 +245,6 @@ const AIChat = () => {
     }
   };
 
-      const aiMsg = { 
-        role: 'assistant', 
-        content: aiResponseContent, 
-        imageUrl: imageUrl, // Save separate URL if needed for UI optimizations
-        timestamp: serverTimestamp() 
-      };
-      
-      if (currentUser && activeChatId) {
-        await addDoc(collection(db, 'users', currentUser.uid, 'chats', activeChatId, 'messages'), aiMsg);
-        await updateDoc(doc(db, 'users', currentUser.uid, 'chats', activeChatId), { lastUpdate: serverTimestamp() });
-      } else {
-        setMessages(prev => [...prev, aiMsg]);
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-      setIsImageMode(false); // Reset after action if used as toggle
-    }
-  };
 
   const generateImage = async () => {
     if (!input.trim() || isLoading) return;
