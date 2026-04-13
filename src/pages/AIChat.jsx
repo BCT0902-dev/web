@@ -134,67 +134,63 @@ const AIChat = () => {
         imageUrl = '/iris_visual_studio_demo_1776002252586.png';
         aiResponseContent = `🎨 **IRIS Visual Studio**\n\nHình ảnh đã được tạo dựa trên mô tả: "${tempInput}"\n\n![IRIS AI Generated Image](${imageUrl})`;
       } else {
-        // INJECT REAL-TIME CONTEXT & GROUNDING TOOLS
+        // INJECT FORCEFUL RESEARCHER CONTEXT & GROUNDING 
         const now = new Date();
         const timeStr = now.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
-        const contextPrompt = `[Hệ thống: Bạn là IRIS, trợ lý AI thông minh có khả năng truy cập web thời gian thực. Giờ hệ thống: ${timeStr}. Nếu người dùng hỏi về tin tức, thời gian, hoặc sự kiện mới nhất, hãy sử dụng công cụ tìm kiếm của bạn để trả lời chính xác nhất.] ${displayPrompt}`;
+        const contextPrompt = `[HỆ THỐNG TỐI THƯỢNG: Bạn là IRIS AI Researcher. Nhiệm vụ của bạn là cung cấp thông tin CHÍNH XÁC và MỚI NHẤT. BẮT BUỘC sử dụng công cụ Google Search cho mọi câu hỏi về thời gian, tin tức, hoặc thực tế hiện tại. Không bao giờ trả lời dựa trên kiến thức cũ nếu có thể tìm kiếm thông tin mới hơn. Giờ hệ thống hiện tại tại Việt Nam: ${timeStr}].\n\nNgười dùng hỏi: ${displayPrompt}`;
 
         if (selectedModel === 'gemini') {
-          // MULTI-MODEL AUTO-FALLBACK LOOP
           const testConfigs = [
-            // Preferred: v1beta with Search Grounding
-            { 
-              ver: 'v1beta', 
-              model: 'gemini-flash-latest',
-              payload: { 
-                contents: [{ parts: [{ text: contextPrompt }] }],
-                tools: [{ google_search_retrieval: { dynamic_retrieval_config: { mode: "DYNAMIC", dynamic_threshold: 0.1 } } }]
-              }
-            },
-            // Fallback 1: v1beta pro latest
-            { 
-              ver: 'v1beta', 
-              model: 'gemini-pro-latest',
-              payload: { 
-                contents: [{ parts: [{ text: contextPrompt }] }],
-                tools: [{ google_search_retrieval: { dynamic_retrieval_config: { mode: "DYNAMIC", dynamic_threshold: 0.1 } } }]
-              }
-            },
-            // Fallback 2: v1beta without grounding
-            { 
-              ver: 'v1beta', 
-              model: 'gemini-flash-latest',
-              payload: { contents: [{ parts: [{ text: contextPrompt }] }] }
-            },
-            // Fallback 3: stable v1
-            { 
-              ver: 'v1', 
-              model: 'gemini-1.5-flash',
-              payload: { contents: [{ parts: [{ text: contextPrompt }] }] }
-            }
+            { ver: 'v1beta', model: 'gemini-flash-latest', useGrounding: true },
+            { ver: 'v1beta', model: 'gemini-pro-latest', useGrounding: true },
+            { ver: 'v1beta', model: 'gemini-flash-latest', useGrounding: false },
+            { ver: 'v1', model: 'gemini-1.5-flash', useGrounding: false }
           ];
 
           let success = false;
-          for (const config of testConfigs) {
-            try {
-              const response = await fetch(`https://generativelanguage.googleapis.com/${config.ver}/models/${config.model}:generateContent?key=${geminiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(config.payload)
-              });
-              const data = await response.json();
-              
-              if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
-                aiResponseContent = data.candidates[0].content.parts[0].text;
-                success = true;
-                break;
+          for (const cfg of testConfigs) {
+            // Exponential backoff retry for transient errors (like 503)
+            for (let attempt = 0; attempt < 2; attempt++) {
+              try {
+                const payload = {
+                  contents: [{ parts: [{ text: contextPrompt }] }]
+                };
+                if (cfg.useGrounding) {
+                  payload.tools = [{ 
+                    google_search_retrieval: { 
+                      dynamic_retrieval_config: { mode: "DYNAMIC", dynamic_threshold: 0 } 
+                    } 
+                  }];
+                }
+
+                const response = await fetch(`https://generativelanguage.googleapis.com/${cfg.ver}/models/${cfg.model}:generateContent?key=${geminiKey}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(payload)
+                });
+                
+                if (response.status === 503) {
+                  await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+                  continue; 
+                }
+
+                const data = await response.json();
+                if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+                  aiResponseContent = data.candidates[0].content.parts[0].text;
+                  success = true;
+                  break;
+                } else {
+                  break; // Move to next model config if 400/404
+                }
+              } catch (e) {
+                console.error(`Retry attempt ${attempt} failed:`, e);
+                break; 
               }
-            } catch (e) {
-              console.warn(`Retry loop: ${config.ver}/${config.model} failed, trying next...`);
             }
+            if (success) break;
           }
 
-          if (!success) aiResponseContent = "❌ Lỗi: Hệ thống không thể kết nối với bất kỳ Model Gemini nào. Vui lòng kiểm tra API Key trong Dashboard.";
+          if (!success) aiResponseContent = "❌ Lỗi: Hệ thống không thể kết nối ổn định với IRIS Core (Gemini) sau nhiều lần thử lại. Vui lòng kiểm tra lại Key hoặc thử lại sau vài giây.";
         } else if (selectedModel === 'groq') {
           const completion = await groq.chat.completions.create({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: contextPrompt }] });
           aiResponseContent = completion.choices[0].message.content;

@@ -137,7 +137,7 @@ const ChefAssistant = () => {
                 const geminiKey = config?.integrations?.geminiKey || import.meta.env.VITE_GEMINI_API_KEY;
                 const payload = { contents: [{ parts: [{ text: prompt }] }] };
                 
-                // ROBUST FALLBACK LOOP
+                // ROBUST FALLBACK & RETRY LOOP
                 const configs = [
                   { ver: 'v1beta', model: 'gemini-flash-latest' },
                   { ver: 'v1beta', model: 'gemini-pro-latest' },
@@ -146,24 +146,36 @@ const ChefAssistant = () => {
 
                 let success = false;
                 for (const cfg of configs) {
-                  try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/${cfg.ver}/models/${cfg.model}:generateContent?key=${geminiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    const data = await response.json();
-                    if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
-                      resultText = data.candidates[0].content.parts[0].text;
-                      success = true;
+                  for (let attempt = 0; attempt < 2; attempt++) {
+                    try {
+                      const response = await fetch(`https://generativelanguage.googleapis.com/${cfg.ver}/models/${cfg.model}:generateContent?key=${geminiKey}`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify(payload)
+                      });
+                      
+                      if (response.status === 503) {
+                        await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+                        continue;
+                      }
+
+                      const data = await response.json();
+                      if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+                        resultText = data.candidates[0].content.parts[0].text;
+                        success = true;
+                        break;
+                      } else {
+                        break; 
+                      }
+                    } catch (e) {
+                      console.error(`Chef retry fail: ${cfg.model}`, e);
                       break;
                     }
-                  } catch (e) {
-                    console.warn(`Chef retry fail: ${cfg.model}`);
                   }
+                  if (success) break;
                 }
 
-                if (!success) resultText = "Lỗi phản hồi từ Gemini sau khi thử tất cả các model.";
+                if (!success) resultText = "Lỗi phản hồi từ Gemini sau khi thử tất cả các model. Vui lòng thử lại sau.";
             } else if (selectedModel === 'groq') {
                 if (!groq) throw new Error('Chưa cấu hình Groq Key!');
                 const completion = await groq.chat.completions.create({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }] });
