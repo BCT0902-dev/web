@@ -400,7 +400,7 @@ const AdminDashboard = () => {
            'Authorization': `Bearer ${key}`
          },
          body: JSON.stringify({
-           model: "gpt-4o-mini",
+           model: "gpt-4o",
            messages: [{ role: "user", content: "Say 'IRIS_PAWAN_OK'" }]
          })
       });
