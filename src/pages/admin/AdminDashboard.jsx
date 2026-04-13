@@ -51,7 +51,7 @@ const AdminDashboard = () => {
   const [userModal, setUserModal] = useState({ isOpen: false, mode: 'add', data: {} });
 
   // API Test states
-  const [apiTestStatus, setApiTestStatus] = useState({ gemini: '', deepseek: '', groq: '' });
+  const [apiTestStatus, setApiTestStatus] = useState({ gemini: '', deepseek: '', groq: '', openai: '', zalo: '', pawan: '' });
   
   // Newsletter Logic
   const [newsletterContent, setNewsletterContent] = useState('');
@@ -380,6 +380,36 @@ const AdminDashboard = () => {
       }
     } catch (err) {
       setApiTestStatus(prev => ({ ...prev, openai: '❌ LỖI MẠNG: ' + err.message }));
+    }
+  };
+
+  const testPawanAPI = async () => {
+    const key = localConfig?.integrations?.pawanKey;
+    if (!key) {
+      setApiTestStatus(prev => ({ ...prev, pawan: '⚠️ Lỗi: Chưa điền API Key!' }));
+      return;
+    }
+    setApiTestStatus(prev => ({ ...prev, pawan: 'Đang xác thực với Pawan.krd Server...' }));
+    try {
+      const response = await fetch(`https://api.pawan.krd/v1/chat/completions`, {
+         method: 'POST',
+         headers: { 
+           'Content-Type': 'application/json',
+           'Authorization': `Bearer ${key}`
+         },
+         body: JSON.stringify({
+           model: "gpt-4o-mini",
+           messages: [{ role: "user", content: "Say 'IRIS_PAWAN_OK'" }]
+         })
+      });
+      const data = await response.json();
+      if (response.ok && data.choices) {
+        setApiTestStatus(prev => ({ ...prev, pawan: '✅ KẾT NỐI THÀNH CÔNG!' }));
+      } else {
+        setApiTestStatus(prev => ({ ...prev, pawan: `❌ LỖI: ${data.error?.message || response.statusText}` }));
+      }
+    } catch (err) {
+      setApiTestStatus(prev => ({ ...prev, pawan: '❌ LỖI MẠNG: ' + err.message }));
     }
   };
 
@@ -1018,6 +1048,17 @@ const AdminDashboard = () => {
                   <div style={{ display: 'flex', gap: '1rem' }}>
                     <input style={{ flex: 1 }} type="password" value={localConfig.integrations.openaiKey || ''} onChange={(e) => updateNested('integrations', 'openaiKey', e.target.value)} />
                     <button className="add-btn" onClick={testOpenAIAPI}><Activity size={16} /> TEST OPENAI</button>
+                  </div>
+                </div>
+
+                <div className="input-group" style={{ marginTop: '1.5rem' }}>
+                  <label style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>PAWAN API KEY (GPT-4o-mini / Free)</span>
+                    <span style={{ fontSize: '0.8rem', color: apiTestStatus.pawan?.includes('LỖI') ? '#ef4444' : '#10b981' }}>{apiTestStatus.pawan}</span>
+                  </label>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <input style={{ flex: 1 }} type="password" value={localConfig.integrations.pawanKey || ''} onChange={(e) => updateNested('integrations', 'pawanKey', e.target.value)} placeholder="pk-..." />
+                    <button className="add-btn" onClick={testPawanAPI}><Activity size={16} /> TEST PAWAN</button>
                   </div>
                 </div>
 

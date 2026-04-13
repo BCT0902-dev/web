@@ -61,6 +61,7 @@ const AIChat = () => {
   const deepseekKey = config?.integrations?.deepseekKey || import.meta.env.VITE_DEEPSEEK_API_KEY;
   const groqKey = config?.integrations?.groqKey;
   const openaiKey = config?.integrations?.openaiKey;
+  const pawanKey = config?.integrations?.pawanKey;
 
   const genAI = new GoogleGenerativeAI(geminiKey || 'dummy_key');
   const groq = groqKey ? new OpenAI({ apiKey: groqKey, baseURL: 'https://api.groq.com/openai/v1', dangerouslyAllowBrowser: true }) : null;
@@ -217,6 +218,29 @@ const AIChat = () => {
           if (!chatgpt) throw new Error('Chưa cấu hình OpenAI Key!');
           const completion = await chatgpt.chat.completions.create({ model: "gpt-4o-mini", messages: [{ role: "user", content: contextPrompt }] });
           aiResponseContent = completion.choices[0].message.content;
+        } else if (selectedModel === 'pawan') {
+          const activeKey = pawanKey?.trim();
+          if (!activeKey) {
+            aiResponseContent = "⚠️ CHƯA CẤU HÌNH PAWAN API KEY: Vui lòng vào Admin Dashboard để điền Key.";
+          } else {
+            const response = await fetch(`https://api.pawan.krd/v1/chat/completions`, {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${activeKey}`
+              },
+              body: JSON.stringify({
+                model: "gpt-4o-mini",
+                messages: [{ role: "user", content: contextPrompt }]
+              })
+            });
+            const data = await response.json();
+            if (response.ok && data.choices?.[0]?.message?.content) {
+              aiResponseContent = data.choices[0].message.content;
+            } else {
+              aiResponseContent = `❌ Lỗi Pawan API: ${data.error?.message || response.statusText}`;
+            }
+          }
         } else {
           if (!deepseek) throw new Error('Chưa cấu hình Deepseek Key!');
           const completion = await deepseek.chat.completions.create({ model: "deepseek-chat", messages: [{ role: "user", content: contextPrompt }] });
@@ -355,25 +379,26 @@ const AIChat = () => {
                       <button 
                         className={`action-chip model-selector-btn ${selectedModel}`} 
                         onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-                        style={{ 
-                          background: selectedModel === 'gemini' ? '#4285F4' : (selectedModel === 'chatgpt' ? '#10a37f' : (selectedModel === 'groq' ? '#F4511E' : '#673AB7')),
-                          color: '#fff',
+                         style={{ 
+                          background: selectedModel === 'gemini' ? '#4285F4' : (selectedModel === 'chatgpt' ? '#10a37f' : (selectedModel === 'pawan' ? '#00f0ff' : (selectedModel === 'groq' ? '#F4511E' : '#673AB7'))),
+                          color: selectedModel === 'pawan' ? '#000' : '#fff',
                           fontWeight: 'bold',
-                          boxShadow: `0 0 15px ${selectedModel === 'gemini' ? 'rgba(66, 133, 244, 0.4)' : (selectedModel === 'chatgpt' ? 'rgba(16, 163, 127, 0.4)' : (selectedModel === 'groq' ? 'rgba(244, 81, 30, 0.4)' : 'rgba(103, 58, 183, 0.4)'))}`
+                          boxShadow: `0 0 15px ${selectedModel === 'gemini' ? 'rgba(66, 133, 244, 0.4)' : (selectedModel === 'chatgpt' ? 'rgba(16, 163, 127, 0.4)' : (selectedModel === 'pawan' ? 'rgba(0, 240, 255, 0.6)' : (selectedModel === 'groq' ? 'rgba(244, 81, 30, 0.4)' : 'rgba(103, 58, 183, 0.4)')))}`
                         }}
                       >
-                         <Cpu size={16} /> {selectedModel.toUpperCase()} <ChevronDown size={14} />
+                         <Cpu size={16} /> {selectedModel === 'pawan' ? 'IRIS GPT' : selectedModel.toUpperCase()} <ChevronDown size={14} />
                       </button>
                       
                       {isModelDropdownOpen && (
                          <div className="model-dropdown-menu">
-                            {['gemini', 'chatgpt', 'deepseek', 'groq'].map(m => (
+                            {['gemini', 'chatgpt', 'pawan', 'deepseek', 'groq'].map(m => (
                                <div key={m} className={`dropdown-item ${selectedModel === m ? 'active' : ''}`} onClick={() => { setSelectedModel(m); setIsModelDropdownOpen(false); }}>
                                   {m === 'gemini' && <Sparkles size={14} color="#4285F4" />}
                                   {m === 'chatgpt' && <Bot size={14} color="#10a37f" />}
+                                  {m === 'pawan' && <Zap size={14} color="#00f0ff" />}
                                   {m === 'deepseek' && <Brain size={14} color="#673AB7" />}
                                   {m === 'groq' && <Zap size={14} color="#F4511E" />}
-                                  {m.toUpperCase()}
+                                  {m === 'pawan' ? 'IRIS GPT (PRO)' : m.toUpperCase()}
                                </div>
                             ))}
                          </div>
