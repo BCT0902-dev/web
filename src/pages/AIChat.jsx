@@ -230,7 +230,7 @@ const AIChat = () => {
                 'Authorization': `Bearer ${activeKey}`
               },
               body: JSON.stringify({
-                model: "gpt-4o",
+                model: config?.integrations?.pawanModel || "openai/gpt-oss-20b",
                 messages: [{ role: "user", content: contextPrompt }]
               })
             });

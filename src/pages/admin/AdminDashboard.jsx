@@ -1056,12 +1056,34 @@ const AdminDashboard = () => {
 
                 <div className="input-group" style={{ marginTop: '1.5rem' }}>
                   <label style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>PAWAN API KEY (GPT-4o-mini / Free)</span>
+                    <span>PAWAN API KEY (Reverse Proxy / Free)</span>
                     <span style={{ fontSize: '0.8rem', color: apiTestStatus.pawan?.includes('LỖI') ? '#ef4444' : '#10b981' }}>{apiTestStatus.pawan}</span>
                   </label>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
+                  <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.8rem' }}>
                     <input style={{ flex: 1 }} type="password" value={localConfig.integrations.pawanKey || ''} onChange={(e) => updateNested('integrations', 'pawanKey', e.target.value)} placeholder="pk-..." />
                     <button className="add-btn" onClick={testPawanAPI}><Activity size={16} /> TEST PAWAN</button>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <label style={{ fontSize: '0.75rem', opacity: 0.6, whiteSpace: 'nowrap' }}>CHỌN MODEL:</label>
+                    <select 
+                      value={localConfig.integrations.pawanModel || 'openai/gpt-oss-20b'} 
+                      onChange={(e) => updateNested('integrations', 'pawanModel', e.target.value)}
+                      style={{ 
+                        flex: 1, 
+                        background: 'rgba(255,255,255,0.05)', 
+                        border: '1px solid rgba(255,255,255,0.1)', 
+                        color: 'var(--accent-main)',
+                        padding: '0.5rem',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem'
+                      }}
+                    >
+                      <option value="openai/gpt-oss-20b">GPT-OSS 20B (Free)</option>
+                      <option value="stepfun-ai/Step-3.5-Flash">Step 3.5 Flash (Free)</option>
+                      <option value="pkrd/cosmosrp-2.1">CosmosRP V2.1 (Free)</option>
+                      <option value="google/gemma-2-27b-it">Gemma 2 27B IT (Free)</option>
+                      <option value="gpt-4o">GPT-4o (Premium/Standard)</option>
+                    </select>
                   </div>
                 </div>
 
@@ -1280,22 +1302,34 @@ const AdminDashboard = () => {
                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Bật "Bảo trì" để tạm thời khóa quyền truy cập của khách vào các trang cụ thể.</p>
                 </div>
 
-                <div className="glass-panel" style={{ padding: '2rem' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                <div className="glass-panel" style={{ padding: '2rem', background: 'rgba(10,10,10,0.4)', borderRadius: '24px' }}>
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
+                    gap: '1.5rem',
+                    color: '#fff' 
+                  }}>
                     {[
                       'chat', 'youtube', 'chef', 'water', 'blog', 'chronicles', 'about', 'skills'
                     ].map(key => (
                       <div key={key} style={{ 
-                        background: 'rgba(255,255,255,0.02)', 
+                        background: 'rgba(255,255,255,0.03)', 
                         padding: '1.5rem', 
-                        borderRadius: '16px', 
-                        border: '1px solid rgba(255,255,255,0.05)',
+                        borderRadius: '20px', 
+                        border: '1px solid rgba(255,255,255,0.08)',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '1rem'
+                        gap: '1.2rem',
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
                       }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: '0.8rem', letterSpacing: '1px' }}>
+                          <span style={{ 
+                            fontWeight: '700', 
+                            textTransform: 'uppercase', 
+                            fontSize: '0.85rem', 
+                            letterSpacing: '1.5px',
+                            color: 'var(--accent-main)'
+                          }}>
                             {key === 'chat' ? 'IRIS AI CHAT' : 
                              key === 'youtube' ? 'YOUTUBE ANALYZER' :
                              key === 'chef' ? 'CHEF ASSISTANT' :
@@ -1304,7 +1338,7 @@ const AdminDashboard = () => {
                              key === 'chronicles' ? 'PERSONAL CHRONICLES' : 
                              key.toUpperCase()}
                           </span>
-                          {(localConfig.maintenance && localConfig.maintenance[key]) ? <Lock size={16} color="var(--danger)" /> : <Unlock size={16} color="var(--success)" />}
+                          {(localConfig.maintenance && localConfig.maintenance[key]) ? <Lock size={18} color="#ff4d4d" /> : <Unlock size={18} color="#00ffcc" />}
                         </div>
                         
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -1315,17 +1349,19 @@ const AdminDashboard = () => {
                             }}
                             style={{ 
                               flex: 1,
-                              padding: '0.8rem',
-                              borderRadius: '12px',
-                              background: (localConfig.maintenance && localConfig.maintenance[key]) ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-                              color: (localConfig.maintenance && localConfig.maintenance[key]) ? '#ef4444' : '#10b981',
-                              border: `1px solid ${(localConfig.maintenance && localConfig.maintenance[key]) ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)'}`,
-                              fontWeight: 'bold',
-                              fontSize: '0.75rem',
-                              transition: 'all 0.3s ease'
+                              padding: '1rem',
+                              borderRadius: '14px',
+                              background: (localConfig.maintenance && localConfig.maintenance[key]) ? 'rgba(255, 77, 77, 0.15)' : 'rgba(0, 255, 204, 0.1)',
+                              color: (localConfig.maintenance && localConfig.maintenance[key]) ? '#ff4d4d' : '#00ffcc',
+                              border: `1px solid ${(localConfig.maintenance && localConfig.maintenance[key]) ? 'rgba(255, 77, 77, 0.3)' : 'rgba(0, 255, 204, 0.2)'}`,
+                              fontWeight: '800',
+                              fontSize: '0.8rem',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease',
+                              textShadow: (localConfig.maintenance && localConfig.maintenance[key]) ? '0 0 10px rgba(255,77,77,0.3)' : 'none'
                             }}
                           >
-                            {(localConfig.maintenance && localConfig.maintenance[key]) ? 'ĐANG KHÓA (BẢO TRÌ)' : 'ĐANG CÔNG KHAI'}
+                            {(localConfig.maintenance && localConfig.maintenance[key]) ? 'Hệ thống đang Khóa' : 'Đang Công khai'}
                           </button>
                         </div>
                       </div>
