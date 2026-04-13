@@ -1031,6 +1031,16 @@ const AdminDashboard = () => {
                     <button className="add-btn" onClick={testZaloBotAPI}><Activity size={16} /> TEST ZALO</button>
                   </div>
                 </div>
+
+                <div className="input-group" style={{ marginTop: '1.5rem' }}>
+                   <label>ZALO BOT ID (Ví dụ: 351...)</label>
+                   <input type="text" value={localConfig.integrations.zaloBotId || ''} onChange={(e) => updateNested('integrations', 'zaloBotId', e.target.value)} placeholder="Nhập ID Bot để tạo link liên kết nhanh..." />
+                </div>
+
+                <div className="api-config-alert" style={{ marginTop: '1.5rem', background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', borderColor: 'rgba(59, 130, 246, 0.2)' }}>
+                  <strong> WEBHOOK URL:</strong> <code>{window.location.origin}/api/zalo-webhook</code>
+                  <p style={{ fontSize: '0.75rem', marginTop: '0.5rem', opacity: 0.8 }}>Dán URL này vào mục "Webhook URL" trên zaloplatforms.com</p>
+                </div>
               </motion.div>
             )}
 
