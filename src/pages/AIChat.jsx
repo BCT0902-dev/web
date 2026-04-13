@@ -134,8 +134,13 @@ const AIChat = () => {
         imageUrl = '/iris_visual_studio_demo_1776002252586.png';
         aiResponseContent = `🎨 **IRIS Visual Studio**\n\nHình ảnh đã được tạo dựa trên mô tả: "${tempInput}"\n\n![IRIS AI Generated Image](${imageUrl})`;
       } else {
+        // INJECT REAL-TIME CONTEXT
+        const now = new Date();
+        const timeStr = now.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+        const contextPrompt = `[Bối cảnh hiện tại: Việt Nam, Giờ hệ thống: ${timeStr}] ${displayPrompt}`;
+
         if (selectedModel === 'gemini') {
-          const payload = { contents: [{ parts: [{ text: displayPrompt }] }] };
+          const payload = { contents: [{ parts: [{ text: contextPrompt }] }] };
           const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
              method: 'POST',
              headers: { 'Content-Type': 'application/json' },
@@ -144,10 +149,10 @@ const AIChat = () => {
           const data = await response.json();
           aiResponseContent = data.candidates?.[0]?.content?.parts?.[0]?.text || "Lỗi phản hồi từ Gemini.";
         } else if (selectedModel === 'groq') {
-          const completion = await groq.chat.completions.create({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: displayPrompt }] });
+          const completion = await groq.chat.completions.create({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: contextPrompt }] });
           aiResponseContent = completion.choices[0].message.content;
         } else {
-          const completion = await deepseek.chat.completions.create({ model: "deepseek-chat", messages: [{ role: "user", content: displayPrompt }] });
+          const completion = await deepseek.chat.completions.create({ model: "deepseek-chat", messages: [{ role: "user", content: contextPrompt }] });
           aiResponseContent = completion.choices[0].message.content;
         }
       }
@@ -313,6 +318,8 @@ const AIChat = () => {
                 </button>
              </div>
           </div>
+          {/* Dedicated glow layer sibling to prevent stacking context leaks */}
+          <div className="iris-glow-layer" />
         </div>
       </main>
     </div>

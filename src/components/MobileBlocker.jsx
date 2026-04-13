@@ -108,7 +108,7 @@ const MobileBlocker = () => {
               marginBottom: '2.5rem',
               fontFamily: 'Inter'
             }}>
-              {t('mobile.notice_desc', 'BCT0902 is working hard on the Mobile UI. Currently, IRIS AI is optimized for the full PC experience only. Please bear with us!')}
+              {t('mobile.notice_desc', 'Hiện tại dự án chỉ sẵn sàng cho trải nghiệm hoàn hảo trên máy tính. Vui lòng truy cập bằng máy tính và chờ đợi phiên bản tốt nhất cho mobile.')}
             </p>
 
             <div style={{ 
