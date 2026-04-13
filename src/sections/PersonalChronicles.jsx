@@ -91,7 +91,38 @@ const Milestone = ({ milestone, index, isLast, image }) => {
 
         <div style={{ flex: 1, transform: 'translateZ(20px)' }}> {/* Content pops forward slightly */}
             <h3 style={{ fontFamily: 'Chakra Petch', fontSize: '1.4rem', color: '#fff', marginBottom: '1rem', letterSpacing: '1px' }}>{milestone.title}</h3>
-            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>{milestone.desc}</p>
+            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: milestone.achievements?.length > 0 ? '1.5rem' : 0 }}>{milestone.desc}</p>
+            
+            {milestone.achievements?.length > 0 && (
+              <div style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: '0.8rem',
+                paddingLeft: '0.5rem',
+                borderLeft: '2px solid rgba(var(--accent-rgb), 0.3)',
+                marginTop: '1rem'
+              }}>
+                {milestone.achievements.map((ach, i) => (
+                  <motion.div 
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    style={{ 
+                      fontSize: '0.9rem', 
+                      color: '#ddd', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '0.6rem',
+                      lineHeight: 1.4
+                    }}
+                  >
+                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-main)', boxShadow: '0 0 5px var(--accent-main)' }} />
+                    {ach}
+                  </motion.div>
+                ))}
+              </div>
+            )}
         </div>
 
         {image && (
@@ -209,10 +240,14 @@ const PersonalChronicles = () => {
 
   const milestones = [];
   for(let i=1; i<=6; i++) {
+    const achievementKey = `chronicles.m${i}.achievements`;
+    const achievements = t(achievementKey, { returnObjects: true });
+    
     milestones.push({
       year: t(`chronicles.m${i}.year`),
       title: t(`chronicles.m${i}.title`),
-      desc: t(`chronicles.m${i}.desc`)
+      desc: t(`chronicles.m${i}.desc`),
+      achievements: Array.isArray(achievements) ? achievements : []
     });
   }
 

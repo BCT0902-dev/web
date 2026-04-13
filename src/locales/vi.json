@@ -134,7 +134,20 @@
     "m1": { "year": "2006", "title": "Cấp 1", "desc": "Học tại Trường Tiểu học Tân Thanh 1. Những năm tháng đầu đời làm quen với con chữ." },
     "m2": { "year": "2011", "title": "Cấp 2", "desc": "Theo học tại THCS Tân Thanh. Bắt đầu hình thành tư duy học tập độc lập." },
     "m3": { "year": "2015", "title": "Cấp 3", "desc": "Học tại THPT Huỳnh Thúc Kháng. Giai đoạn quan trọng chuẩn bị cho tương lai." },
-    "m4": { "year": "2019", "title": "Đại học", "desc": "Sinh viên Đại học Lạc Hồng. Nơi kiến thức chuyên môn bắt đầu được tích lũy." },
+    "m4": { 
+      "year": "2019", 
+      "title": "Đại học Lạc Hồng (LHU)", 
+      "desc": "Giai đoạn tích lũy kiến thức chuyên môn và khẳng định năng lực qua các dự án thực tế cùng nhiều giải thưởng học thuật.",
+      "achievements": [
+        "Tốt nghiệp loại Giỏi chuyên ngành Công Nghệ Thông Tin",
+        "Top 4 dự án epic 2023 \"Smart Inhaler\"",
+        "Giải đặc biệt giải Tài năng IT 2021",
+        "Dự án phát hiện tụ máu trong não bằng DeepLearning",
+        "Dự án Smart Fish Feeder",
+        "Gương mặt tiêu biểu Đoàn cơ sở LHU 2021",
+        "Dự án Trao tặng máy tính - Vững bước khó khăn 2021"
+      ]
+    },
     "m5": { "year": "2023", "title": "Kỹ thuật viên @ FPT", "desc": "Thực tập và làm việc tại tập đoàn FPT. Trải nghiệm môi trường làm việc chuyên nghiệp hàng đầu Việt Nam với vai trò kỹ thuật." },
     "m6": { "year": "07/2023 - 01/2025", "title": "IT @ Chính Nam Biên Hòa", "desc": "Phụ trách mảng CNTT tại Công ty Chính Nam Biên Hòa trong 1 năm 7 tháng. Hiện tại tôi đang tự do và sẵn sàng cho những thử thách mới." }
   },
