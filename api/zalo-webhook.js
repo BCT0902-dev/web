@@ -87,10 +87,68 @@ export default async function handler(req, res) {
       await reply(`✅ THIẾT LẬP THÀNH CÔNG!\nIRIS đã kết nối với tài khoản của ngài.\nGiờ đây ngài có thể nhận lời nhắc uống nước tự động.`);
     } else {
       await reply(`✅ XÁC NHẬN KẾT NỐI\nID Zalo của ngài là: ${fromUid}\n\nNgài hãy dán mã này vào website IRIS AI để bắt đầu.`);
+      
+      // Setup delayed intro in Firestore if not exists
+      const sessionRef = db.collection('hydration_sessions').doc(fromUid);
+      const sessionDoc = await sessionRef.get();
+      if (!sessionDoc.exists) {
+        await sessionRef.set({
+          chat_id: fromUid,
+          name: "Ngài",
+          intro_sent: false,
+          intro_at: admin.firestore.Timestamp.fromMillis(Date.now() + 3 * 60 * 1000), // 3 mins later
+          created_at: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+      }
     }
   } else {
-    // FALLBACK: When user sends random message and it's not an ID request
-    await reply(`🤖 Chào ngài, IRIS AI đã nhận được tin nhắn.\n\nĐể liên kết Zalo Bot và nhận nhắc nhở tự động, ngài hãy truy cập trang web: https://www.bct0902.top của Bùi Công Tới để thực hiện lập kế hoạch AI nhé! 💧`);
+    // INTERACTIVE LOGIC
+    const sessionRef = db.collection('hydration_sessions').doc(fromUid);
+    const sessionDoc = await sessionRef.get();
+
+    if (sessionDoc.exists) {
+      const session = sessionDoc.data();
+      const lowerMsg = messageText.toLowerCase();
+
+      // 1. CANCEL PLAN
+      if (lowerMsg.includes('hủy') && lowerMsg.includes('kế hoạch')) {
+        await sessionRef.delete();
+        await reply(`🗑️ ĐÃ HỦY KẾ HOẠCH\n\nIRIS AI đã xóa toàn bộ lịch trình và ngừng nhắc nhở. Ngài có thể lập kế hoạch mới bất cứ lúc nào trên website.`);
+        return res.status(200).json({ ok: true });
+      }
+
+      // 2. ACKNOWLEDGE DRINKING
+      const okKeywords = ['ok', 'xong', 'rồi', 'đã uống', 'done', 'uống rồi'];
+      if (okKeywords.some(kw => lowerMsg.includes(kw))) {
+        let schedule = session.schedule || [];
+        // Find most recent 'sent' reminder
+        const sentIndex = [...schedule].reverse().findIndex(item => item.status === 'sent');
+        
+        if (sentIndex !== -1) {
+          const actualIndex = schedule.length - 1 - sentIndex;
+          schedule[actualIndex].status = 'completed';
+          
+          // Increment consumed
+          const amountStr = schedule[actualIndex].amount || "0";
+          const amountVal = parseInt(amountStr.replace(/[^0-9]/g, '')) || 0;
+          const newConsumed = (session.consumed || 0) + (amountVal / 1000); // convert ml to L
+          
+          await sessionRef.update({
+            schedule,
+            consumed: Number(newConsumed.toFixed(2)),
+            last_drink_at: admin.firestore.FieldValue.serverTimestamp()
+          });
+
+          await reply(`✅ TUYỆT VỜI!\n\nIRIS đã ghi nhận ngài vừa nạp ${amountVal}ml.\nTiến độ: ${Number(newConsumed.toFixed(2))}/${session.total_target} Lít.\n\nCố gắng duy trì phong độ nhé ngài! 💪`);
+        } else {
+          await reply(`🤔 IRIS chưa thấy lịch nhắc gần đây. Có thể ngài đã uống vượt kế hoạch? Rất tốt ạ!`);
+        }
+        return res.status(200).json({ ok: true });
+      }
+    }
+
+    // FALLBACK: Default response
+    await reply(`🤖 Chào ngài, IRIS AI đã nhận được tin nhắn.\n\nĐể liên kết Zalo Bot và nhận nhắc nhở tự động, ngài hãy truy cập trang web: https://www.bct0902.top để thực hiện lập kế hoạch AI nhé! 💧`);
   }
 
   return res.status(200).json({ ok: true });
