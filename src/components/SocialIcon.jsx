@@ -10,7 +10,6 @@ import {
   DollarSign, 
   FileText, 
   Image as ImageIcon, 
-  Slack, 
   Gamepad2,
   Trash2
 } from 'lucide-react';
@@ -127,7 +126,16 @@ const SocialIcon = ({ name, size = 20, color = 'currentColor' }) => {
   if (brandName.includes('patreon')) return <DollarSign size={size} color={color} />;
   if (brandName.includes('medium')) return <FileText size={size} color={color} />;
   if (brandName.includes('behance') || brandName.includes('image')) return <ImageIcon size={size} color={color} />;
-  if (brandName.includes('slack')) return <Slack size={size} color={color} />;
+  if (brandName.includes('slack')) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="13" y="2" width="3" height="8" rx="1.5"></rect>
+        <rect x="19" y="9" width="3" height="8" rx="1.5"></rect>
+        <rect x="8" y="14" width="3" height="8" rx="1.5"></rect>
+        <rect x="2" y="7" width="3" height="8" rx="1.5"></rect>
+      </svg>
+    );
+  }
   if (brandName.includes('steam') || brandName.includes('gamepad')) return <Gamepad2 size={size} color={color} />;
   if (brandName.includes('discord')) return <MessageSquare size={size} color={color} />;
   if (brandName.includes('apple')) return <Music size={size} color={color} />;
