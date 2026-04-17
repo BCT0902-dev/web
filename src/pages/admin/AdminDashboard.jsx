@@ -35,6 +35,7 @@ import { db } from '../../firebase';
 import { doc, setDoc, updateDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 import { useConfig } from '../../context/ConfigContext';
+import SocialIcon from '../../components/SocialIcon';
 import './AdminDashboard.css';
 
 const SOCIAL_PLATFORMS = [
@@ -789,11 +790,10 @@ const AdminDashboard = () => {
                           }}
                           onClick={() => setActiveIconPickerIdx(activeIconPickerIdx === idx ? null : idx)}
                         >
-                          {social.icon && SOCIAL_PLATFORMS.some(p => p.icon === social.icon) ? (
-                             <span style={{ fontSize: '10px', fontWeight: 'bold' }}>ICON</span>
-                          ) : (
-                             <ImageIcon size={18} />
+                          {social.icon && (
+                             <SocialIcon name={social.icon} size={20} color="#fff" />
                           )}
+                          {!social.icon && <ImageIcon size={18} />}
                         </button>
                         
                         <AnimatePresence>
@@ -858,14 +858,12 @@ const AdminDashboard = () => {
                                     }}
                                     title={platform.name}
                                   >
-                                    <div style={{ color: platform.color, fontSize: '0.6rem', fontWeight: 'bold' }}>{platform.name.substring(0,6)}</div>
-                                    <div style={{
-                                      width: '10px',
-                                      height: '10px',
-                                      borderRadius: '50%',
-                                      background: platform.color,
-                                      boxShadow: `0 0 10px ${platform.color}`
-                                    }} />
+                                    <div style={{ color: platform.color, marginBottom: '2px' }}>
+                                      <SocialIcon name={platform.icon} size={22} color={platform.color} />
+                                    </div>
+                                    <div style={{ color: platform.color, fontSize: '0.6rem', fontWeight: 'bold', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                      {platform.name}
+                                    </div>
                                   </button>
                                 ))}
                               </div>
