@@ -13,7 +13,10 @@ export default async function handler(req, res) {
 
   if (!BOT_TOKEN) {
     console.error("CRITICAL: ZALO_BOT_TOKEN is not set on server!");
-    return res.status(500).json({ error: 'Server configuration error' });
+    return res.status(500).json({ 
+      error: 'Cấu hình Server thiếu ZALO_BOT_TOKEN. Vui lòng thêm vào biến môi trường Vercel.',
+      ok: false 
+    });
   }
 
   try {
@@ -26,9 +29,13 @@ export default async function handler(req, res) {
     const data = await response.json();
     console.log("Zalo API Proxy Result:", JSON.stringify(data));
     
+    if (!data.ok) {
+      console.error("Zalo API Error Detail:", data.description || "Unknown error");
+    }
+
     return res.status(data.ok ? 200 : 400).json(data);
   } catch (error) {
     console.error("Zalo Proxy Error:", error);
-    return res.status(500).json({ error: 'Failed to connect to Zalo API' });
+    return res.status(500).json({ error: 'Failed to connect to Zalo API Bridge', ok: false });
   }
 }

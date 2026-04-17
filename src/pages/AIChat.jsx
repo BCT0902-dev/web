@@ -2,24 +2,24 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Send, 
-  Trash2, 
   PlusCircle, 
+  MessageSquare, 
+  LogOut, 
+  ChevronLeft, 
+  ArrowLeft, 
   Bot, 
-  User, 
-  Zap, 
+  Sparkles, 
   Cpu, 
-  Copy, 
-  Check,
-  ChevronLeft,
-  Settings,
-  Sparkles,
-  MessageSquare,
-  History,
-  Terminal,
-  Eraser,
+  Settings, 
+  HelpCircle, 
+  X, 
+  Menu,
   Shield,
-  ChevronDown,
-  Brain
+  Zap,
+  Brain,
+  Download,
+  Terminal,
+  User
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -51,6 +51,7 @@ const AIChat = () => {
   const [isFocused, setIsFocused] = useState(false);
   const [chatMode, setChatMode] = useState('fast'); // 'fast' | 'reasoning'
   const [routingInfo, setRoutingInfo] = useState('');
+  const [selectedImage, setSelectedImage] = useState(null);
   
   const messagesEndRef = useRef(null);
   const { currentUser: authUser, isAdmin } = useAuth();
@@ -183,6 +184,27 @@ const AIChat = () => {
     throw new Error(`Tất cả các Node Search đều gặp sự cố: ${lastError}`);
   };
 
+  const handleDownloadImage = async (url) => {
+    try {
+      setRoutingInfo('Đang chuẩn bị tệp tải về...');
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.setAttribute('download', `IRIS-Art-${Date.now()}.jpg`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+      setRoutingInfo('');
+    } catch (error) {
+      console.error('Download failed:', error);
+      setRoutingInfo('Lỗi khi tải ảnh. Vui lòng thử lại.');
+      setTimeout(() => setRoutingInfo(''), 3000);
+    }
+  };
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
     
@@ -215,7 +237,7 @@ const AIChat = () => {
         // Wait bit for "processing" feel
         await new Promise(r => setTimeout(r, 2000));
         
-        aiResponseContent = `🎨 **IRIS Visual Studio (Free Engine)**\n\nHình ảnh đã được tạo cho: "${tempInput}"\n\n![IRIS AI Generated Image](${imageUrl})`;
+        aiResponseContent = `🎨 **IRIS Visual Studio (Free Engine)**\n\nHình ảnh đã được tạo cho: "${tempInput}"`;
       } else {
         const now = new Date();
         const timeStr = now.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
@@ -346,6 +368,17 @@ const AIChat = () => {
                 </div>
                 <div className="message-content">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                  {msg.imageUrl && (
+                    <div className="message-image-container" style={{ marginTop: '0.8rem' }}>
+                      <img 
+                        src={msg.imageUrl} 
+                        alt="IRIS Art" 
+                        className="message-image" 
+                        style={{ maxWidth: '100%', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.1)', cursor: 'pointer' }}
+                        onClick={() => setSelectedImage(msg.imageUrl)}
+                      />
+                    </div>
+                  )}
                 </div>
               </motion.div>
             ))
@@ -435,6 +468,28 @@ const AIChat = () => {
           <div className="iris-glow-layer" />
         </div>
       </main>
+
+      {/* Full-screen Image Modal (Lightbox) */}
+      {selectedImage && (
+        <div className="iris-lightbox-overlay">
+          <div className="lightbox-header">
+            <button className="lightbox-action-btn" onClick={() => handleDownloadImage(selectedImage)}>
+              <Download size={18} /> TẢI VỀ MÁY
+            </button>
+            <button className="lightbox-action-btn close" onClick={() => setSelectedImage(null)}>
+              <X size={18} /> ĐÓNG
+            </button>
+          </div>
+          <div className="lightbox-content" onClick={() => setSelectedImage(null)}>
+            <img 
+              src={selectedImage} 
+              alt="IRIS Fullsized Art" 
+              className="lightbox-image" 
+              onClick={(e) => e.stopPropagation()} 
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

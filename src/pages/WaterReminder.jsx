@@ -58,39 +58,61 @@ const WaterReminder = () => {
 
   const calculateAndStart = async () => {
     if (!formData.name || !formData.weight || !formData.chat_id) {
-      alert("Vui lòng nhập đầy đủ thông tin!");
+      alert("Vui lòng nhập đầy đủ tên, cân nặng và Zalo Chat ID!");
       return;
     }
 
     setIsLoading(true);
-    setStatus('🔍 AI đang lập kế hoạch cá nhân hóa cho ngài...');
+    setStatus('🔍 IRIS đang lập kế hoạch cá nhân hóa cho ngài...');
 
     try {
-      const baseLiters = (Number(formData.weight) * 0.033).toFixed(1);
+      const weightNum = Number(formData.weight);
+      const baseLiters = (weightNum * 0.033).toFixed(1);
       let aiSchedule = [];
       
-      if (geminiKey) {
-        const prompt = `Tính toán lịch trình uống nước khoa học cho: ${formData.name}, ${formData.weight}kg, ${formData.height}cm. Mục tiêu: ${baseLiters}L. Trả về JSON mảng: [ { "time": "HH:mm", "amount": "250ml", "note": "Ghi chú" } ]`;
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-        });
-        const data = await response.json();
-        const cleanedJson = data.candidates?.[0]?.content?.parts?.[0]?.text.replace(/```json|```/g, '').trim();
-        aiSchedule = JSON.parse(cleanedJson).map(item => ({ ...item, status: 'pending' }));
+      // Tier 1: Gemini AI Planning
+      if (geminiKey && geminiKey !== 'your_gemini_api_key_here') {
+        try {
+          const prompt = `Bạn là chuyên gia dinh dưỡng IRIS. Hãy tính toán lịch trình uống nước khoa học cho: ${formData.name}, cân nặng ${weightNum}kg. 
+          Tổng lượng nước mục tiêu: ${baseLiters} Lít. 
+          Hãy chia nhỏ thành 7-8 lần uống trong ngày (từ 07:00 đến 22:00).
+          Trả về DUY NHẤT một mảng JSON có cấu trúc: [ { "time": "HH:mm", "amount": "250ml", "note": "Ghi chú ngắn" } ]. Đừng nói gì thêm ngoài JSON.`;
+
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+          });
+          const data = await response.json();
+          const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+          
+          // Robust JSON extraction
+          const jsonMatch = rawText.match(/\[[\s\S]*\]/);
+          if (jsonMatch) {
+            aiSchedule = JSON.parse(jsonMatch[0]).map(item => ({ ...item, status: 'pending' }));
+          }
+        } catch (aiErr) {
+          console.error("AI Hydration Planning Failed, using fallback...", aiErr);
+        }
       }
 
-      if (!aiSchedule.length) {
+      // Tier 2: Hard Fallback to Standard Scientific Schedule
+      if (!aiSchedule || aiSchedule.length === 0) {
+        setStatus('⚠️ AI quá tải, đang áp dụng lịch trình tiêu chuẩn khoa học...');
         aiSchedule = [
-          { time: "07:00", amount: "300ml", note: "Thức dậy", status: 'pending' },
-          { time: "09:00", amount: "250ml", note: "Bắt đầu việc", status: 'pending' },
-          { time: "11:30", amount: "250ml", note: "Trước trưa", status: 'pending' },
-          { time: "14:00", amount: "250ml", note: "Chiều", status: 'pending' },
-          { time: "16:30", amount: "250ml", note: "Cuối ngày", status: 'pending' },
-          { time: "19:00", amount: "250ml", note: "Tối", status: 'pending' },
-          { time: "21:30", amount: "200ml", note: "Trước ngủ", status: 'pending' }
+          { time: "07:00", amount: "300ml", note: "Thức dậy & Thanh lọc", status: 'pending' },
+          { time: "09:00", amount: "250ml", note: "Bắt đầu làm việc", status: 'pending' },
+          { time: "11:30", amount: "250ml", note: "Trước bữa trưa", status: 'pending' },
+          { time: "14:00", amount: "250ml", note: "Giờ nghỉ chiều", status: 'pending' },
+          { time: "16:30", amount: "250ml", note: "Cuối giờ làm", status: 'pending' },
+          { time: "19:00", amount: "250ml", note: "Sau bữa tối", status: 'pending' },
+          { time: "21:30", amount: "200ml", note: "Trước khi ngủ", status: 'pending' }
         ];
+        // Ensure standard schedule fits user's weight goal
+        const totalStandard = aiSchedule.reduce((sum, item) => sum + parseInt(item.amount), 0) / 1000;
+        if (totalStandard < baseLiters) {
+           aiSchedule.push({ time: "10:30", amount: "250ml", note: "Bổ sung giữa giờ", status: 'pending' });
+        }
       }
 
       const sessionData = {
@@ -99,26 +121,38 @@ const WaterReminder = () => {
         consumed: 0,
         schedule: aiSchedule,
         intro_sent: false,
-        intro_at: serverTimestamp(), // Will be handled by cron 3 mins later roughly
+        intro_at: serverTimestamp(),
         updated_at: serverTimestamp()
       };
 
       await setDoc(doc(db, 'hydration_sessions', formData.chat_id), sessionData);
       localStorage.setItem('iris_chat_id', formData.chat_id);
       
-      // Send initial plan via Zalo
+      // Trigger Initial Notification
+      setStatus('📡 Đang đồng bộ hóa với Zalo Bot...');
       const scheduleLines = aiSchedule.map(s => `🔹 ${s.time}: ${s.amount} (${s.note})`).join('\n');
-      await fetch('/api/send-notif', {
+      
+      const notifRes = await fetch('/api/send-notif', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: formData.chat_id,
-          text: `💧 KẾ HOẠCH HYDRATION CỦA ${formData.name.toUpperCase()}\nMục tiêu: ${baseLiters} Lít/ngày\n\nLỊCH TRÌNH:\n${scheduleLines}\n\nEm sẽ chủ động nhắc ngài đúng giờ nhé! 🚀`
+          text: `💧 KẾ HOẠCH HYDRATION: ${formData.name.toUpperCase()}\n\nMục tiêu: ${baseLiters} Lít/ngày\n\nLỊCH TRÌNH:\n${scheduleLines}\n\nEm đã lưu lịch này và sẽ nhắc ngài đúng giờ nhé! 🚀`
         })
       });
 
-      setStatus('🚀 Đã kích hoạt hệ thống nhắc nhở!');
-    } catch (e) { setStatus('❌ Lỗi thiết lập.'); } finally { setIsLoading(false); }
+      const notifData = await notifRes.json();
+      if (notifData.ok) {
+        setStatus('🚀 Đã kích hoạt hệ thống nhắc nhở thành công!');
+      } else {
+        setStatus(`⚠️ Kích hoạt Dashboard thành công, nhưng Zalo lỗi: ${notifData.error || "Sai token"}`);
+      }
+    } catch (e) { 
+      console.error(e);
+      setStatus('❌ Lỗi thiết lập hệ thống. Vui lòng thử lại sau.'); 
+    } finally { 
+      setIsLoading(false); 
+    }
   };
 
   const cancelPlan = async () => {
@@ -177,15 +211,26 @@ const WaterReminder = () => {
               </div>
             </div>
             <div className="input-group-modern">
-              <label style={{ color: '#fff' }}>ZALO CHAT ID</label>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <input type="text" value={formData.chat_id} onChange={e => { setFormData({...formData, chat_id: e.target.value}); localStorage.setItem('iris_chat_id', e.target.value); }} style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--accent-main)', padding: '1rem', borderRadius: '14px', color: '#fff' }} />
-                <button onClick={startSync} style={{ background: '#0068ff', color: '#fff', border: 'none', padding: '0 1rem', borderRadius: '14px' }}><Bot size={20} /></button>
-              </div>
-            </div>
-            <button onClick={calculateAndStart} disabled={isLoading} style={{ marginTop: '1rem', padding: '1.2rem', borderRadius: '18px', background: 'var(--accent-main)', color: '#fff', border: 'none', fontWeight: 'bold', fontSize: '1.1rem' }}>
-              {isLoading ? <Activity className="spin" /> : 'KÍCH HOẠT NHẮC NHỞ AI'}
-            </button>
+               <label style={{ color: '#fff' }}>ZALO CHAT ID</label>
+               <div style={{ display: 'flex', gap: '1rem' }}>
+                 <input type="text" value={formData.chat_id} onChange={e => { setFormData({...formData, chat_id: e.target.value}); localStorage.setItem('iris_chat_id', e.target.value); }} style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--accent-main)', padding: '1rem', borderRadius: '14px', color: '#fff' }} />
+                 <button onClick={startSync} style={{ background: '#0068ff', color: '#fff', border: 'none', padding: '0 1rem', borderRadius: '14px' }}><Bot size={20} /></button>
+               </div>
+             </div>
+
+             {status && (
+               <motion.div 
+                 initial={{ opacity: 0, y: 5 }} 
+                 animate={{ opacity: 1, y: 0 }} 
+                 style={{ padding: '1rem', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', fontSize: '0.9rem', color: status.includes('❌') || status.includes('⚠️') ? '#ff4d4d' : '#00ff88', textAlign: 'center' }}
+               >
+                 {status}
+               </motion.div>
+             )}
+
+             <button onClick={calculateAndStart} disabled={isLoading} style={{ marginTop: '0.5rem', padding: '1.2rem', borderRadius: '18px', background: 'var(--accent-main)', color: '#fff', border: 'none', fontWeight: 'bold', fontSize: '1.1rem', cursor: isLoading ? 'not-allowed' : 'pointer' }}>
+               {isLoading ? <Activity className="spin" /> : 'KÍCH HOẠT NHẮC NHỞ AI'}
+             </button>
           </div>
         ) : (
           <div className="glass-panel" style={{ padding: '2.5rem', borderRadius: '32px', background: 'rgba(20,20,25,0.8)', border: '1px solid var(--accent-main)' }}>

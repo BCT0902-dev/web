@@ -37,6 +37,20 @@ import { Link } from 'react-router-dom';
 import { useConfig } from '../../context/ConfigContext';
 import './AdminDashboard.css';
 
+const SOCIAL_PLATFORMS = [
+  { name: 'Zalo', color: '#0068FF', icon: 'Zalo' },
+  { name: 'Facebook', color: '#1877F2', icon: 'Facebook' },
+  { name: 'YouTube', color: '#FF0000', icon: 'Youtube' },
+  { name: 'TikTok', color: '#000000', icon: 'Tiktok' },
+  { name: 'Instagram', color: '#E4405F', icon: 'Instagram' },
+  { name: 'Telegram', color: '#26A5E4', icon: 'Send' },
+  { name: 'LinkedIn', color: '#0A66C2', icon: 'Linkedin' },
+  { name: 'GitHub', color: '#181717', icon: 'Github' },
+  { name: 'Discord', color: '#5865F2', icon: 'MessageSquare' },
+  { name: 'X (Twitter)', color: '#000000', icon: 'X' },
+  { name: 'Website', color: '#4B5563', icon: 'Globe' }
+];
+
 const AdminDashboard = () => {
   const { config, loading } = useConfig();
   const [activeTab, setActiveTab] = useState('general');
@@ -709,13 +723,24 @@ const AdminDashboard = () => {
 
                 <div className="manager-header">
                   <label>QUẢN LÝ MẠNG XÃ HỘI (SOCIALS)</label>
-                  <button className="add-btn" onClick={() => {
-                     const newSocials = [...(localConfig.social_links || [])];
-                     newSocials.push({ name: 'Mới', icon: 'Globe', url: '', color: '#0084FF', isVisible: true });
-                     setLocalConfig(prev => ({ ...prev, social_links: newSocials }));
-                  }}>
-                    <Plus size={14} /> THÊM MXH
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button className="add-btn" onClick={() => {
+                        const newSocials = [...(localConfig.social_links || [])];
+                        newSocials.push({ name: 'Mới', icon: 'Globe', url: '', color: '#0084FF', isVisible: true });
+                        setLocalConfig(prev => ({ ...prev, social_links: newSocials }));
+                    }}>
+                        <Plus size={14} /> THÊM MXH
+                    </button>
+                    {(localConfig.social_links || []).length > 0 && (
+                        <button className="add-btn" style={{ background: '#ef4444' }} onClick={() => {
+                            if (window.confirm("Ngài chắc chắn muốn xóa TẤT CẢ mạng xã hội này chứ? Thao tác này không thể hoàn tác.")) {
+                                setLocalConfig(prev => ({ ...prev, social_links: [] }));
+                            }
+                        }}>
+                            <Trash2 size={14} /> XÓA TẤT CẢ
+                        </button>
+                    )}
+                  </div>
                 </div>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -732,6 +757,33 @@ const AdminDashboard = () => {
                         newSocials[idx].name = e.target.value;
                         setLocalConfig(prev => ({ ...prev, social_links: newSocials }));
                       }} />
+
+                      <div className="social-icon-library-wrapper" style={{ position: 'relative' }}>
+                        <select 
+                          style={{ width: '100%', padding: '0.6rem 2rem 0.6rem 0.6rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: '8px', appearance: 'none', fontSize: '0.8rem' }}
+                          onChange={(e) => {
+                            const selected = SOCIAL_PLATFORMS.find(p => p.name === e.target.value);
+                            if (selected) {
+                                const newSocials = [...localConfig.social_links];
+                                newSocials[idx] = { 
+                                    ...newSocials[idx], 
+                                    name: selected.name, 
+                                    color: selected.color,
+                                    icon: selected.icon,
+                                    iconUrl: '' // Reset override when picking from library
+                                };
+                                setLocalConfig(prev => ({ ...prev, social_links: newSocials }));
+                            }
+                          }}
+                          value={SOCIAL_PLATFORMS.some(p => p.name === social.name) ? social.name : ""}
+                        >
+                          <option value="">-- Thư viện Icon --</option>
+                          {SOCIAL_PLATFORMS.map((p, i) => (
+                              <option key={i} value={p.name}>{p.name}</option>
+                          ))}
+                        </select>
+                        <ChevronDown size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', opacity: 0.5 }} />
+                      </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <div style={{ width: '30px', height: '30px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
