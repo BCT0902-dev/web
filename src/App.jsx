@@ -25,6 +25,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import Blog from './pages/blog/Blog'; // Assuming I move it to pages/blog/Blog.jsx or keep it simple
 import BlogPost from './pages/blog/BlogPost';
 import Chronicles from './pages/Chronicles';
+import NotFound from './pages/NotFound';
 
 import PageGuard from './components/PageGuard';
 
@@ -96,6 +97,7 @@ function AppRoutes() {
             </PageGuard>
           } />
           <Route path="/admin" element={isAdmin ? <AdminDashboard /> : <Login />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
         {!isAdminPage && <FloatingChatBtn />}
         {!isLoginPage && !isAdminPage && !isUtilitiesPage && !isBlogPage && !isChroniclesPage && <Footer />}

@@ -46,8 +46,20 @@ const SOCIAL_PLATFORMS = [
   { name: 'Telegram', color: '#26A5E4', icon: 'Send' },
   { name: 'LinkedIn', color: '#0A66C2', icon: 'Linkedin' },
   { name: 'GitHub', color: '#181717', icon: 'Github' },
-  { name: 'Discord', color: '#5865F2', icon: 'MessageSquare' },
   { name: 'X (Twitter)', color: '#000000', icon: 'X' },
+  { name: 'Discord', color: '#5865F2', icon: 'MessageSquare' },
+  { name: 'Reddit', color: '#FF4500', icon: 'Bot' },
+  { name: 'Twitch', color: '#9146FF', icon: 'Tv' },
+  { name: 'Spotify', color: '#1DB954', icon: 'Music' },
+  { name: 'Apple Music', color: '#FA243C', icon: 'Music' },
+  { name: 'Snapchat', color: '#FFFC00', icon: 'Ghost' },
+  { name: 'Pinterest', color: '#BD081C', icon: 'Pin' },
+  { name: 'Patreon', color: '#F96854', icon: 'DollarSign' },
+  { name: 'Medium', color: '#000000', icon: 'FileText' },
+  { name: 'Behance', color: '#1769FF', icon: 'Image' },
+  { name: 'Dribbble', color: '#EA4C89', icon: 'Dribbble' },
+  { name: 'Slack', color: '#4A154B', icon: 'Slack' },
+  { name: 'Steam', color: '#000000', icon: 'Gamepad2' },
   { name: 'Website', color: '#4B5563', icon: 'Globe' }
 ];
 
@@ -58,6 +70,7 @@ const AdminDashboard = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [status, setStatus] = useState('');
   const [adjustmentModal, setAdjustmentModal] = useState({ isOpen: false, src: '', callback: null, aspect: 2 });
+  const [activeIconPickerIdx, setActiveIconPickerIdx] = useState(null);
   const [zoom, setZoom] = useState(1);
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
   
@@ -759,30 +772,106 @@ const AdminDashboard = () => {
                       }} />
 
                       <div className="social-icon-library-wrapper" style={{ position: 'relative' }}>
-                        <select 
-                          style={{ width: '100%', padding: '0.6rem 2rem 0.6rem 0.6rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: '8px', appearance: 'none', fontSize: '0.8rem' }}
-                          onChange={(e) => {
-                            const selected = SOCIAL_PLATFORMS.find(p => p.name === e.target.value);
-                            if (selected) {
-                                const newSocials = [...localConfig.social_links];
-                                newSocials[idx] = { 
-                                    ...newSocials[idx], 
-                                    name: selected.name, 
-                                    color: selected.color,
-                                    icon: selected.icon,
-                                    iconUrl: '' // Reset override when picking from library
-                                };
-                                setLocalConfig(prev => ({ ...prev, social_links: newSocials }));
-                            }
+                        <button 
+                          className="btn-select-icon"
+                          style={{
+                            width: '45px',
+                            height: '45px',
+                            borderRadius: '12px',
+                            background: social.color || 'rgba(255,255,255,0.05)',
+                            border: '2px solid rgba(255,255,255,0.1)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            color: '#fff',
+                            transition: 'all 0.3s'
                           }}
-                          value={SOCIAL_PLATFORMS.some(p => p.name === social.name) ? social.name : ""}
+                          onClick={() => setActiveIconPickerIdx(activeIconPickerIdx === idx ? null : idx)}
                         >
-                          <option value="">-- Thư viện Icon --</option>
-                          {SOCIAL_PLATFORMS.map((p, i) => (
-                              <option key={i} value={p.name}>{p.name}</option>
-                          ))}
-                        </select>
-                        <ChevronDown size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', opacity: 0.5 }} />
+                          {social.icon && SOCIAL_PLATFORMS.some(p => p.icon === social.icon) ? (
+                             <span style={{ fontSize: '10px', fontWeight: 'bold' }}>ICON</span>
+                          ) : (
+                             <ImageIcon size={18} />
+                          )}
+                        </button>
+                        
+                        <AnimatePresence>
+                          {activeIconPickerIdx === idx && (
+                            <motion.div 
+                              initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                              animate={{ opacity: 1, scale: 1, y: 0 }}
+                              exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                              style={{
+                                position: 'absolute',
+                                top: '100%',
+                                left: 0,
+                                zIndex: 1000,
+                                background: '#1a1a1f',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: '16px',
+                                padding: '1rem',
+                                boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+                                width: '320px',
+                                marginTop: '10px'
+                              }}
+                            >
+                              <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(4, 1fr)',
+                                gap: '0.8rem',
+                                maxHeight: '300px',
+                                overflowY: 'auto',
+                                paddingRight: '5px'
+                              }} className="custom-scrollbar">
+                                {SOCIAL_PLATFORMS.map((platform, pIdx) => (
+                                  <button
+                                    key={pIdx}
+                                    style={{
+                                      width: '60px',
+                                      height: '60px',
+                                      borderRadius: '12px',
+                                      background: platform.color + '22',
+                                      border: `1px solid ${platform.color}44`,
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      gap: '5px',
+                                      cursor: 'pointer',
+                                      transition: 'all 0.2s',
+                                      position: 'relative'
+                                    }}
+                                    onMouseOver={(e) => e.currentTarget.style.background = platform.color + '44'}
+                                    onMouseOut={(e) => e.currentTarget.style.background = platform.color + '22'}
+                                    onClick={() => {
+                                      const newSocials = [...localConfig.social_links];
+                                      newSocials[idx] = { 
+                                          ...newSocials[idx], 
+                                          name: platform.name, 
+                                          color: platform.color,
+                                          icon: platform.icon,
+                                          iconUrl: '' 
+                                      };
+                                      setLocalConfig(prev => ({ ...prev, social_links: newSocials }));
+                                      setActiveIconPickerIdx(null);
+                                    }}
+                                    title={platform.name}
+                                  >
+                                    <div style={{ color: platform.color, fontSize: '0.6rem', fontWeight: 'bold' }}>{platform.name.substring(0,6)}</div>
+                                    <div style={{
+                                      width: '10px',
+                                      height: '10px',
+                                      borderRadius: '50%',
+                                      background: platform.color,
+                                      boxShadow: `0 0 10px ${platform.color}`
+                                    }} />
+                                  </button>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
