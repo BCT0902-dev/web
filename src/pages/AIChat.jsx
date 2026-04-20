@@ -77,6 +77,13 @@ const AIChat = () => {
     return 'Bạn';
   };
 
+  const startNewChat = () => {
+    setActiveChatId(null);
+    setMessages([]);
+    setInput('');
+    setRoutingInfo('');
+  };
+
   const scrollToBottom = () => {
      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -219,8 +226,26 @@ const AIChat = () => {
     setIsLoading(true);
     setRoutingInfo('IRIS đang phân tích yêu cầu...');
 
-    if (currentUser && activeChatId) {
-      await addDoc(collection(db, 'users', currentUser.uid, 'chats', activeChatId, 'messages'), userMsg);
+    let currentChatId = activeChatId;
+
+    if (currentUser && !currentChatId) {
+      try {
+        setRoutingInfo('Đang khởi tạo phiên hội thoại mới...');
+        const chatsRef = collection(db, 'users', currentUser.uid, 'chats');
+        const newChat = await addDoc(chatsRef, {
+          title: tempInput.substring(0, 40) + (tempInput.length > 40 ? '...' : ''),
+          lastUpdate: serverTimestamp(),
+          createdAt: serverTimestamp()
+        });
+        currentChatId = newChat.id;
+        setActiveChatId(currentChatId);
+      } catch (err) {
+        console.error("Lỗi tạo chat:", err);
+      }
+    }
+
+    if (currentUser && currentChatId) {
+      await addDoc(collection(db, 'users', currentUser.uid, 'chats', currentChatId, 'messages'), userMsg);
     } else {
       setMessages(prev => [...prev, userMsg]);
     }
@@ -310,9 +335,9 @@ const AIChat = () => {
       }
 
       const aiMsg = { role: 'assistant', content: aiResponseContent, imageUrl, timestamp: serverTimestamp() };
-      if (currentUser && activeChatId) {
-        await addDoc(collection(db, 'users', currentUser.uid, 'chats', activeChatId, 'messages'), aiMsg);
-        await updateDoc(doc(db, 'users', currentUser.uid, 'chats', activeChatId), { lastUpdate: serverTimestamp() });
+      if (currentUser && currentChatId) {
+        await addDoc(collection(db, 'users', currentUser.uid, 'chats', currentChatId, 'messages'), aiMsg);
+        await updateDoc(doc(db, 'users', currentUser.uid, 'chats', currentChatId), { lastUpdate: serverTimestamp() });
       } else {
         setMessages(prev => [...prev, aiMsg]);
       }
@@ -342,7 +367,7 @@ const AIChat = () => {
           <button className="toggle-sidebar" onClick={() => setIsSidebarOpen(false)}><ChevronLeft /></button>
         </div>
 
-        <button className="new-chat-btn" onClick={() => navigate('/utilities/chat')}>
+        <button className="new-chat-btn" onClick={startNewChat}>
           <PlusCircle size={20} />
           BẮT ĐẦU CHAT MỚI
         </button>
