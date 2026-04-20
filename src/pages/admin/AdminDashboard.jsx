@@ -78,9 +78,10 @@ const AdminDashboard = () => {
   const [isSyncingNews, setIsSyncingNews] = useState(false);
   const [syncStatus, setSyncStatus] = useState('');
 
-  // Analytics Logic
-  const [analyticsData, setAnalyticsData] = useState([]);
-  const [loadingAnalytics, setLoadingAnalytics] = useState(false);
+  // Blog State
+  const [blogPosts, setBlogPosts] = useState([]);
+  const [loadingBlog, setLoadingBlog] = useState(false);
+  const [seedingProgress, setSeedingProgress] = useState('');
 
   useEffect(() => {
     if (config) {
@@ -93,8 +94,92 @@ const AdminDashboard = () => {
       fetchUsers();
     } else if (activeTab === 'analytics') {
       fetchAnalytics();
+    } else if (activeTab === 'blog') {
+      fetchBlogPosts();
     }
   }, [activeTab]);
+
+  const fetchBlogPosts = async () => {
+    setLoadingBlog(true);
+    try {
+      const q = query(collection(db, 'blog_posts'), orderBy('timestamp', 'desc'));
+      const snapshot = await getDocs(q);
+      setBlogPosts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingBlog(false);
+    }
+  };
+
+  const deleteBlogPost = async (id) => {
+    if (!window.confirm('Ngài có chắc chắn muốn xoá bài viết này không?')) return;
+    try {
+      await deleteDoc(doc(db, 'blog_posts', id));
+      setBlogPosts(prev => prev.filter(p => p.id !== id));
+    } catch (err) {
+      alert("Lỗi xoá bài: " + err.message);
+    }
+  };
+
+  const seedBlogPosts = async () => {
+    const key = localConfig?.integrations?.geminiKey;
+    if (!key) {
+      alert("Chưa cấu hình Gemini API Key!");
+      return;
+    }
+
+    if (!window.confirm('Hệ thống sẽ thực hiện tạo 5 BÀI VIẾT mồi chuẩn SEO cùng lúc. Quá trình này mất khoảng 20-30 giây. Ngài đồng ý chứ?')) return;
+
+    setSeedingProgress('Đang khởi động IRIS Content Factory...');
+    setIsSyncingNews(true);
+
+    try {
+      const prompt = `Bạn là chuyên gia biên tập nội dung. Hãy tạo 5 bài viết blog CHẤT LƯỢNG CAO bằng Tiếng Việt về 5 chủ đề công nghệ khác nhau (AI, Web, Cybersecurity, Hardware, Future Tech).
+      Mỗi bài viết cần: Title, Excerpt (mô tả hấp dẫn), Content (Markdown dài, tối ưu SEO với H2, H3), Category.
+      Trả về JSON mảng 5 đối tượng:
+      [ { "title": "...", "excerpt": "...", "content": "...", "category": "...", "slug": "tieu-de-khong-dau" } ]
+      Lưu ý: Chỉ trả về JSON nguyên bản.`;
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      });
+
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) throw new Error('Không nhận được phản hồi từ AI');
+
+      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      const postsArray = JSON.parse(jsonMatch ? jsonMatch[0] : text);
+
+      setSeedingProgress(`Đã tạo nội dung 5 bài viết. Đang minh họa & lưu trữ...`);
+
+      for (const [idx, post] of postsArray.entries()) {
+        const seed = Math.floor(Math.random() * 1000000);
+        const thumbnailUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(post.title)}?width=1280&height=720&nologo=true&seed=${seed}`;
+        
+        const docId = `seed-${Date.now()}-${idx}`;
+        await setDoc(doc(db, 'blog_posts', docId), {
+          ...post,
+          date: new Date().toLocaleDateString('vi-VN'),
+          author: 'IRIS Core Seeder',
+          thumbnail: thumbnailUrl,
+          published: true,
+          timestamp: new Date()
+        });
+      }
+
+      setSeedingProgress('✅ ĐÃ TẠO 5 BÀI VIẾT MỒI THÀNH CÔNG!');
+      fetchBlogPosts();
+    } catch (err) {
+      setSeedingProgress('❌ LỖI SEEDING: ' + err.message);
+    } finally {
+      setIsSyncingNews(false);
+      setTimeout(() => setSeedingProgress(''), 5000);
+    }
+  };
 
   const fetchAnalytics = async () => {
     setLoadingAnalytics(true);
@@ -632,6 +717,7 @@ const AdminDashboard = () => {
     { id: 'maintenance', label: 'QUẢN LÝ TRẠNG THÁI TRANG', icon: <Lock size={18} /> },
     { id: 'newsletter', label: 'BẢN TIN AI', icon: <Mail size={18} /> },
     { id: 'analytics', label: 'THỐNG KÊ TRAFFIC', icon: <BarChart3 size={18} /> },
+    { id: 'blog', label: 'QUẢN LÝ BLOG', icon: <FileText size={18} /> },
     { id: 'users', label: 'QUẢN LÝ TÀI KHOẢN', icon: <Users size={18} /> },
     { id: 'ai-intelligence', label: 'HỆ THỐNG AI', icon: <Brain size={18} /> }
   ];
@@ -1372,6 +1458,63 @@ const AdminDashboard = () => {
                       {syncStatus && <div>[{new Date().toLocaleTimeString()}] {syncStatus}</div>}
                     </div>
                   </div>
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === 'blog' && (
+              <motion.div key="blog" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="config-section">
+                <div className="manager-header">
+                   <div style={{ display: 'flex', gap: '0.8rem', color: 'var(--accent-main)', alignItems: 'center' }}>
+                      <FileText size={24} /> <h3>QUẢN LÝ BÀI VIẾT & BLOG</h3>
+                   </div>
+                   <div style={{ display: 'flex', gap: '1rem' }}>
+                      <button className="add-btn" onClick={seedBlogPosts} disabled={isSyncingNews} style={{ background: 'var(--accent-secondary)', border: 'none' }}>
+                        <Sparkles size={14} /> SEED 5 BÀI VIẾT AI
+                      </button>
+                      <button className="add-btn" onClick={fetchBlogPosts}><Activity size={14} /> REFRESH</button>
+                   </div>
+                </div>
+
+                {seedingProgress && (
+                  <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', borderLeft: '4px solid var(--accent-main)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <Zap className={isSyncingNews ? "spin" : ""} size={16} color="var(--accent-main)" /> {seedingProgress}
+                  </motion.div>
+                )}
+
+                <div className="glass-panel" style={{ padding: 0 }}>
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>BÀI VIẾT</th>
+                        <th>DANH MỤC</th>
+                        <th>NGÀY ĐĂNG</th>
+                        <th style={{ textAlign: 'right' }}>THAO TÁC</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {loadingBlog ? (
+                        <tr><td colSpan="4" style={{ textAlign: 'center', padding: '2rem' }}>Đang tải danh sách bài viết...</td></tr>
+                      ) : blogPosts.length === 0 ? (
+                        <tr><td colSpan="4" style={{ textAlign: 'center', padding: '2rem', opacity: 0.5 }}>Chưa có bài viết nào. Hãy thử nhấn nút SEED 5 BÀI VIẾT ở trên!</td></tr>
+                      ) : blogPosts.map(post => (
+                        <tr key={post.id}>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                              <img src={post.thumbnail} style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} alt="tn" />
+                              <div style={{ fontWeight: 600, maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{post.title}</div>
+                            </div>
+                          </td>
+                          <td><span className="role-badge" style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--accent-main)', border: '1px solid var(--accent-main)' }}>{post.category?.toUpperCase()}</span></td>
+                          <td style={{ fontSize: '0.8rem', opacity: 0.7 }}>{post.date}</td>
+                          <td style={{ textAlign: 'right' }}>
+                            <Link to={`/blog/${post.id}`} target="_blank" className="icon-btn"><ExternalLink size={14} /></Link>
+                            <button className="icon-btn danger" onClick={() => deleteBlogPost(post.id)}><Trash2 size={14} /></button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </motion.div>
             )}
