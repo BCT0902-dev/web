@@ -58,6 +58,9 @@ const AIChat = () => {
   const currentUser = authUser;
   const navigate = useNavigate();
 
+  // Harmonized UID for Firestore paths
+  const effectiveUid = currentUser?.uid || (isAdmin ? 'admin' : null);
+
   // AI Config
   // AI Config Status
   const geminiEnabled = config?.integrations?.geminiEnabled !== false;
@@ -94,9 +97,8 @@ const AIChat = () => {
 
   // Firebase Effects
   useEffect(() => {
-    if (!currentUser && !isAdmin) return;
-    const uid = currentUser?.uid || 'admin';
-    const chatsRef = collection(db, 'users', uid, 'chats');
+    if (!effectiveUid) return;
+    const chatsRef = collection(db, 'users', effectiveUid, 'chats');
     const q = query(chatsRef, orderBy('lastUpdate', 'desc'));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -105,18 +107,18 @@ const AIChat = () => {
       if (!activeChatId && chats.length > 0) setActiveChatId(chats[0].id);
     });
     return () => unsubscribe();
-  }, [currentUser]);
+  }, [effectiveUid]);
 
   useEffect(() => {
-    if (!currentUser || !activeChatId) return;
-    const msgsRef = collection(db, 'users', currentUser.uid, 'chats', activeChatId, 'messages');
+    if (!effectiveUid || !activeChatId) return;
+    const msgsRef = collection(db, 'users', effectiveUid, 'chats', activeChatId, 'messages');
     const q = query(msgsRef, orderBy('timestamp', 'asc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const msgs = snapshot.docs.map(doc => doc.data());
       setMessages(msgs);
     });
     return () => unsubscribe();
-  }, [currentUser, activeChatId]);
+  }, [effectiveUid, activeChatId]);
 
   const classifyIntent = async (prompt) => {
     const p = prompt.toLowerCase();
@@ -235,10 +237,10 @@ const AIChat = () => {
 
     let currentChatId = activeChatId;
 
-    if (currentUser && !currentChatId) {
+    if (effectiveUid && !currentChatId) {
       try {
         setRoutingInfo('Đang khởi tạo phiên hội thoại mới...');
-        const chatsRef = collection(db, 'users', currentUser.uid, 'chats');
+        const chatsRef = collection(db, 'users', effectiveUid, 'chats');
         const newChat = await addDoc(chatsRef, {
           title: tempInput.substring(0, 40) + (tempInput.length > 40 ? '...' : ''),
           lastUpdate: serverTimestamp(),
@@ -251,8 +253,8 @@ const AIChat = () => {
       }
     }
 
-    if (currentUser && currentChatId) {
-      await addDoc(collection(db, 'users', currentUser.uid, 'chats', currentChatId, 'messages'), userMsg);
+    if (effectiveUid && currentChatId) {
+      await addDoc(collection(db, 'users', effectiveUid, 'chats', currentChatId, 'messages'), userMsg);
     } else {
       setMessages(prev => [...prev, userMsg]);
     }
@@ -347,9 +349,9 @@ NGỮ CẢNH TAVILY:\n${searchData.context}` },
       }
 
       const aiMsg = { role: 'assistant', content: aiResponseContent, imageUrl, timestamp: serverTimestamp() };
-      if (currentUser && currentChatId) {
-        await addDoc(collection(db, 'users', currentUser.uid, 'chats', currentChatId, 'messages'), aiMsg);
-        await updateDoc(doc(db, 'users', currentUser.uid, 'chats', currentChatId), { lastUpdate: serverTimestamp() });
+      if (effectiveUid && currentChatId) {
+        await addDoc(collection(db, 'users', effectiveUid, 'chats', currentChatId, 'messages'), aiMsg);
+        await updateDoc(doc(db, 'users', effectiveUid, 'chats', currentChatId), { lastUpdate: serverTimestamp() });
       } else {
         setMessages(prev => [...prev, aiMsg]);
       }
