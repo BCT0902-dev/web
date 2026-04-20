@@ -12,9 +12,6 @@ import PersonalChronicles from './sections/PersonalChronicles';
 import MobileBlocker from './components/MobileBlocker';
 import Background from './components/Background';
 import Login from './pages/Login';
-import Utilities from './pages/Utilities';
-import UtilityHub from './pages/UtilityHub';
-import FloatingChatBtn from './components/FloatingChatBtn';
 import { ConfigProvider } from './context/ConfigContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoadingScreen from './components/LoadingScreen';
@@ -59,7 +56,6 @@ function AppRoutes() {
 
   const isLoginPage = location.pathname === '/login';
   const isAdminPage = location.pathname.startsWith('/admin');
-  const isUtilitiesPage = location.pathname.startsWith('/utilities');
   const isBlogPage = location.pathname.startsWith('/blog');
   const isChroniclesPage = location.pathname === '/chronicles';
 
@@ -80,7 +76,6 @@ function AppRoutes() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/utilities/*" element={<Utilities />} />
           <Route path="/blog" element={
             <PageGuard pageId="blog">
               <Blog />
@@ -99,8 +94,7 @@ function AppRoutes() {
           <Route path="/admin" element={isAdmin ? <AdminDashboard /> : <Login />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
-        {!isAdminPage && <FloatingChatBtn />}
-        {!isLoginPage && !isAdminPage && !isUtilitiesPage && !isBlogPage && !isChroniclesPage && <Footer />}
+        {!isLoginPage && !isAdminPage && !isBlogPage && !isChroniclesPage && <Footer />}
         {(isBlogPage || isChroniclesPage) && <Footer />}
       </div>
     </>

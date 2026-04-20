@@ -287,59 +287,7 @@ const AdminDashboard = () => {
     }
   };
 
-   const testGeminiAPI = async () => {
-    const key = localConfig?.integrations?.geminiKey;
-    if (!key) {
-      setApiTestStatus(prev => ({ ...prev, gemini: '⚠️ Lỗi: Chưa điền API Key!' }));
-      return;
-    }
-    
-    setApiTestStatus(prev => ({ ...prev, gemini: '🔍 Đang quét các Model khả dụng...' }));
-    
-    const testCases = [
-      { ver: 'v1beta', model: 'gemini-flash-latest' },
-      { ver: 'v1beta', model: 'gemini-pro-latest' },
-      { ver: 'v1beta', model: 'gemini-1.5-flash' },
-      { ver: 'v1', model: 'gemini-1.5-flash' }
-    ];
-
-    let success = false;
-
-    try {
-      for (const t of testCases) {
-        setApiTestStatus(prev => ({ ...prev, gemini: `⏳ Đang thử ${t.ver}/${t.model}...` }));
-        try {
-          const payload = { contents: [{ parts: [{ text: "Say 'OK'" }] }] };
-          const response = await fetch(`https://generativelanguage.googleapis.com/${t.ver}/models/${t.model}:generateContent?key=${key}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          const data = await response.json();
-          
-          if (data.error?.message?.toLowerCase().includes('expired')) {
-            setApiTestStatus(prev => ({ ...prev, gemini: '⚠️ LỖI: API KEY ĐÃ HẾT HẠN! Hãy lấy Key mới từ Google AI Studio.' }));
-            return;
-          }
-
-          if (response.ok && data.candidates) {
-            setApiTestStatus(prev => ({ ...prev, gemini: `✅ THÀNH CÔNG: Đã xác minh ${t.ver}/${t.model}!` }));
-            success = true;
-            break;
-          }
-        } catch (e) {
-          console.error(`Test failed for ${t.ver}/${t.model}:`, e);
-        }
-      }
-
-      if (!success) {
-        setApiTestStatus(prev => ({ ...prev, gemini: '❌ LỖI: Tất cả các Model thử nghiệm đều thất bại. Hãy kiểm tra lại Key.' }));
-      }
-    } catch (err) {
-      setApiTestStatus(prev => ({ ...prev, gemini: '❌ LỖI HỆ THỐNG: ' + err.message }));
-    }
-  };
-  
+ 
   const triggerAINewsSync = async () => {
     const key = localConfig?.integrations?.geminiKey;
     if (!key) {
@@ -396,64 +344,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const testGroqAPI = async () => {
-    const key = localConfig?.integrations?.groqKey;
-    if (!key) {
-      setApiTestStatus(prev => ({ ...prev, groq: '⚠️ Lỗi: Chưa điền API Key!' }));
-      return;
-    }
-    setApiTestStatus(prev => ({ ...prev, groq: 'Đang kiểm tra bằng REST...' }));
-    try {
-      const payload = {
-        model: "llama-3.3-70b-versatile",
-        messages: [{ role: "user", content: "Say 'TEST_OK'" }]
-      };
-      const response = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
-         method: 'POST',
-         headers: { 
-           'Content-Type': 'application/json',
-           'Authorization': `Bearer ${key}`
-         },
-         body: JSON.stringify(payload)
-      });
-      const data = await response.json();
-      if (response.ok && data.choices) {
-        setApiTestStatus(prev => ({ ...prev, groq: '✅ KẾT NỐI THÀNH CÔNG!' }));
-      } else {
-        setApiTestStatus(prev => ({ ...prev, groq: `❌ LỖI: ${data.error?.message || response.statusText}` }));
-      }
-    } catch (err) {
-      setApiTestStatus(prev => ({ ...prev, groq: '❌ LỖI MẠNG: ' + err.message }));
-    }
-  };
 
-  const testTavilyAPI = async () => {
-    const key = localConfig?.integrations?.tavilyKey;
-    if (!key) {
-      setApiTestStatus(prev => ({ ...prev, tavily: '⚠️ Lỗi: Chưa điền API Key!' }));
-      return;
-    }
-    setApiTestStatus(prev => ({ ...prev, tavily: 'Đang gửi Request đến Tavily Search Engine...' }));
-    try {
-      const response = await fetch(`https://api.tavily.com/search`, {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({
-           api_key: key,
-           query: "IRIS AI System Test",
-           search_depth: "basic"
-         })
-      });
-      const data = await response.json();
-      if (response.ok && data.results) {
-        setApiTestStatus(prev => ({ ...prev, tavily: `✅ KẾT NỐI THÀNH CÔNG! (Tìm thấy ${data.results.length} kết quả)` }));
-      } else {
-        setApiTestStatus(prev => ({ ...prev, tavily: `❌ LỖI: ${data.detail || 'Không thể xác thực Key'}` }));
-      }
-    } catch (err) {
-      setApiTestStatus(prev => ({ ...prev, tavily: '❌ LỖI MẠNG: ' + err.message }));
-    }
-  };
 
   const compressImage = (base64) => {
     return new Promise((resolve) => {
@@ -629,13 +520,10 @@ const AdminDashboard = () => {
     { id: 'filmstrip', label: 'KỸ THUẬT SỐ & KÝ ỨC', icon: <ImageIcon size={18} /> },
     { id: 'apps', label: 'ỨNG DỤNG TIN DÙNG', icon: <Zap size={18} /> },
     { id: 'content', label: 'NỘI DUNG KHÁC', icon: <FileText size={18} /> },
-    { id: 'integrations', label: 'TÍCH HỢP AI', icon: <Key size={18} /> },
-    { id: 'maintenance', label: 'QUẢN LÝ TRẠNG THÁI TRANG', icon: <Lock size={18} /> },
-    { id: 'newsletter', label: 'BẢN TIN AI', icon: <Mail size={18} /> },
-    { id: 'analytics', label: 'THỐNG KÊ TRAFFIC', icon: <BarChart3 size={18} /> },
+        { id: 'maintenance', label: 'QUẢN LÝ TRẠNG THÁI TRANG', icon: <Lock size={18} /> },
+        { id: 'analytics', label: 'THỐNG KÊ TRAFFIC', icon: <BarChart3 size={18} /> },
     { id: 'blog', label: 'QUẢN LÝ BLOG', icon: <FileText size={18} /> },
-    { id: 'users', label: 'QUẢN LÝ TÀI KHOẢN', icon: <Users size={18} /> },
-    { id: 'ai-intelligence', label: 'HỆ THỐNG AI', icon: <Brain size={18} /> }
+    { id: 'users', label: 'QUẢN LÝ TÀI KHOẢN', icon: <Users size={18} /> }
   ];
 
   if (loading || !localConfig) {
@@ -1139,116 +1027,7 @@ const AdminDashboard = () => {
               </motion.div>
             )}
 
-            {activeTab === 'integrations' && (
-              <motion.div key="integrations" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="config-section">
-                <div className="api-config-alert"><strong>KIỂM TRA API:</strong> Đã cập nhật sang v1 cho Gemini và Standard Header cho Deepseek.</div>
-                <div className="input-group">
-                  <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                      <span>GEMINI API KEY (v1/1.5-flash)</span>
-                      <div className="api-status-toggle">
-                        <input 
-                          type="checkbox" 
-                          id="toggle-gemini" 
-                          checked={localConfig.integrations.geminiEnabled !== false} 
-                          onChange={(e) => updateNested('integrations', 'geminiEnabled', e.target.checked)} 
-                        />
-                        <label htmlFor="toggle-gemini"></label>
-                      </div>
-                    </div>
-                    <span style={{ fontSize: '0.8rem', color: apiTestStatus.gemini.includes('LỖI') ? '#ef4444' : '#10b981' }}>{apiTestStatus.gemini}</span>
-                  </label>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
-                    <input style={{ flex: 1, opacity: localConfig.integrations.geminiEnabled === false ? 0.3 : 1 }} type="password" value={localConfig.integrations.geminiKey} onChange={(e) => updateNested('integrations', 'geminiKey', e.target.value)} disabled={localConfig.integrations.geminiEnabled === false} />
-                    <button className="add-btn" onClick={testGeminiAPI} disabled={localConfig.integrations.geminiEnabled === false}><Activity size={16} /> TEST v1</button>
-                  </div>
-                </div>
-                <div className="input-group" style={{ marginTop: '1.5rem' }}>
-                  <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                      <span>TAVILY SEARCH API KEY</span>
-                      <div className="api-status-toggle">
-                        <input 
-                          type="checkbox" 
-                          id="toggle-tavily" 
-                          checked={localConfig.integrations.tavilyEnabled !== false} 
-                          onChange={(e) => updateNested('integrations', 'tavilyEnabled', e.target.checked)} 
-                        />
-                        <label htmlFor="toggle-tavily"></label>
-                      </div>
-                    </div>
-                    <span style={{ fontSize: '0.8rem', color: apiTestStatus.tavily?.includes('LỖI') ? '#ef4444' : '#10b981' }}>{apiTestStatus.tavily}</span>
-                  </label>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
-                    <input style={{ flex: 1, opacity: localConfig.integrations.tavilyEnabled === false ? 0.3 : 1 }} type="password" value={localConfig.integrations.tavilyKey || ''} onChange={(e) => updateNested('integrations', 'tavilyKey', e.target.value)} disabled={localConfig.integrations.tavilyEnabled === false} />
-                    <button className="add-btn" onClick={testTavilyAPI} disabled={localConfig.integrations.tavilyEnabled === false}><Activity size={16} /> TEST TAVILY</button>
-                  </div>
-                </div>
 
-                <div className="input-group" style={{ marginTop: '1.5rem' }}>
-                  <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                      <span>GROQ API KEY (Llama 3)</span>
-                      <div className="api-status-toggle">
-                        <input 
-                          type="checkbox" 
-                          id="toggle-groq" 
-                          checked={localConfig.integrations.groqEnabled !== false} 
-                          onChange={(e) => updateNested('integrations', 'groqEnabled', e.target.checked)} 
-                        />
-                        <label htmlFor="toggle-groq"></label>
-                      </div>
-                    </div>
-                    <span style={{ fontSize: '0.8rem', color: apiTestStatus.groq?.includes('LỖI') ? '#ef4444' : '#10b981' }}>{apiTestStatus.groq}</span>
-                  </label>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
-                    <input style={{ flex: 1, opacity: localConfig.integrations.groqEnabled === false ? 0.3 : 1 }} type="password" value={localConfig.integrations.groqKey || ''} onChange={(e) => updateNested('integrations', 'groqKey', e.target.value)} disabled={localConfig.integrations.groqEnabled === false} />
-                    <button className="add-btn" onClick={testGroqAPI} disabled={localConfig.integrations.groqEnabled === false}><Activity size={16} /> TEST GROQ</button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {activeTab === 'newsletter' && (
-              <motion.div key="newsletter" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="config-section">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                   <div style={{ display: 'flex', gap: '0.8rem', color: 'var(--accent-main)' }}>
-                      <Mail size={24} /> <h3>IRIS AI NEWSLETTER GENERATOR</h3>
-                   </div>
-                   <button className="add-btn" onClick={generateNewsletter} disabled={newsletterLoading}>
-                      <Bot size={18} /> {newsletterLoading ? 'ĐANG SUY LUẬN...' : 'TẠO BẢN TIN VỚI GROQ'}
-                   </button>
-                </div>
-                
-                <div className="glass-panel" style={{ padding: '2rem', minHeight: '400px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                   <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>BẢN THẢO (MARKDOWN)</label>
-                   <textarea 
-                     value={newsletterContent}
-                     onChange={(e) => setNewsletterContent(e.target.value)}
-                     placeholder="Bản tin sẽ hiện ở đây sau khi bạn bấm tạo..."
-                     style={{ 
-                       flex: 1, 
-                       background: 'rgba(255,255,255,0.02)', 
-                       border: '1px solid rgba(255,255,255,0.1)', 
-                       borderRadius: '12px', 
-                       padding: '1.5rem', 
-                       color: '#fff', 
-                       fontFamily: 'inherit',
-                       fontSize: '1rem',
-                       lineHeight: '1.6',
-                       minHeight: '300px'
-                     }}
-                   />
-                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                      <button className="add-btn" style={{ background: 'rgba(255,255,255,0.1)' }} onClick={() => setNewsletterContent('')}>XÓA TRẮNG</button>
-                      <button className="add-btn" onClick={() => {
-                        navigator.clipboard.writeText(newsletterContent);
-                        alert("Đã sao chép vào bộ nhớ tạm!");
-                      }}>SAO CHÉP NỘI DUNG</button>
-                   </div>
-                </div>
-              </motion.div>
-            )}
 
             {activeTab === 'analytics' && (
               <motion.div key="analytics" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="config-section">
@@ -1281,68 +1060,6 @@ const AdminDashboard = () => {
                        )}
                      </tbody>
                    </table>
-                </div>
-              </motion.div>
-            )}
-
-            {activeTab === 'ai-intelligence' && (
-              <motion.div key="ai-intelligence" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="config-section">
-                <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--accent-main)' }}>
-                  <Brain size={64} className="text-glow" style={{ marginBottom: '1.5rem', color: 'var(--accent-main)' }} />
-                  <h2 style={{ fontSize: '2rem', marginBottom: '1rem', fontFamily: 'Chakra Petch' }}>HỆ THỐNG TRÍ TUỆ NHÂN TẠO IRIS</h2>
-                  <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto 2.5rem' }}>
-                    Kích hoạt AI để tự động nghiên cứu xu hướng công nghệ toàn cầu, tổng hợp tin tức từ các nguồn uy tín tại Việt Nam và Thế giới, sau đó tự động biên tập bài viết lên Bảng tin.
-                  </p>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
-                    <button 
-                      className="save-btn" 
-                      style={{ padding: '1.2rem 3rem', fontSize: '1.1rem', borderRadius: '50px', background: 'var(--accent-main)', color: '#fff' }}
-                      onClick={triggerAINewsSync}
-                      disabled={isSyncingNews}
-                    >
-                      {isSyncingNews ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                          <Zap className="spin" size={20} /> ĐANG ĐỒNG BỘ...
-                        </div>
-                      ) : (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                          <Sparkles size={20} /> ĐỒNG BỘ BẢN TIN AI NGAY
-                        </div>
-                      )}
-                    </button>
-
-                    {syncStatus && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        style={{ 
-                          padding: '1rem 2rem', 
-                          borderRadius: '8px', 
-                          background: syncStatus.includes('✅') ? 'rgba(0,255,0,0.1)' : 'rgba(255,255,255,0.05)',
-                          color: syncStatus.includes('❌') ? '#ff4d4d' : 'inherit',
-                          fontSize: '0.9rem',
-                          fontFamily: 'var(--font-mono)',
-                          border: '1px solid rgba(255,255,255,0.1)'
-                        }}
-                      >
-                        {syncStatus}
-                      </motion.div>
-                    )}
-                  </div>
-
-                  <div className="admin-divider" style={{ margin: '3rem 0' }}></div>
-
-                  <div style={{ textAlign: 'left' }}>
-                    <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <Activity size={18} color="var(--accent-main)" /> NHẬT KÝ HOẠT ĐỘNG AI
-                    </h3>
-                    <div className="glass-panel" style={{ background: 'rgba(0,0,0,0.5)', padding: '1.5rem', maxHeight: '200px', overflowY: 'auto', fontSize: '0.8rem', fontFamily: 'var(--font-mono)', opacity: 0.7 }}>
-                      <div>[SYSTEM] IRIS Core Ready.</div>
-                      <div>[INFO] Waiting for manual sync trigger...</div>
-                      {syncStatus && <div>[{new Date().toLocaleTimeString()}] {syncStatus}</div>}
-                    </div>
-                  </div>
                 </div>
               </motion.div>
             )}

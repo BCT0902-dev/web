@@ -171,26 +171,7 @@ const Navbar = () => {
                 )}
               </li>
             ))}
-            <li>
-              <Link 
-                to="/utilities" 
-                style={{ 
-                  fontFamily: 'var(--font-mono)', 
-                  fontSize: '0.9rem',
-                  textTransform: 'uppercase',
-                  opacity: 0.8,
-                  color: 'var(--accent-main)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  textDecoration: 'none'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.opacity = 1}
-                onMouseOut={(e) => e.currentTarget.style.opacity = 0.8}
-              >
-                <Zap size={18} /> {t('nav.utilities')}
-              </Link>
-            </li>
+
         </ul>
 
         <div style={{ flex: '1 1 0', display: 'flex', justifyContent: 'flex-end', gap: '1.2rem', alignItems: 'center', minWidth: 0 }}>

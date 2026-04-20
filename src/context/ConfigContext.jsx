@@ -57,11 +57,7 @@ export const ConfigProvider = ({ children }) => {
           "/film/style_office_1775962215135.png"
         ]
       },
-      integrations: {
-        geminiKey: localStorage.getItem('GEMINI_API_KEY') || '',
-        groqKey: '',
-        tavilyKey: ''
-      },
+
       apps: [
         { name: "Antigravity", color: "#00d2ff" },
         { name: "Github", color: "#ffffff" },
@@ -80,10 +76,6 @@ export const ConfigProvider = ({ children }) => {
         { name: "VM Ware", color: "#607078" }
       ],
       maintenance: {
-        chat: false,
-        youtube: false,
-        chef: false,
-        water: false,
         blog: false,
         chronicles: false,
         about: false,
