@@ -39,28 +39,17 @@ import SocialIcon from '../../components/SocialIcon';
 import './AdminDashboard.css';
 
 const SOCIAL_PLATFORMS = [
-  { name: 'Zalo', color: '#0068FF', icon: 'Zalo' },
   { name: 'Facebook', color: '#1877F2', icon: 'Facebook' },
   { name: 'YouTube', color: '#FF0000', icon: 'YouTube' },
-  { name: 'TikTok', color: '#000000', icon: 'TikTok' },
-  { name: 'Instagram', color: '#E4405F', icon: 'Instagram' },
-  { name: 'Telegram', color: '#26A5E4', icon: 'Telegram' },
-  { name: 'LinkedIn', color: '#0A66C2', icon: 'LinkedIn' },
   { name: 'GitHub', color: '#181717', icon: 'GitHub' },
+  { name: 'TikTok', color: '#000000', icon: 'TikTok' },
+  { name: 'Telegram', color: '#26A5E4', icon: 'Telegram' },
   { name: 'X (Twitter)', color: '#000000', icon: 'X' },
+  { name: 'Instagram', color: '#E4405F', icon: 'Instagram' },
   { name: 'Discord', color: '#5865F2', icon: 'Discord' },
+  { name: 'Zalo', color: '#0068FF', icon: 'Zalo' },
   { name: 'Reddit', color: '#FF4500', icon: 'Reddit' },
-  { name: 'Twitch', color: '#9146FF', icon: 'Twitch' },
-  { name: 'Spotify', color: '#1DB954', icon: 'Spotify' },
-  { name: 'Apple Music', color: '#FA243C', icon: 'Apple' },
-  { name: 'Snapchat', color: '#FFFC00', icon: 'Snapchat' },
-  { name: 'Pinterest', color: '#BD081C', icon: 'Pinterest' },
-  { name: 'Patreon', color: '#F96854', icon: 'Patreon' },
-  { name: 'Medium', color: '#000000', icon: 'Medium' },
-  { name: 'Behance', color: '#1769FF', icon: 'Behance' },
-  { name: 'Dribbble', color: '#EA4C89', icon: 'Dribbble' },
-  { name: 'Slack', color: '#4A154B', icon: 'Slack' },
-  { name: 'Steam', color: '#000000', icon: 'Steam' },
+  { name: 'Threads', color: '#000000', icon: 'Threads' },
   { name: 'Website', color: '#4B5563', icon: 'Globe' }
 ];
 

@@ -128,7 +128,18 @@ const SocialIcon = ({ name, size = 20, color = 'currentColor' }) => {
     );
   }
 
-  // 12. Twitch
+  // 12. Threads
+  if (brandName.includes('threads')) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 12c0-3 2.5-5.5 5.5-5.5S23 9 23 12s-2 5.5-5.5 5.5S12 15 12 12z" />
+        <path d="M14 12c0-1.1.9-2 2-2s2 .9 2 2-0.9 2-2 2-2-.9-2-2z" />
+        <path d="M12 12c0 3-2.5 5.5-5.5 5.5S1 15 1 12s2-5.5 5.5-5.5S12 9 12 12z" />
+      </svg>
+    );
+  }
+
+  // 13. Twitch
   if (brandName.includes('twitch')) {
     return (
       <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
