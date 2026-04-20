@@ -184,7 +184,7 @@ const AIChat = () => {
         const smartPrompt = `[HƯỚNG DẪN THÔNG MINH: Nếu hỏi về thời gian tại quốc gia lớn, hãy liệt kê các múi giờ chính & thành phố lớn. Đừng từ chối.]\n\n${contextPrompt}`;
         const payload = {
           contents: [{ parts: [{ text: smartPrompt }] }],
-          tools: [{ google_search_retrieval: { dynamic_retrieval_config: { mode: "DYNAMIC", dynamic_threshold: 0 } } }]
+          tools: [{ google_search_retrieval: {} }]
         };
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeKey}`, {
           method: 'POST',
