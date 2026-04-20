@@ -148,8 +148,17 @@ const AdminDashboard = () => {
       });
 
       const data = await response.json();
+      
+      if (!response.ok) {
+        const errorDetail = data.error?.message || response.statusText;
+        throw new Error(`API ${response.status}: ${errorDetail}`);
+      }
+
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) throw new Error('Không nhận được phản hồi từ AI');
+      if (!text) {
+        console.error("Gemini Response structure invalid:", data);
+        throw new Error('AI không trả về nội dung hợp lệ. Vui lòng kiểm tra API Key hoặc Quota.');
+      }
 
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       const postsArray = JSON.parse(jsonMatch ? jsonMatch[0] : text);
