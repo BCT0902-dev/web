@@ -143,7 +143,7 @@ const BlogCMS = () => {
     }
   };
 
-  if (loading) return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f0f14', color: '#fff' }}>Đang khởi tạo Môi trường Soạn thảo...</div>;
+  if (loading) return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#ffffff', color: '#111827' }}>Đang khởi tạo Môi trường Soạn thảo...</div>;
 
   return (
     <div className="cms-container">
