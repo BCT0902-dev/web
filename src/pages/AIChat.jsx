@@ -335,7 +335,10 @@ NGỮ CẢNH TAVILY:\n${searchData.context}` },
           if (groq && groqEnabled) {
              const completion = await groq.chat.completions.create({ 
                model: "llama-3.3-70b-versatile", 
-               messages: [{ role: "user", content: contextPrompt }] 
+               messages: [
+                 { role: "system", content: "Bạn là IRIS, AI cấp cao. TUYỆT ĐỐI tuân thủ MỐC THỜI GIAN HỆ THỐNG được đưa ra trong prompt của người dùng. Không được dùng kiến thức cũ để suy luận ngày giờ, hôm nay LÀ ngày được cung cấp trong [THỜI GIAN HỆ THỐNG]." },
+                 { role: "user", content: contextPrompt }
+               ] 
              });
              aiResponseContent = completion.choices[0].message.content;
           } else {
