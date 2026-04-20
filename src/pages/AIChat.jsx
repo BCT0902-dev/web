@@ -161,7 +161,7 @@ const AIChat = () => {
     const activeKey = geminiKey?.trim();
     if (!activeKey || activeKey === 'dummy_key') return "⚠️ CHƯA CẤU HÌNH GEMINI KEY.";
 
-    const models = ['gemini-1.5-flash-latest', 'gemini-1.5-pro-latest', 'gemini-1.5-flash'];
+    const models = ['gemini-1.5-flash', 'gemini-1.5-pro'];
     let lastError = '';
 
     for (const model of models) {
@@ -251,7 +251,7 @@ const AIChat = () => {
           ? "PHÂN TÍCH CHUYÊN SÂU: Trả lời cực kỳ chi tiết, giải thích rõ ràng và cung cấp thêm thông tin hữu ích." 
           : "TỐI ƯU TỐC ĐỘ: Trả lời cực kỳ ngắn gọn, đơn giản, tập trung vào sự chính xác tuyệt đối.";
 
-        const contextPrompt = `[HỆ THỐNG IRIS: ${depthInstruction}. Giờ hệ thống: ${timeStr}].\n\nNgười dùng hỏi: ${tempInput}`;
+        const contextPrompt = `[HỆ THỐNG IRIS - LƯU Ý QUAN TRỌNG: Hôm nay là ${timeStr}. Hãy sử dụng thời gian này làm mốc thời gian thực chính xác nhất. ${depthInstruction}].\n\nNgười dùng hỏi: ${tempInput}`;
 
         // ROUTING LOGIC WITH ROBUST FALLBACK
         // ROUTING LOGIC WITH TAVILY + GROQ / GEMINI
@@ -282,7 +282,7 @@ const AIChat = () => {
           setRoutingInfo('Phát hiện nhu cầu suy luận sâu -> Ưu tiên Gemini (Long Context)...');
           
           if (geminiEnabled && geminiKey) {
-             const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
+             const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
              const result = await model.generateContent(contextPrompt);
              const response = await result.response;
              aiResponseContent = response.text();
