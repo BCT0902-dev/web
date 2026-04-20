@@ -70,7 +70,7 @@ const AdminDashboard = () => {
   const [userModal, setUserModal] = useState({ isOpen: false, mode: 'add', data: {} });
 
   // API Test states
-  const [apiTestStatus, setApiTestStatus] = useState({ gemini: '', deepseek: '', groq: '', openai: '', zalo: '', pawan: '' });
+  const [apiTestStatus, setApiTestStatus] = useState({ gemini: '', groq: '', tavily: '' });
   
   // Newsletter Logic
   const [newsletterContent, setNewsletterContent] = useState('');
@@ -123,13 +123,16 @@ const AdminDashboard = () => {
   };
 
   const seedBlogPosts = async () => {
-    const key = localConfig?.integrations?.geminiKey;
-    if (!key) {
-      alert("Chưa cấu hình Gemini API Key!");
+    const integrations = localConfig?.integrations || {};
+    const geminiEnabled = integrations.geminiEnabled !== false;
+    const geminiKey = (geminiEnabled && integrations.geminiKey) || null;
+
+    if (!geminiKey) {
+      alert("Chưa bật hoặc chưa cấu hình Gemini Node (Bắt buộc cho Blog Seeder)!");
       return;
     }
 
-    if (!window.confirm('Hệ thống sẽ thực hiện tạo 5 BÀI VIẾT mồi chuẩn SEO cùng lúc. Quá trình này mất khoảng 20-30 giây. Ngài đồng ý chứ?')) return;
+    if (!window.confirm('Hệ thống sẽ thực hiện tạo 5 BÀI VIẾT mồi chuẩn SEO cùng lúc qua IRIS Gemini Core. Quá trình này mất khoảng 20-30 giây. Ngài đồng ý chứ?')) return;
 
     setSeedingProgress('Đang khởi động IRIS Content Factory...');
     setIsSyncingNews(true);
@@ -141,25 +144,15 @@ const AdminDashboard = () => {
       [ { "title": "...", "excerpt": "...", "content": "...", "category": "...", "slug": "tieu-de-khong-dau" } ]
       Lưu ý: Chỉ trả về JSON nguyên bản.`;
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+      setSeedingProgress(`--- ĐANG DÙNG IRIS GEMINI CORE ---`);
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
       });
-
       const data = await response.json();
-      
-      if (!response.ok) {
-        const errorDetail = data.error?.message || response.statusText;
-        throw new Error(`API ${response.status}: ${errorDetail}`);
-      }
-
+      if (!response.ok) throw new Error(data.error?.message || "Gemini Error");
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) {
-        console.error("Gemini Response structure invalid:", data);
-        throw new Error('AI không trả về nội dung hợp lệ. Vui lòng kiểm tra API Key hoặc Quota.');
-      }
-
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       const postsArray = JSON.parse(jsonMatch ? jsonMatch[0] : text);
 
@@ -205,9 +198,10 @@ const AdminDashboard = () => {
 
   const generateNewsletter = async () => {
     setNewsletterLoading(true);
+    const groqEnabled = localConfig?.integrations?.groqEnabled !== false;
     const groqKey = localConfig?.integrations?.groqKey;
-    if (!groqKey) {
-      alert("Chưa cấu hình Groq API Key!");
+    if (!groqEnabled || !groqKey) {
+      alert("Chức năng Newsletter đang bị khoá (Groq Node chưa được bật hoặc chưa có Key)!");
       setNewsletterLoading(false);
       return;
     }
@@ -403,37 +397,6 @@ const AdminDashboard = () => {
     }
   };
 
-  const testDeepseekAPI = async () => {
-    const key = localConfig?.integrations?.deepseekKey;
-    if (!key) {
-      setApiTestStatus(prev => ({ ...prev, deepseek: '⚠️ Lỗi: Chưa điền API Key!' }));
-      return;
-    }
-    setApiTestStatus(prev => ({ ...prev, deepseek: 'Đang gửi Request TCP đến Deepseek...' }));
-    try {
-      const payload = {
-        model: "deepseek-chat",
-        messages: [{ role: "user", content: "Say 'TEST_OK'" }]
-      };
-      const response = await fetch(`https://api.deepseek.com/chat/completions`, {
-         method: 'POST',
-         headers: { 
-           'Content-Type': 'application/json',
-           'Authorization': `Bearer ${key}`
-         },
-         body: JSON.stringify(payload)
-      });
-      const data = await response.json();
-      if (response.ok && data.choices) {
-        setApiTestStatus(prev => ({ ...prev, deepseek: '✅ KẾT NỐI THÀNH CÔNG!' }));
-      } else {
-        setApiTestStatus(prev => ({ ...prev, deepseek: `❌ LỖI: ${data.error?.message || response.statusText}` }));
-      }
-    } catch (err) {
-      setApiTestStatus(prev => ({ ...prev, deepseek: '❌ LỖI MẠNG: ' + err.message }));
-    }
-  };
-
   const testGroqAPI = async () => {
     const key = localConfig?.integrations?.groqKey;
     if (!key) {
@@ -465,86 +428,31 @@ const AdminDashboard = () => {
     }
   };
 
-  const testOpenAIAPI = async () => {
-    const key = localConfig?.integrations?.openaiKey;
+  const testTavilyAPI = async () => {
+    const key = localConfig?.integrations?.tavilyKey;
     if (!key) {
-      setApiTestStatus(prev => ({ ...prev, openai: '⚠️ Lỗi: Chưa điền API Key!' }));
+      setApiTestStatus(prev => ({ ...prev, tavily: '⚠️ Lỗi: Chưa điền API Key!' }));
       return;
     }
-    setApiTestStatus(prev => ({ ...prev, openai: 'Đang xác thực với OpenAI Trust Server...' }));
+    setApiTestStatus(prev => ({ ...prev, tavily: 'Đang gửi Request đến Tavily Search Engine...' }));
     try {
-      const payload = {
-        model: "gpt-4o-mini",
-        messages: [{ role: "user", content: "Say 'TEST_OK'" }]
-      };
-      const response = await fetch(`https://api.openai.com/v1/chat/completions`, {
+      const response = await fetch(`https://api.tavily.com/search`, {
          method: 'POST',
-         headers: { 
-           'Content-Type': 'application/json',
-           'Authorization': `Bearer ${key}`
-         },
-         body: JSON.stringify(payload)
-      });
-      const data = await response.json();
-      if (response.ok && data.choices) {
-        setApiTestStatus(prev => ({ ...prev, openai: '✅ KẾT NỐI THÀNH CÔNG!' }));
-      } else {
-        setApiTestStatus(prev => ({ ...prev, openai: `❌ LỖI: ${data.error?.message || response.statusText}` }));
-      }
-    } catch (err) {
-      setApiTestStatus(prev => ({ ...prev, openai: '❌ LỖI MẠNG: ' + err.message }));
-    }
-  };
-
-  const testPawanAPI = async () => {
-    const key = localConfig?.integrations?.pawanKey;
-    if (!key) {
-      setApiTestStatus(prev => ({ ...prev, pawan: '⚠️ Lỗi: Chưa điền API Key!' }));
-      return;
-    }
-    setApiTestStatus(prev => ({ ...prev, pawan: 'Đang xác thực với Pawan.krd Server...' }));
-    try {
-      const response = await fetch(`https://api.pawan.krd/v1/chat/completions`, {
-         method: 'POST',
-         headers: { 
-           'Content-Type': 'application/json',
-           'Authorization': `Bearer ${key}`
-         },
+         headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify({
-           model: localConfig?.integrations?.pawanModel || "openai/gpt-oss-20b",
-           messages: [{ role: "user", content: "Say 'IRIS_PAWAN_OK'" }]
+           api_key: key,
+           query: "IRIS AI System Test",
+           search_depth: "basic"
          })
       });
       const data = await response.json();
-      if (response.ok && data.choices) {
-        setApiTestStatus(prev => ({ ...prev, pawan: '✅ KẾT NỐI THÀNH CÔNG!' }));
+      if (response.ok && data.results) {
+        setApiTestStatus(prev => ({ ...prev, tavily: `✅ KẾT NỐI THÀNH CÔNG! (Tìm thấy ${data.results.length} kết quả)` }));
       } else {
-        setApiTestStatus(prev => ({ ...prev, pawan: `❌ LỖI: ${data.error?.message || response.statusText}` }));
+        setApiTestStatus(prev => ({ ...prev, tavily: `❌ LỖI: ${data.detail || 'Không thể xác thực Key'}` }));
       }
     } catch (err) {
-      setApiTestStatus(prev => ({ ...prev, pawan: '❌ LỖI MẠNG: ' + err.message }));
-    }
-  };
-
-  const testZaloBotAPI = async () => {
-    const token = localConfig?.integrations?.zaloBotToken;
-    if (!token) {
-      setApiTestStatus(prev => ({ ...prev, zalo: '⚠️ Lỗi: Chưa điền Token!' }));
-      return;
-    }
-    setApiTestStatus(prev => ({ ...prev, zalo: 'Đang kiểm tra Zalo Bot Auth...' }));
-    try {
-      const response = await fetch(`https://bot-api.zaloplatforms.com/bot${token}/getMe`, {
-         method: 'GET'
-      });
-      const data = await response.json();
-      if (data.ok) {
-        setApiTestStatus(prev => ({ ...prev, zalo: `✅ OK: Bot ${data.result?.first_name || 'IRIS'}!` }));
-      } else {
-        setApiTestStatus(prev => ({ ...prev, zalo: `❌ LỖI: ${data.description || 'Token không hợp lệ'}` }));
-      }
-    } catch (err) {
-      setApiTestStatus(prev => ({ ...prev, zalo: '❌ LỖI MẠNG: ' + err.message }));
+      setApiTestStatus(prev => ({ ...prev, tavily: '❌ LỖI MẠNG: ' + err.message }));
     }
   };
 
@@ -1236,99 +1144,68 @@ const AdminDashboard = () => {
               <motion.div key="integrations" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="config-section">
                 <div className="api-config-alert"><strong>KIỂM TRA API:</strong> Đã cập nhật sang v1 cho Gemini và Standard Header cho Deepseek.</div>
                 <div className="input-group">
-                  <label style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>GEMINI API KEY (v1/1.5-flash)</span>
+                  <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                      <span>GEMINI API KEY (v1/1.5-flash)</span>
+                      <div className="api-status-toggle">
+                        <input 
+                          type="checkbox" 
+                          id="toggle-gemini" 
+                          checked={localConfig.integrations.geminiEnabled !== false} 
+                          onChange={(e) => updateNested('integrations', 'geminiEnabled', e.target.checked)} 
+                        />
+                        <label htmlFor="toggle-gemini"></label>
+                      </div>
+                    </div>
                     <span style={{ fontSize: '0.8rem', color: apiTestStatus.gemini.includes('LỖI') ? '#ef4444' : '#10b981' }}>{apiTestStatus.gemini}</span>
                   </label>
                   <div style={{ display: 'flex', gap: '1rem' }}>
-                    <input style={{ flex: 1 }} type="password" value={localConfig.integrations.geminiKey} onChange={(e) => updateNested('integrations', 'geminiKey', e.target.value)} />
-                    <button className="add-btn" onClick={testGeminiAPI}><Activity size={16} /> TEST v1</button>
+                    <input style={{ flex: 1, opacity: localConfig.integrations.geminiEnabled === false ? 0.3 : 1 }} type="password" value={localConfig.integrations.geminiKey} onChange={(e) => updateNested('integrations', 'geminiKey', e.target.value)} disabled={localConfig.integrations.geminiEnabled === false} />
+                    <button className="add-btn" onClick={testGeminiAPI} disabled={localConfig.integrations.geminiEnabled === false}><Activity size={16} /> TEST v1</button>
                   </div>
                 </div>
                 <div className="input-group" style={{ marginTop: '1.5rem' }}>
-                  <label style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>DEEPSEEK API KEY</span>
-                    <span style={{ fontSize: '0.8rem', color: apiTestStatus.deepseek.includes('LỖI') ? '#ef4444' : '#10b981' }}>{apiTestStatus.deepseek}</span>
+                  <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                      <span>TAVILY SEARCH API KEY</span>
+                      <div className="api-status-toggle">
+                        <input 
+                          type="checkbox" 
+                          id="toggle-tavily" 
+                          checked={localConfig.integrations.tavilyEnabled !== false} 
+                          onChange={(e) => updateNested('integrations', 'tavilyEnabled', e.target.checked)} 
+                        />
+                        <label htmlFor="toggle-tavily"></label>
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '0.8rem', color: apiTestStatus.tavily?.includes('LỖI') ? '#ef4444' : '#10b981' }}>{apiTestStatus.tavily}</span>
                   </label>
                   <div style={{ display: 'flex', gap: '1rem' }}>
-                    <input style={{ flex: 1 }} type="password" value={localConfig.integrations.deepseekKey} onChange={(e) => updateNested('integrations', 'deepseekKey', e.target.value)} />
-                    <button className="add-btn" onClick={testDeepseekAPI}><Activity size={16} /> TEST</button>
+                    <input style={{ flex: 1, opacity: localConfig.integrations.tavilyEnabled === false ? 0.3 : 1 }} type="password" value={localConfig.integrations.tavilyKey || ''} onChange={(e) => updateNested('integrations', 'tavilyKey', e.target.value)} disabled={localConfig.integrations.tavilyEnabled === false} />
+                    <button className="add-btn" onClick={testTavilyAPI} disabled={localConfig.integrations.tavilyEnabled === false}><Activity size={16} /> TEST TAVILY</button>
                   </div>
                 </div>
+
                 <div className="input-group" style={{ marginTop: '1.5rem' }}>
-                  <label style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>GROQ API KEY (Llama 3)</span>
+                  <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                      <span>GROQ API KEY (Llama 3)</span>
+                      <div className="api-status-toggle">
+                        <input 
+                          type="checkbox" 
+                          id="toggle-groq" 
+                          checked={localConfig.integrations.groqEnabled !== false} 
+                          onChange={(e) => updateNested('integrations', 'groqEnabled', e.target.checked)} 
+                        />
+                        <label htmlFor="toggle-groq"></label>
+                      </div>
+                    </div>
                     <span style={{ fontSize: '0.8rem', color: apiTestStatus.groq?.includes('LỖI') ? '#ef4444' : '#10b981' }}>{apiTestStatus.groq}</span>
                   </label>
                   <div style={{ display: 'flex', gap: '1rem' }}>
-                    <input style={{ flex: 1 }} type="password" value={localConfig.integrations.groqKey || ''} onChange={(e) => updateNested('integrations', 'groqKey', e.target.value)} />
-                    <button className="add-btn" onClick={testGroqAPI}><Activity size={16} /> TEST GROQ</button>
+                    <input style={{ flex: 1, opacity: localConfig.integrations.groqEnabled === false ? 0.3 : 1 }} type="password" value={localConfig.integrations.groqKey || ''} onChange={(e) => updateNested('integrations', 'groqKey', e.target.value)} disabled={localConfig.integrations.groqEnabled === false} />
+                    <button className="add-btn" onClick={testGroqAPI} disabled={localConfig.integrations.groqEnabled === false}><Activity size={16} /> TEST GROQ</button>
                   </div>
-                </div>
-
-                <div className="input-group" style={{ marginTop: '1.5rem' }}>
-                  <label style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>OPENAI API KEY (ChatGPT)</span>
-                    <span style={{ fontSize: '0.8rem', color: apiTestStatus.openai?.includes('LỖI') ? '#ef4444' : '#10b981' }}>{apiTestStatus.openai}</span>
-                  </label>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
-                    <input style={{ flex: 1 }} type="password" value={localConfig.integrations.openaiKey || ''} onChange={(e) => updateNested('integrations', 'openaiKey', e.target.value)} />
-                    <button className="add-btn" onClick={testOpenAIAPI}><Activity size={16} /> TEST OPENAI</button>
-                  </div>
-                </div>
-
-                <div className="input-group" style={{ marginTop: '1.5rem' }}>
-                  <label style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>PAWAN API KEY (Reverse Proxy / Free)</span>
-                    <span style={{ fontSize: '0.8rem', color: apiTestStatus.pawan?.includes('LỖI') ? '#ef4444' : '#10b981' }}>{apiTestStatus.pawan}</span>
-                  </label>
-                  <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.8rem' }}>
-                    <input style={{ flex: 1 }} type="password" value={localConfig.integrations.pawanKey || ''} onChange={(e) => updateNested('integrations', 'pawanKey', e.target.value)} placeholder="pk-..." />
-                    <button className="add-btn" onClick={testPawanAPI}><Activity size={16} /> TEST PAWAN</button>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <label style={{ fontSize: '0.75rem', opacity: 0.6, whiteSpace: 'nowrap' }}>CHỌN MODEL:</label>
-                    <select 
-                      value={localConfig.integrations.pawanModel || 'openai/gpt-oss-20b'} 
-                      onChange={(e) => updateNested('integrations', 'pawanModel', e.target.value)}
-                      style={{ 
-                        flex: 1, 
-                        background: 'rgba(255,255,255,0.05)', 
-                        border: '1px solid rgba(255,255,255,0.1)', 
-                        color: 'var(--accent-main)',
-                        padding: '0.5rem',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem'
-                      }}
-                    >
-                      <option value="openai/gpt-oss-20b">GPT-OSS 20B (Free)</option>
-                      <option value="stepfun-ai/Step-3.5-Flash">Step 3.5 Flash (Free)</option>
-                      <option value="pkrd/cosmosrp-2.1">CosmosRP V2.1 (Free)</option>
-                      <option value="google/gemma-2-27b-it">Gemma 2 27B IT (Free)</option>
-                      <option value="gpt-4o">GPT-4o (Premium/Standard)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="input-group" style={{ marginTop: '1.5rem' }}>
-                  <label style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>ZALO BOT TOKEN (zaloplatforms.com)</span>
-                    <span style={{ fontSize: '0.8rem', color: apiTestStatus.zalo?.includes('LỖI') ? '#ef4444' : '#10b981' }}>{apiTestStatus.zalo}</span>
-                  </label>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
-                    <input style={{ flex: 1 }} type="password" value={localConfig.integrations.zaloBotToken || ''} onChange={(e) => updateNested('integrations', 'zaloBotToken', e.target.value)} />
-                    <button className="add-btn" onClick={testZaloBotAPI}><Activity size={16} /> TEST ZALO</button>
-                  </div>
-                </div>
-
-                <div className="input-group" style={{ marginTop: '1.5rem' }}>
-                   <label>ZALO BOT ID (Ví dụ: 351...)</label>
-                   <input type="text" value={localConfig.integrations.zaloBotId || '2374048838780370931'} onChange={(e) => updateNested('integrations', 'zaloBotId', e.target.value)} placeholder="Nhập ID Bot để tạo link liên kết nhanh..." />
-                </div>
-
-                <div className="api-config-alert" style={{ marginTop: '1.5rem', background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', borderColor: 'rgba(59, 130, 246, 0.2)' }}>
-                  <strong> WEBHOOK URL:</strong> <code>{window.location.origin}/api/zalo-webhook</code>
-                  <p style={{ fontSize: '0.75rem', marginTop: '0.5rem', opacity: 0.8 }}>Dán URL này vào mục "Webhook URL" trên zaloplatforms.com</p>
                 </div>
               </motion.div>
             )}

@@ -59,9 +59,8 @@ export const ConfigProvider = ({ children }) => {
       },
       integrations: {
         geminiKey: localStorage.getItem('GEMINI_API_KEY') || '',
-        deepseekKey: localStorage.getItem('DEEPSEEK_API_KEY') || '',
         groqKey: '',
-        pawanKey: ''
+        tavilyKey: ''
       },
       apps: [
         { name: "Antigravity", color: "#00d2ff" },

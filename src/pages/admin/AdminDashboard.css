@@ -441,3 +441,53 @@ input[type="range"]::-moz-range-thumb {
   cursor: pointer;
   border: 2px solid #fff;
 }
+
+/* API Status Toggle Switch */
+.api-status-toggle {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+}
+
+.api-status-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.api-status-toggle label {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.1);
+  transition: .4s;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.api-status-toggle label:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 2px;
+  bottom: 2px;
+  background-color: var(--text-muted);
+  transition: .4s;
+  border-radius: 50%;
+}
+
+.api-status-toggle input:checked + label {
+  background-color: rgba(var(--accent-rgb), 0.2);
+  border-color: var(--accent-main);
+}
+
+.api-status-toggle input:checked + label:before {
+  transform: translateX(16px);
+  background-color: var(--accent-main);
+  box-shadow: 0 0 10px var(--accent-glow);
+}

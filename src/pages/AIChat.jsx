@@ -59,16 +59,17 @@ const AIChat = () => {
   const navigate = useNavigate();
 
   // AI Config
-  const geminiKey = config?.integrations?.geminiKey || import.meta.env.VITE_GEMINI_API_KEY;
-  const deepseekKey = config?.integrations?.deepseekKey || import.meta.env.VITE_DEEPSEEK_API_KEY;
-  const groqKey = config?.integrations?.groqKey;
-  const openaiKey = config?.integrations?.openaiKey;
-  const pawanKey = config?.integrations?.pawanKey;
+  // AI Config Status
+  const geminiEnabled = config?.integrations?.geminiEnabled !== false;
+  const groqEnabled = config?.integrations?.groqEnabled !== false;
+  const tavilyEnabled = config?.integrations?.tavilyEnabled !== false;
+
+  const geminiKey = (geminiEnabled && (config?.integrations?.geminiKey || import.meta.env.VITE_GEMINI_API_KEY)) || null;
+  const groqKey = groqEnabled ? config?.integrations?.groqKey : null;
+  const tavilyKey = tavilyEnabled ? config?.integrations?.tavilyKey : null;
 
   const genAI = new GoogleGenerativeAI(geminiKey || 'dummy_key');
   const groq = groqKey ? new OpenAI({ apiKey: groqKey, baseURL: 'https://api.groq.com/openai/v1', dangerouslyAllowBrowser: true }) : null;
-  const deepseek = new OpenAI({ apiKey: deepseekKey || 'dummy_key', baseURL: 'https://api.deepseek.com', dangerouslyAllowBrowser: true });
-  const chatgpt = openaiKey ? new OpenAI({ apiKey: openaiKey, dangerouslyAllowBrowser: true }) : null;
 
   const getUserDisplayName = () => {
     if (currentUser?.displayName) return currentUser.displayName;
@@ -135,21 +136,25 @@ const AIChat = () => {
     }
   };
 
-  const executePawanRequest = async (prompt, controller) => {
-    const activeKey = pawanKey?.trim();
-    if (!activeKey) throw new Error('No Pawan Key');
-    const response = await fetch(`https://api.pawan.krd/v1/chat/completions`, {
+  const executeTavilySearch = async (query) => {
+    if (!tavilyKey) throw new Error("Chưa cấu hình Tavily Search Key!");
+    const response = await fetch(`https://api.tavily.com/search`, {
       method: 'POST',
-      signal: controller.signal,
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${activeKey}` },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: config?.integrations?.pawanModel || "openai/gpt-oss-20b",
-        messages: [{ role: "user", content: prompt }]
+        api_key: tavilyKey,
+        query: query,
+        search_depth: "advanced",
+        include_answer: true,
+        max_results: 5
       })
     });
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error?.message || 'Pawan Error');
-    return data.choices[0].message.content;
+    if (!response.ok) throw new Error(data.detail || "Lỗi truy vấn Tavily");
+    
+    // Format search results for context
+    const context = data.results.map(r => `[${r.title}]: ${r.content} (Source: ${r.url})`).join('\n\n');
+    return { context, aiAnswer: data.answer };
   };
 
   const executeSmartSearch = async (contextPrompt) => {
@@ -249,41 +254,57 @@ const AIChat = () => {
         const contextPrompt = `[HỆ THỐNG IRIS: ${depthInstruction}. Giờ hệ thống: ${timeStr}].\n\nNgười dùng hỏi: ${tempInput}`;
 
         // ROUTING LOGIC WITH ROBUST FALLBACK
+        // ROUTING LOGIC WITH TAVILY + GROQ / GEMINI
         if (intent === 'SEARCH') {
           try {
-            aiResponseContent = await executeSmartSearch(contextPrompt);
+            setRoutingInfo('Đang truy vấn dữ liệu thời gian thực qua Tavily...');
+            const searchData = await executeTavilySearch(tempInput);
+            
+            if (groq && groqEnabled) {
+              setRoutingInfo('Tavily đã tìm thấy dữ liệu -> Đang tổng hợp bằng Groq...');
+              const completion = await groq.chat.completions.create({
+                model: "llama-3.3-70b-versatile",
+                messages: [
+                  { role: "system", content: `Bạn là IRIS Intelligence. Hãy sử dụng thông tin từ Tavily sau đây để trả lời người dùng một cách chính xác nhất. Nếu Tavily không có dữ liệu, hãy trả lời dựa trên kiến thức của bạn.\n\nNGỮ CẢNH TAVILY:\n${searchData.context}` },
+                  { role: "user", content: contextPrompt }
+                ]
+              });
+              aiResponseContent = completion.choices[0].message.content;
+            } else {
+              setRoutingInfo('Groq tắt -> Trả về kết quả trực tiếp từ Tavily...');
+              aiResponseContent = searchData.aiAnswer || "Không thể tổng hợp dữ liệu.";
+            }
           } catch (err) {
-            setRoutingInfo('Cảnh báo: Tất cả Node tìm kiếm gặp sự cố. Đang dùng trí tuệ nội tại...');
-            // Final fallback to a stable reasoning model if search fails
-            const completion = await groq.chat.completions.create({ 
-              model: "llama-3.3-70b-versatile", 
-              messages: [{ role: "user", content: `[LƯU Ý: Search Node đang bảo trì. Hãy trả lời dựa trên kiến thức hiện có].\n\n${contextPrompt}` }] 
-            });
-            aiResponseContent = `⚠️ (IRIS đang ở chế độ Offline) ${completion.choices[0].message.content}`;
+            setRoutingInfo('Tavily Node gặp sự cố -> Chuyển sang Gemini Search...');
+            aiResponseContent = await executeSmartSearch(contextPrompt);
           }
         } else if (chatMode === 'reasoning' || intent === 'REASONING') {
-          setRoutingInfo('Phát hiện nhu cầu suy luận sâu -> Điều phối DeepSeek-V3...');
-          if (!deepseekKey) throw new Error('Chưa cấu hình Deepseek Key!');
-          const completion = await deepseek.chat.completions.create({ 
-            model: "deepseek-chat", 
-            messages: [{ role: "user", content: contextPrompt }] 
-          });
-          aiResponseContent = completion.choices[0].message.content;
-        } else {
-          // RACE MODE for Fast Response
-          setRoutingInfo('Chế độ Nhanh -> Đang đua tốc độ giữa các IRIS Node...');
-          const controller = new AbortController();
+          setRoutingInfo('Phát hiện nhu cầu suy luận sâu -> Ưu tiên Gemini (Long Context)...');
           
-          const requests = [];
-          if (groq) requests.push(groq.chat.completions.create({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: contextPrompt }] }).then(res => res.choices[0].message.content));
-          if (pawanKey) requests.push(executePawanRequest(contextPrompt, controller));
-          if (deepseekKey) requests.push(deepseek.chat.completions.create({ model: "deepseek-chat", messages: [{ role: "user", content: contextPrompt }] }).then(res => res.choices[0].message.content));
-
-          try {
-            aiResponseContent = await Promise.any(requests);
-            controller.abort(); // Cancel others
-          } catch (e) {
-            aiResponseContent = "❌ Tất cả các Node đều gặp sự cố. Vui lòng kiểm tra lại API.";
+          if (geminiEnabled && geminiKey) {
+             const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
+             const result = await model.generateContent(contextPrompt);
+             const response = await result.response;
+             aiResponseContent = response.text();
+          } else {
+            throw new Error('Chế độ Suy luận bị khoá (Gemini Node chưa được bật)!');
+          }
+        } else {
+          // FAST MODE -> ALWAYS GROQ
+          setRoutingInfo('IRIS (Fast Mode) -> Đang sử dụng bộ phán đoán Groq...');
+          
+          if (groq && groqEnabled) {
+             const completion = await groq.chat.completions.create({ 
+               model: "llama-3.3-70b-versatile", 
+               messages: [{ role: "user", content: contextPrompt }] 
+             });
+             aiResponseContent = completion.choices[0].message.content;
+          } else {
+            setRoutingInfo('Groq tắt -> Chuyển sang Gemini Flash...');
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const result = await model.generateContent(contextPrompt);
+            const response = await result.response;
+            aiResponseContent = response.text();
           }
         }
       }
