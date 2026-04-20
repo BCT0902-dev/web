@@ -36,6 +36,7 @@ import { doc, setDoc, updateDoc, collection, getDocs, deleteDoc } from 'firebase
 import { Link } from 'react-router-dom';
 import { useConfig } from '../../context/ConfigContext';
 import SocialIcon from '../../components/SocialIcon';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import './AdminDashboard.css';
 
 const SOCIAL_PLATFORMS = [
@@ -145,14 +146,12 @@ const AdminDashboard = () => {
       Lưu ý: Chỉ trả về JSON nguyên bản.`;
 
       setSeedingProgress(`--- ĐANG DÙNG IRIS GEMINI CORE ---`);
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${geminiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error?.message || "Gemini Error");
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      const genAI = new GoogleGenerativeAI(geminiKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       const postsArray = JSON.parse(jsonMatch ? jsonMatch[0] : text);
 

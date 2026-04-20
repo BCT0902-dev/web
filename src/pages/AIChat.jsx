@@ -279,7 +279,8 @@ const AIChat = () => {
         aiResponseContent = `🎨 **IRIS Visual Studio (Free Engine)**\n\nHình ảnh đã được tạo cho: "${tempInput}"`;
       } else {
         const now = new Date();
-        const timeStr = now.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+        const timeOptions = { timeZone: 'Asia/Ho_Chi_Minh', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+        const timeStr = now.toLocaleString('vi-VN', timeOptions);
         
         let depthInstruction = isDeepThink 
           ? "PHÂN TÍCH CHUYÊN SÂU: Trả lời cực kỳ chi tiết, giải thích rõ ràng và cung cấp thêm thông tin hữu ích." 
