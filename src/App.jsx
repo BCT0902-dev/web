@@ -17,8 +17,8 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import LoadingScreen from './components/LoadingScreen';
 import { AnimatePresence } from 'framer-motion';
 import ScrollToTop from './components/ScrollToTop';
-
 import AdminDashboard from './pages/admin/AdminDashboard';
+import BlogCMS from './pages/admin/BlogCMS';
 import Blog from './pages/blog/Blog'; // Assuming I move it to pages/blog/Blog.jsx or keep it simple
 import BlogPost from './pages/blog/BlogPost';
 import Chronicles from './pages/Chronicles';
@@ -92,6 +92,7 @@ function AppRoutes() {
             </PageGuard>
           } />
           <Route path="/admin" element={isAdmin ? <AdminDashboard /> : <Login />} />
+          <Route path="/admin/cms/:id" element={isAdmin ? <BlogCMS /> : <Login />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         {!isLoginPage && !isAdminPage && !isBlogPage && !isChroniclesPage && <Footer />}

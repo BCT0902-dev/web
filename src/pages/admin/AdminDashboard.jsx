@@ -1071,9 +1071,9 @@ const AdminDashboard = () => {
                       <FileText size={24} /> <h3>QUẢN LÝ BÀI VIẾT & BLOG</h3>
                    </div>
                    <div style={{ display: 'flex', gap: '1rem' }}>
-                      <button className="add-btn" onClick={seedBlogPosts} disabled={isSyncingNews} style={{ background: 'var(--accent-secondary)', border: 'none' }}>
-                        <Sparkles size={14} /> SEED 5 BÀI VIẾT AI
-                      </button>
+                      <Link to="/admin/cms/new" className="add-btn" style={{ background: 'var(--accent-main)', border: 'none', color: '#fff', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Edit size={14} /> VIẾT BÀI MỚI (CMS)
+                      </Link>
                       <button className="add-btn" onClick={fetchBlogPosts}><Activity size={14} /> REFRESH</button>
                    </div>
                 </div>
@@ -1098,7 +1098,7 @@ const AdminDashboard = () => {
                       {loadingBlog ? (
                         <tr><td colSpan="4" style={{ textAlign: 'center', padding: '2rem' }}>Đang tải danh sách bài viết...</td></tr>
                       ) : blogPosts.length === 0 ? (
-                        <tr><td colSpan="4" style={{ textAlign: 'center', padding: '2rem', opacity: 0.5 }}>Chưa có bài viết nào. Hãy thử nhấn nút SEED 5 BÀI VIẾT ở trên!</td></tr>
+                        <tr><td colSpan="4" style={{ textAlign: 'center', padding: '2rem', opacity: 0.5 }}>Chưa có bài viết nào. Hãy thử nhấn nút VIẾT BÀI MỚI (CMS) ở trên!</td></tr>
                       ) : blogPosts.map(post => (
                         <tr key={post.id}>
                           <td>
@@ -1107,9 +1107,17 @@ const AdminDashboard = () => {
                               <div style={{ fontWeight: 600, maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{post.title}</div>
                             </div>
                           </td>
-                          <td><span className="role-badge" style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--accent-main)', border: '1px solid var(--accent-main)' }}>{post.category?.toUpperCase()}</span></td>
+                          <td>
+                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                              <span className="role-badge" style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--accent-main)', border: '1px solid var(--accent-main)' }}>{post.category?.toUpperCase() || 'TECH'}</span>
+                              <span className="role-badge" style={{ background: post.published ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)', color: post.published ? '#10b981' : '#f59e0b', border: `1px solid ${post.published ? 'rgba(16, 185, 129, 0.4)' : 'rgba(245, 158, 11, 0.4)'}` }}>
+                                {post.published ? 'PUBLIC' : 'DRAFT'}
+                              </span>
+                            </div>
+                          </td>
                           <td style={{ fontSize: '0.8rem', opacity: 0.7 }}>{post.date}</td>
                           <td style={{ textAlign: 'right' }}>
+                            <Link to={`/admin/cms/${post.id}`} className="icon-btn" style={{ background: 'rgba(255, 154, 61, 0.1)', color: 'var(--accent-main)', borderColor: 'rgba(255, 154, 61, 0.2)' }}><Edit size={14} /></Link>
                             <Link to={`/blog/${post.id}`} target="_blank" className="icon-btn"><ExternalLink size={14} /></Link>
                             <button className="icon-btn danger" onClick={() => deleteBlogPost(post.id)}><Trash2 size={14} /></button>
                           </td>
