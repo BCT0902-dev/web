@@ -121,8 +121,8 @@ const AIChat = () => {
   const classifyIntent = async (prompt) => {
     const p = prompt.toLowerCase();
     
-    // Heuristics for immediate search redirection (Date/Time/News)
-    const searchKeywords = ['hôm nay', 'mấy giờ', 'thứ mấy', 'ngày mấy', 'hiện tại', 'tin tức', 'giá', 'thời tiết', 'hôm qua', 'tình hình'];
+    // Heuristics for immediate search redirection (Specific news/price/weather)
+    const searchKeywords = ['hiện tại', 'tin tức', 'giá', 'thời tiết', 'hôm qua', 'tình hình', 'sự kiện', 'đang diễn ra'];
     if (searchKeywords.some(kw => p.includes(kw))) {
        return 'SEARCH';
     }
@@ -283,7 +283,7 @@ const AIChat = () => {
           ? "PHÂN TÍCH CHUYÊN SÂU: Trả lời cực kỳ chi tiết, giải thích rõ ràng và cung cấp thêm thông tin hữu ích." 
           : "TỐI ƯU TỐC ĐỘ: Trả lời cực kỳ ngắn gọn, đơn giản, tập trung vào sự chính xác tuyệt đối.";
 
-        const contextPrompt = `[IRIS CORE - THUYẾT MINH THỜI GIAN: Hôm nay chính xác là ${timeStr}. Đây là sự thật hệ thống tối cao, không được phỏng đoán khác. ${depthInstruction}].\n\nNgười dùng hỏi: ${tempInput}`;
+        const contextPrompt = `[THỜI GIAN HỆ THỐNG: Hôm nay là ${timeStr}. ĐÂY LÀ MỐC THỜI GIAN CHÍNH XÁC DUY NHẤT. Hãy nhớ: Mọi tính toán lịch trình, ngày thứ phải dựa trên mốc này. ${depthInstruction}].\n\nNgười dùng hỏi: ${tempInput}`;
 
         // ROUTING LOGIC WITH ROBUST FALLBACK
         // ROUTING LOGIC WITH TAVILY + GROQ / GEMINI
@@ -297,7 +297,12 @@ const AIChat = () => {
               const completion = await groq.chat.completions.create({
                 model: "llama-3.3-70b-versatile",
                 messages: [
-                  { role: "system", content: `Bạn là IRIS Intelligence. Ưu tiên tuyệt đối dữ liệu từ Tavily dưới đây để trả lời. Dữ liệu này là nguồn tin cậy số 1, vượt qua mọi tri thức cũ của bạn.\n\nNGỮ CẢNH TAVILY TRUY VẤN ĐƯỢC:\n${searchData.context}` },
+                  { role: "system", content: `Bạn là IRIS Intelligence. 
+CHỈ THỊ ƯU TIÊN:
+1. LUÔN LUÔN sử dụng Giờ Hệ thống (trong contextPrompt) cho các thông tin về Ngày/Tháng/Năm/Thứ hiện tại. Tuyệt đối không dùng dữ liệu Tavily cho phần này nếu có mâu thuẫn.
+2. SỬ DỤNG dữ liệu Tavily cho các kiến thức, sự kiện, giá cả, và thông tin thực tế bên ngoài.
+
+NGỮ CẢNH TAVILY:\n${searchData.context}` },
                   { role: "user", content: contextPrompt }
                 ]
               });
