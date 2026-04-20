@@ -120,6 +120,13 @@ const AIChat = () => {
 
   const classifyIntent = async (prompt) => {
     const p = prompt.toLowerCase();
+    
+    // Heuristics for immediate search redirection (Date/Time/News)
+    const searchKeywords = ['hôm nay', 'mấy giờ', 'thứ mấy', 'ngày mấy', 'hiện tại', 'tin tức', 'giá', 'thời tiết', 'hôm qua', 'tình hình'];
+    if (searchKeywords.some(kw => p.includes(kw))) {
+       return 'SEARCH';
+    }
+
     if (p.includes('vẽ') || p.includes('tạo ảnh') || p.includes('hình ảnh') || p.includes('generate image') || p.includes('draw')) {
       return 'IMAGE';
     }
@@ -129,7 +136,7 @@ const AIChat = () => {
         model: "llama-3.3-70b-versatile",
         messages: [{ 
           role: "system", 
-          content: "Classify user intent: 'SEARCH' (current events/news), 'REASONING' (code/math/complex), 'GENERAL' (greetings/simple). Return ONLY the token." 
+          content: "Classify user intent: 'SEARCH' (current events/news/specific facts/time), 'REASONING' (code/math/complex), 'GENERAL' (greetings/simple chat). Return ONLY the token." 
         }, { 
           role: "user", 
           content: prompt 
@@ -276,7 +283,7 @@ const AIChat = () => {
           ? "PHÂN TÍCH CHUYÊN SÂU: Trả lời cực kỳ chi tiết, giải thích rõ ràng và cung cấp thêm thông tin hữu ích." 
           : "TỐI ƯU TỐC ĐỘ: Trả lời cực kỳ ngắn gọn, đơn giản, tập trung vào sự chính xác tuyệt đối.";
 
-        const contextPrompt = `[HỆ THỐNG IRIS - LƯU Ý QUAN TRỌNG: Hôm nay là ${timeStr}. Hãy sử dụng thời gian này làm mốc thời gian thực chính xác nhất. ${depthInstruction}].\n\nNgười dùng hỏi: ${tempInput}`;
+        const contextPrompt = `[IRIS CORE - THUYẾT MINH THỜI GIAN: Hôm nay chính xác là ${timeStr}. Đây là sự thật hệ thống tối cao, không được phỏng đoán khác. ${depthInstruction}].\n\nNgười dùng hỏi: ${tempInput}`;
 
         // ROUTING LOGIC WITH ROBUST FALLBACK
         // ROUTING LOGIC WITH TAVILY + GROQ / GEMINI
@@ -290,7 +297,7 @@ const AIChat = () => {
               const completion = await groq.chat.completions.create({
                 model: "llama-3.3-70b-versatile",
                 messages: [
-                  { role: "system", content: `Bạn là IRIS Intelligence. Hãy sử dụng thông tin từ Tavily sau đây để trả lời người dùng một cách chính xác nhất. Nếu Tavily không có dữ liệu, hãy trả lời dựa trên kiến thức của bạn.\n\nNGỮ CẢNH TAVILY:\n${searchData.context}` },
+                  { role: "system", content: `Bạn là IRIS Intelligence. Ưu tiên tuyệt đối dữ liệu từ Tavily dưới đây để trả lời. Dữ liệu này là nguồn tin cậy số 1, vượt qua mọi tri thức cũ của bạn.\n\nNGỮ CẢNH TAVILY TRUY VẤN ĐƯỢC:\n${searchData.context}` },
                   { role: "user", content: contextPrompt }
                 ]
               });
