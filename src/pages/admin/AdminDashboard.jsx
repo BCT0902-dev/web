@@ -29,7 +29,12 @@ import {
   Mail,
   BarChart3,
   Lock,
-  Unlock
+  Unlock,
+  TrendingUp,
+  Smartphone,
+  Monitor,
+  Eye,
+  Clock
 } from 'lucide-react';
 import { db } from '../../firebase';
 import { doc, setDoc, updateDoc, collection, getDocs, deleteDoc, query, orderBy, limit } from 'firebase/firestore';
@@ -1036,11 +1041,129 @@ const AdminDashboard = () => {
 
             {activeTab === 'analytics' && (
               <motion.div key="analytics" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="config-section">
-                <div className="manager-header">
-                   <label>TRAFFIC & EVENT STREAM (TOP 100)</label>
-                   <button className="add-btn" onClick={fetchAnalytics}><Activity size={14} /> TẢI LẠI</button>
+                {/* Stats Cards Row */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+                  <div className="glass-panel" style={{ padding: '1.5rem', borderLeft: '4px solid #00d2ff', background: 'linear-gradient(135deg, rgba(0, 210, 255, 0.05), transparent)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', opacity: 0.6, fontSize: '0.8rem', marginBottom: '0.5rem', fontFamily: 'var(--font-mono)' }}>
+                       <span>TỔNG LƯỢT TRUY CẬP</span>
+                       <Eye size={14} />
+                    </div>
+                    <div style={{ fontSize: '2.5rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#00d2ff', textShadow: '0 0 15px rgba(0, 210, 255, 0.3)' }}>
+                      {analyticsData.length}
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>Dữ liệu thời gian thực</div>
+                  </div>
+                  
+                  <div className="glass-panel" style={{ padding: '1.5rem', borderLeft: '4px solid var(--accent-main)', background: 'linear-gradient(135deg, rgba(var(--accent-rgb), 0.05), transparent)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', opacity: 0.6, fontSize: '0.8rem', marginBottom: '0.5rem', fontFamily: 'var(--font-mono)' }}>
+                       <span>TRANG PHỔ BIẾN NHẤT</span>
+                       <TrendingUp size={14} />
+                    </div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--accent-main)' }}>
+                      {(() => {
+                        const counts = {};
+                        analyticsData.forEach(d => counts[d.path] = (counts[d.path] || 0) + 1);
+                        const top = Object.entries(counts).sort((a,b) => b[1]-a[1])[0];
+                        return top ? top[0] : 'N/A';
+                      })()}
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>Dựa trên {analyticsData.length} mẫu</div>
+                  </div>
+
+                  <div className="glass-panel" style={{ padding: '1.5rem', borderLeft: '4px solid #10b981', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.05), transparent)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', opacity: 0.6, fontSize: '0.8rem', marginBottom: '0.5rem', fontFamily: 'var(--font-mono)' }}>
+                       <span>MOBILE VS DESKTOP</span>
+                       <Smartphone size={14} />
+                    </div>
+                    <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#10b981' }}>
+                      {(() => {
+                        let mob = 0;
+                        analyticsData.forEach(d => { if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(d.userAgent)) mob++; });
+                        const mobPerc = analyticsData.length ? Math.round((mob/analyticsData.length)*100) : 0;
+                        return `${mobPerc}% / ${100-mobPerc}%`;
+                      })()}
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>Phân bổ loại thiết bị</div>
+                  </div>
                 </div>
-                
+
+                {/* Visual Charts Row */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+                   <div className="glass-panel" style={{ padding: '1.5rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                        <h4 style={{ margin: 0, fontSize: '0.9rem', opacity: 0.8, fontFamily: 'var(--font-mono)' }}>PHÂN BỔ TRANG TRUY CẬP (TOP 5)</h4>
+                        <BarChart3 size={16} opacity={0.5} />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                         {(() => {
+                            const counts = {};
+                            analyticsData.forEach(d => counts[d.path] = (counts[d.path] || 0) + 1);
+                            const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 5);
+                            const max = sorted[0]?.[1] || 1;
+                            return sorted.map(([path, count], idx) => (
+                               <div key={idx} style={{ position: 'relative' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
+                                     <span style={{ opacity: 0.8 }}>{path}</span>
+                                     <span style={{ fontWeight: 600 }}>{count} views</span>
+                                  </div>
+                                  <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.03)', borderRadius: '3px', overflow: 'hidden' }}>
+                                     <motion.div 
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${(count/max)*100}%` }}
+                                        transition={{ duration: 1.2, delay: idx*0.1, ease: "circOut" }}
+                                        style={{ height: '100%', background: `linear-gradient(90deg, var(--accent-main), #ffb000)`, boxShadow: '0 0 10px var(--accent-glow)' }}
+                                     />
+                                  </div>
+                               </div>
+                            ));
+                         })()}
+                         {analyticsData.length === 0 && <p style={{ textAlign: 'center', opacity: 0.4, fontSize: '0.8rem' }}>Chưa có dữ liệu đồ thị...</p>}
+                      </div>
+                   </div>
+
+                   <div className="glass-panel" style={{ padding: '1.5rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                        <h4 style={{ margin: 0, fontSize: '0.9rem', opacity: 0.8, fontFamily: 'var(--font-mono)' }}>TRÌNH DUYỆT SỬ DỤNG</h4>
+                        <Globe size={16} opacity={0.5} />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                        {(() => {
+                           const browsers = { Chrome: 0, Safari: 0, Firefox: 0, Edge: 0, Other: 0 };
+                           analyticsData.forEach(d => {
+                              if (d.userAgent.includes('Chrome')) browsers.Chrome++;
+                              else if (d.userAgent.includes('Safari')) browsers.Safari++;
+                              else if (d.userAgent.includes('Firefox')) browsers.Firefox++;
+                              else if (d.userAgent.includes('Edg')) browsers.Edge++;
+                              else browsers.Other++;
+                           });
+                           return Object.entries(browsers).filter(b => b[1] > 0).map(([name, count], idx) => (
+                              <div key={name} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                 <div style={{ width: '50px', fontSize: '0.7rem', opacity: 0.6 }}>{name}</div>
+                                 <div style={{ flex: 1, height: '4px', background: 'rgba(255,255,255,0.03)', borderRadius: '2px', overflow: 'hidden' }}>
+                                    <motion.div 
+                                       initial={{ width: 0 }}
+                                       animate={{ width: `${(count/analyticsData.length)*100}%` }}
+                                       transition={{ duration: 1, delay: idx*0.05 }}
+                                       style={{ height: '100%', background: name === 'Chrome' ? '#4285F4' : name === 'Safari' ? '#007AFF' : 'var(--accent-main)' }}
+                                    />
+                                 </div>
+                                 <div style={{ fontSize: '0.7rem', fontWeight: 600, width: '30px', textAlign: 'right' }}>{Math.round((count/analyticsData.length)*100)}%</div>
+                              </div>
+                           ));
+                        })()}
+                        {analyticsData.length === 0 && <p style={{ textAlign: 'center', opacity: 0.4, fontSize: '0.8rem' }}>Chưa có dữ liệu đồ thị...</p>}
+                      </div>
+                   </div>
+                </div>
+
+                <div className="manager-header" style={{ marginBottom: '1rem' }}>
+                   <label>TRAFFIC & EVENT STREAM (MỚI NHẤT)</label>
+                   <button className="add-btn" onClick={fetchAnalytics} disabled={loadingAnalytics}>
+                     <Activity size={14} className={loadingAnalytics ? "spin" : ""} /> 
+                     {loadingAnalytics ? 'ĐANG TẢI...' : 'LÀM MỚI'}
+                   </button>
+                </div>
+
                 <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
                    <table className="admin-table">
                      <thead>
@@ -1054,10 +1177,23 @@ const AdminDashboard = () => {
                      <tbody>
                        {analyticsData.map(log => (
                          <tr key={log.id}>
-                           <td><span style={{ color: 'var(--accent-main)', fontWeight: 700 }}>{log.event}</span></td>
-                           <td><code style={{ fontSize: '0.8rem' }}>{log.path}</code></td>
-                           <td style={{ fontSize: '0.8rem' }}>{log.timestamp?.toDate?.()?.toLocaleString() || 'Vừa xong'}</td>
-                           <td style={{ fontSize: '0.7rem', opacity: 0.6, maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.userAgent}</td>
+                           <td>
+                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                               <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: log.event === 'PAGE_VIEW' ? '#00d2ff' : 'var(--accent-main)', boxShadow: `0 0 8px ${log.event === 'PAGE_VIEW' ? '#00d2ff' : 'var(--accent-main)'}` }} />
+                               <span style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.8rem' }}>{log.event}</span>
+                             </div>
+                           </td>
+                           <td><code style={{ fontSize: '0.75rem', color: 'var(--accent-main)' }}>{log.path}</code></td>
+                           <td style={{ fontSize: '0.8rem' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', opacity: 0.8 }}>
+                                 <Clock size={12} />
+                                 {log.timestamp?.toDate?.()?.toLocaleString() || 'Vừa xong'}
+                              </div>
+                           </td>
+                           <td style={{ fontSize: '0.7rem', opacity: 0.6, maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                             {/Android|iPhone/i.test(log.userAgent) ? <Smartphone size={12} style={{marginRight:'4px'}} /> : <Monitor size={12} style={{marginRight:'4px'}} />}
+                             {log.userAgent}
+                           </td>
                          </tr>
                        ))}
                        {analyticsData.length === 0 && (
