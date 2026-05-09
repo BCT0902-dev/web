@@ -199,6 +199,11 @@
 .stat-pill.success { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
 .stat-pill.warning { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
 
+.stat-pill.active {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+    border-color: #fff;
+}
+
 .preview-actions {
     display: flex;
     gap: 1rem;
@@ -218,6 +223,7 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     padding: 1.5rem;
+    transition: all 0.2s;
 }
 
 .question-card.invalid {
@@ -225,10 +231,44 @@
     background: rgba(239, 68, 68, 0.05);
 }
 
+.question-card.editing {
+    border-color: var(--accent-main);
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.1);
+}
+
 .q-header {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     margin-bottom: 0.5rem;
+}
+
+.q-badges {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-icon {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    padding: 0.3rem 0.8rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-icon.edit:hover {
+    background: var(--accent-main);
+    color: #000;
+    border-color: var(--accent-main);
+}
+
+.btn-icon.delete:hover {
+    background: #ef4444;
+    border-color: #ef4444;
 }
 
 .error-badge {
@@ -277,6 +317,49 @@
     border-top: 1px dashed rgba(255, 255, 255, 0.1);
     font-size: 0.9rem;
     color: var(--accent-main);
+}
+
+.q-answer.error {
+    color: #ef4444;
+}
+
+/* Edit Inline Form */
+.edit-options-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    margin-top: 0.5rem;
+}
+
+.edit-option-row {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.edit-option-row input[type="text"] {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #fff;
+    outline: none;
+    font-family: inherit;
+}
+
+.edit-option-row input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.add-opt-btn {
+    align-self: flex-start;
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
 }
 
 /* Config Section */

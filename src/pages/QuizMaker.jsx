@@ -20,6 +20,8 @@ const QuizMaker = () => {
   const [error, setError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [answerFormat, setAnswerFormat] = useState('bold'); // 'bold', 'italic', 'aiken'
+  const [filterMode, setFilterMode] = useState('all'); // 'all', 'invalid'
+  const [editingQuestion, setEditingQuestion] = useState(null); // stores the question object currently being edited
   
   // Config States
   const [config, setConfig] = useState({
@@ -152,17 +154,17 @@ const QuizMaker = () => {
       return;
     }
 
+    // Check invalid questions
+    const invalidCount = questions.filter(q => !q.correctAnswer || q.options.length < 2).length;
+    if (invalidCount > 0) {
+      setError(`Vẫn còn ${invalidCount} câu bị lỗi. Bạn cần sửa hoặc xóa chúng trước khi tạo bài thi.`);
+      return;
+    }
+
     // Validate Config
     if (config.questionsCount > questions.length) {
        setError(`Số lượng câu hỏi hiển thị (${config.questionsCount}) không được lớn hơn tổng số câu hỏi trong ngân hàng (${questions.length}).`);
        return;
-    }
-
-    // Check invalid questions
-    const invalidCount = questions.filter(q => !q.correctAnswer || q.options.length < 2).length;
-    if (invalidCount > 0) {
-      setError(`Có ${invalidCount} câu hỏi bị thiếu đáp án hoặc thiếu lựa chọn. Vui lòng kiểm tra lại file Word.`);
-      return;
     }
 
     setIsSaving(true);
@@ -191,6 +193,21 @@ const QuizMaker = () => {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleDeleteQuestion = (id) => {
+    if(window.confirm('Ngài có chắc muốn xóa câu hỏi này khỏi danh sách?')) {
+        const newQs = questions.filter(q => q.id !== id);
+        setQuestions(newQs);
+        setConfig(prev => ({ ...prev, questionsCount: Math.min(prev.questionsCount, newQs.length) }));
+    }
+  };
+
+  const handleSaveEdit = (e) => {
+    e.preventDefault();
+    const updatedQs = questions.map(q => q.id === editingQuestion.id ? editingQuestion : q);
+    setQuestions(updatedQs);
+    setEditingQuestion(null);
   };
 
   return (
@@ -291,24 +308,104 @@ const QuizMaker = () => {
               <div className="preview-stats">
                 <h2><FileText size={24} className="text-gradient" /> TỔNG QUAN FILE TÀI LIỆU</h2>
                 <div className="stats-row">
-                  <span className="stat-pill success">Đã tìm thấy: {questions.length} câu hỏi</span>
-                  <span className="stat-pill warning">Câu lỗi: {questions.filter(q => !q.correctAnswer || q.options.length < 2).length}</span>
+                  <span 
+                    className={`stat-pill success ${filterMode === 'all' ? 'active' : ''}`} 
+                    onClick={() => setFilterMode('all')}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    Tất cả: {questions.length} câu
+                  </span>
+                  <span 
+                    className={`stat-pill warning ${filterMode === 'invalid' ? 'active' : ''}`} 
+                    onClick={() => setFilterMode('invalid')}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    Câu lỗi: {questions.filter(q => !q.correctAnswer || q.options.length < 2).length}
+                  </span>
                 </div>
               </div>
               <div className="preview-actions">
                 <button onClick={() => setStep(1)} className="btn-secondary">HỦY BỎ</button>
-                <button onClick={() => setStep(3)} className="btn-primary">TIẾP TỤC CẤU HÌNH</button>
+                <button onClick={() => {
+                   const invalidCount = questions.filter(q => !q.correctAnswer || q.options.length < 2).length;
+                   if (invalidCount > 0) {
+                      setError(`Vui lòng sửa hoặc xóa ${invalidCount} câu bị lỗi trước khi tiếp tục!`);
+                   } else {
+                      setError('');
+                      setStep(3);
+                   }
+                }} className="btn-primary">TIẾP TỤC CẤU HÌNH</button>
               </div>
             </div>
 
             <div className="questions-list">
-              {questions.map((q, idx) => {
+              {questions
+                .filter(q => {
+                   if (filterMode === 'invalid') return (!q.correctAnswer || q.options.length < 2);
+                   return true;
+                })
+                .map((q, idx) => {
                 const isValid = q.correctAnswer && q.options.length >= 2;
+                
+                if (editingQuestion && editingQuestion.id === q.id) {
+                    return (
+                        <div key={q.id} className="question-card editing glass-panel">
+                            <form onSubmit={handleSaveEdit}>
+                                <div className="form-group">
+                                    <label>Nội dung câu hỏi</label>
+                                    <textarea rows="2" value={editingQuestion.text} onChange={e => setEditingQuestion({...editingQuestion, text: e.target.value})} required />
+                                </div>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--text-muted)' }}>Các lựa chọn (Tick vào đáp án đúng)</label>
+                                <div className="edit-options-grid">
+                                    {editingQuestion.options.map((opt, oIdx) => (
+                                        <div key={oIdx} className="edit-option-row">
+                                            <input 
+                                                type="radio" 
+                                                name="correctAnswer" 
+                                                checked={editingQuestion.correctAnswer === opt.letter} 
+                                                onChange={() => setEditingQuestion({...editingQuestion, correctAnswer: opt.letter})}
+                                                required
+                                            />
+                                            <span className="opt-letter">{opt.letter}.</span>
+                                            <input 
+                                                type="text" 
+                                                value={opt.text} 
+                                                onChange={e => {
+                                                    const newOpts = [...editingQuestion.options];
+                                                    newOpts[oIdx].text = e.target.value;
+                                                    setEditingQuestion({...editingQuestion, options: newOpts});
+                                                }}
+                                                required 
+                                            />
+                                            <button type="button" className="btn-icon delete" onClick={() => {
+                                                const newOpts = editingQuestion.options.filter((_, i) => i !== oIdx);
+                                                setEditingQuestion({...editingQuestion, options: newOpts});
+                                            }}><X size={16}/></button>
+                                        </div>
+                                    ))}
+                                    <button type="button" onClick={() => {
+                                        const nextLetter = String.fromCharCode(65 + editingQuestion.options.length); // A, B, C...
+                                        setEditingQuestion({...editingQuestion, options: [...editingQuestion.options, { letter: nextLetter, text: 'Lựa chọn mới' }]})
+                                    }} className="btn-secondary add-opt-btn">+ Thêm lựa chọn</button>
+                                </div>
+                                <div className="edit-actions" style={{ marginTop: '1rem', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                                    <button type="button" onClick={() => setEditingQuestion(null)} className="btn-secondary">Hủy</button>
+                                    <button type="submit" className="btn-primary">Lưu Câu Hỏi</button>
+                                </div>
+                            </form>
+                        </div>
+                    );
+                }
+
                 return (
-                  <div key={idx} className={`question-card ${isValid ? '' : 'invalid'}`}>
+                  <div key={q.id} className={`question-card ${isValid ? '' : 'invalid'}`}>
                     <div className="q-header">
-                      <strong>Câu {idx + 1}:</strong>
-                      {!isValid && <span className="error-badge">Thiếu đáp án/lựa chọn</span>}
+                      <strong>Câu {q.id}:</strong>
+                      <div className="q-badges">
+                          {!isValid && <span className="error-badge">Thiếu đáp án/lựa chọn</span>}
+                          <button onClick={() => setEditingQuestion(q)} className="btn-icon edit">Sửa</button>
+                          <button onClick={() => handleDeleteQuestion(q.id)} className="btn-icon delete">Xóa</button>
+                      </div>
                     </div>
                     <p className="q-text">{q.text}</p>
                     <div className="q-options">
@@ -318,8 +415,10 @@ const QuizMaker = () => {
                         </div>
                       ))}
                     </div>
-                    {q.correctAnswer && (
+                    {q.correctAnswer ? (
                       <div className="q-answer">Đáp án đúng: <strong>{q.correctAnswer}</strong></div>
+                    ) : (
+                      <div className="q-answer error">Chưa cấu hình đáp án đúng!</div>
                     )}
                   </div>
                 )
