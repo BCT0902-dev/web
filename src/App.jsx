@@ -25,6 +25,7 @@ import Chronicles from './pages/Chronicles';
 import LinkShortener from './pages/LinkShortener';
 import ShortLinkRedirect from './pages/ShortLinkRedirect';
 import NotFound from './pages/NotFound';
+import QuizMaker from './pages/QuizMaker';
 
 import PageGuard from './components/PageGuard';
 import { useAnalytics } from './hooks/useAnalytics';
@@ -70,9 +71,10 @@ function AppRoutes() {
   const isBlogPage = location.pathname.startsWith('/blog');
   const isChroniclesPage = location.pathname === '/chronicles';
   const isShortenerPage = location.pathname === '/shortener';
-  const isRedirectPage = location.pathname.length > 1 && !isLoginPage && !isAdminPage && !isBlogPage && !isChroniclesPage && !isShortenerPage;
+  const isQuizMakerPage = location.pathname === '/quiz-maker';
+  const isRedirectPage = location.pathname.length > 1 && !isLoginPage && !isAdminPage && !isBlogPage && !isChroniclesPage && !isShortenerPage && !isQuizMakerPage && !location.pathname.startsWith('/quiz/');
 
-  const { isAdmin } = useAuth();
+  const { isAdmin, currentUser } = useAuth();
 
   return (
     <>
@@ -107,11 +109,12 @@ function AppRoutes() {
           <Route path="/admin" element={isAdmin ? <AdminDashboard /> : <Login />} />
           <Route path="/admin/cms/:id" element={isAdmin ? <BlogCMS /> : <Login />} />
           <Route path="/shortener" element={<LinkShortener />} />
+          <Route path="/quiz-maker" element={(currentUser || isAdmin) ? <QuizMaker /> : <Login />} />
           <Route path="/:slug" element={<ShortLinkRedirect />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
-        {!isLoginPage && !isAdminPage && !isBlogPage && !isChroniclesPage && !isShortenerPage && !isRedirectPage && <Footer />}
-        {(isBlogPage || isChroniclesPage || isShortenerPage) && <Footer />}
+        {!isLoginPage && !isAdminPage && !isBlogPage && !isChroniclesPage && !isShortenerPage && !isQuizMakerPage && !isRedirectPage && <Footer />}
+        {(isBlogPage || isChroniclesPage || isShortenerPage || isQuizMakerPage) && <Footer />}
       </div>
     </>
   );
