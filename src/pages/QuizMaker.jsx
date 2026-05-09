@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { UploadCloud, FileText, CheckCircle, AlertCircle, Settings, Layout, Image as ImageIcon, Check, Save, X } from 'lucide-react';
 import mammoth from 'mammoth';
 import { db } from '../firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import './QuizMaker.css';
@@ -14,7 +14,7 @@ const QuizMaker = () => {
   const fileInputRef = useRef(null);
 
   // States
-  const [step, setStep] = useState(1); // 1: Upload, 2: Preview, 3: Config
+  const [step, setStep] = useState(0); // 0: Dashboard, 1: Upload, 2: Preview, 3: Config
   const [fileName, setFileName] = useState('');
   const [questions, setQuestions] = useState([]);
   const [error, setError] = useState('');
@@ -22,6 +22,9 @@ const QuizMaker = () => {
   const [answerFormat, setAnswerFormat] = useState('bold'); // 'bold', 'italic', 'aiken'
   const [filterMode, setFilterMode] = useState('all'); // 'all', 'invalid'
   const [editingQuestion, setEditingQuestion] = useState(null); // stores the question object currently being edited
+  const [userQuizzes, setUserQuizzes] = useState([]);
+  const [quizId, setQuizId] = useState(null); // ID of the quiz being edited
+  const [isLoadingQuizzes, setIsLoadingQuizzes] = useState(false);
   
   // Config States
   const [config, setConfig] = useState({
@@ -32,10 +35,82 @@ const QuizMaker = () => {
     timeLimit: 45,
     questionsCount: 40,
     isScored: true,
-    hasLeaderboard: true
+    hasLeaderboard: true,
+    expiryDate: '' // New: Deadline
   });
 
   const [isSaving, setIsSaving] = useState(false);
+
+  // --- Dashboard Logic ---
+  useEffect(() => {
+    if (currentUser || isAdmin) {
+      fetchUserQuizzes();
+    }
+  }, [currentUser, isAdmin]);
+
+  const fetchUserQuizzes = async () => {
+    setIsLoadingQuizzes(true);
+    try {
+      const quizzesRef = collection(db, 'quizzes');
+      let q;
+      if (isAdmin) {
+        q = query(quizzesRef);
+      } else {
+        q = query(quizzesRef, where('creatorId', '==', currentUser.uid));
+      }
+      
+      const querySnapshot = await getDocs(q);
+      const fetched = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })).sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds);
+      
+      setUserQuizzes(fetched);
+    } catch (err) {
+      console.error("Error fetching quizzes:", err);
+      setError("Không thể tải danh sách bài thi.");
+    } finally {
+      setIsLoadingQuizzes(false);
+    }
+  };
+
+  const handleEditQuiz = (quiz) => {
+    setQuizId(quiz.id);
+    setQuestions(quiz.questions);
+    setConfig(quiz.config);
+    setStep(3); // Go straight to config
+    setError('');
+  };
+
+  const handleDeleteQuizRecord = async (id) => {
+    if (window.confirm('Ngài có chắc muốn xóa vĩnh viễn bài thi này?')) {
+      try {
+        await deleteDoc(doc(db, 'quizzes', id));
+        setUserQuizzes(userQuizzes.filter(q => q.id !== id));
+      } catch (err) {
+        console.error("Error deleting quiz:", err);
+        alert("Lỗi khi xóa bài thi.");
+      }
+    }
+  };
+
+  const startNewQuiz = () => {
+    setQuizId(null);
+    setQuestions([]);
+    setConfig({
+      title: 'Bài thi trắc nghiệm',
+      description: '',
+      bannerUrl: '',
+      backgroundUrl: '',
+      timeLimit: 45,
+      questionsCount: 40,
+      isScored: true,
+      hasLeaderboard: true,
+      expiryDate: ''
+    });
+    setStep(1);
+    setError('');
+  };
 
   // --- Parsing Logic ---
   const parseHtmlDocx = (htmlString, format) => {
@@ -171,21 +246,28 @@ const QuizMaker = () => {
     setError('');
 
     try {
-      const slug = generateSlug();
+      const slug = quizId ? userQuizzes.find(q => q.id === quizId).slug : generateSlug();
       const quizData = {
         slug: slug,
         creatorId: isAdmin ? 'admin' : currentUser.uid,
         creatorName: isAdmin ? 'BCT_ADMIN' : (currentUser.displayName || currentUser.email),
         config: config,
         questions: questions,
-        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
         status: 'active'
       };
 
-      await addDoc(collection(db, 'quizzes'), quizData);
+      if (quizId) {
+        await updateDoc(doc(db, 'quizzes', quizId), quizData);
+        alert(`Cập nhật bài thi thành công!`);
+      } else {
+        quizData.createdAt = serverTimestamp();
+        await addDoc(collection(db, 'quizzes'), quizData);
+        alert(`Khởi tạo bài thi thành công! Link tham gia: ${window.location.origin}/quiz/${slug}`);
+      }
       
-      alert(`Khởi tạo bài thi thành công! Link tham gia: ${window.location.origin}/quiz/${slug}`);
-      navigate('/admin'); // Redirect back to dashboard or wherever
+      fetchUserQuizzes();
+      setStep(0); // Back to dashboard
       
     } catch (err) {
       console.error(err);
@@ -219,6 +301,11 @@ const QuizMaker = () => {
           <p className="subtitle">Hệ thống tạo bài thi trắc nghiệm tự động bằng AI</p>
           
           <div className="step-indicator">
+            <div className={`step ${step === 0 ? 'active' : ''}`} onClick={() => setStep(0)} style={{ cursor: 'pointer' }}>
+              <div className="step-num">0</div>
+              <span>Quản lý</span>
+            </div>
+            <div className="step-line"></div>
             <div className={`step ${step >= 1 ? 'active' : ''}`}>
               <div className="step-num">1</div>
               <span>Upload Word</span>
@@ -239,6 +326,68 @@ const QuizMaker = () => {
         {error && (
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="maker-error">
             <AlertCircle size={18} /> {error}
+          </motion.div>
+        )}
+
+        {/* STEP 0: DASHBOARD */}
+        {step === 0 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="dashboard-section glass-panel shadow-glow">
+            <div className="dashboard-header">
+              <h2><Layout size={24} className="text-gradient" /> DANH SÁCH BÀI THI</h2>
+              <button onClick={startNewQuiz} className="btn-primary">+ TẠO BÀI THI MỚI</button>
+            </div>
+
+            {isLoadingQuizzes ? (
+              <div className="loading-state">Đang tải danh sách...</div>
+            ) : userQuizzes.length === 0 ? (
+              <div className="empty-state">Chưa có bài thi nào. Bấm nút phía trên để bắt đầu!</div>
+            ) : (
+              <div className="quiz-table-wrapper">
+                <table className="quiz-table">
+                  <thead>
+                    <tr>
+                      <th>TIÊU ĐỀ</th>
+                      <th>SLUG / LINK</th>
+                      <th>NGÀY TẠO</th>
+                      <th>TRẠNG THÁI</th>
+                      <th>THAO TÁC</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {userQuizzes.map(quiz => (
+                      <tr key={quiz.id}>
+                        <td>
+                          <div className="quiz-title-cell">
+                            <strong>{quiz.config.title}</strong>
+                            <small>{quiz.questions.length} câu hỏi</small>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="quiz-link-cell">
+                            <code>{quiz.slug}</code>
+                            <button className="copy-btn" onClick={() => {
+                              navigator.clipboard.writeText(`${window.location.origin}/quiz/${quiz.slug}`);
+                              alert("Đã copy link!");
+                            }}><Check size={14}/></button>
+                          </div>
+                        </td>
+                        <td>{quiz.createdAt?.seconds ? new Date(quiz.createdAt.seconds * 1000).toLocaleDateString('vi-VN') : '---'}</td>
+                        <td>
+                          <span className={`status-badge ${new Date(quiz.config.expiryDate) < new Date() && quiz.config.expiryDate ? 'expired' : 'active'}`}>
+                            {new Date(quiz.config.expiryDate) < new Date() && quiz.config.expiryDate ? 'Hết hạn' : 'Đang mở'}
+                          </span>
+                        </td>
+                        <td className="actions-cell">
+                          <button onClick={() => handleEditQuiz(quiz)} className="btn-icon edit">Sửa</button>
+                          <button onClick={() => handleDeleteQuizRecord(quiz.id)} className="btn-icon delete">Xóa</button>
+                          <button onClick={() => window.open(`/quiz/${quiz.slug}`, '_blank')} className="btn-icon view">Xem</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </motion.div>
         )}
 
@@ -473,6 +622,17 @@ const QuizMaker = () => {
                     </div>
                     <input type="checkbox" checked={config.hasLeaderboard} onChange={e => setConfig({...config, hasLeaderboard: e.target.checked})} />
                   </label>
+
+                  <div className="form-group" style={{ marginTop: '1rem' }}>
+                    <label>HẠN CHÓT NỘP BÀI (DEADLINE)</label>
+                    <input 
+                      type="datetime-local" 
+                      value={config.expiryDate} 
+                      onChange={e => setConfig({...config, expiryDate: e.target.value})} 
+                      style={{ background: 'rgba(255, 68, 68, 0.05)', borderColor: 'rgba(255, 68, 68, 0.2)' }}
+                    />
+                    <small style={{ color: '#ef4444' }}>Hệ thống sẽ tự động đóng bài thi sau thời gian này.</small>
+                  </div>
                 </div>
               </div>
 

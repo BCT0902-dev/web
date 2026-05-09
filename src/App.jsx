@@ -26,6 +26,7 @@ import LinkShortener from './pages/LinkShortener';
 import ShortLinkRedirect from './pages/ShortLinkRedirect';
 import NotFound from './pages/NotFound';
 import QuizMaker from './pages/QuizMaker';
+import QuizPlayer from './pages/QuizPlayer';
 
 import PageGuard from './components/PageGuard';
 import { useAnalytics } from './hooks/useAnalytics';
@@ -110,6 +111,7 @@ function AppRoutes() {
           <Route path="/admin/cms/:id" element={isAdmin ? <BlogCMS /> : <Login />} />
           <Route path="/shortener" element={<LinkShortener />} />
           <Route path="/quiz-maker" element={(currentUser || isAdmin) ? <QuizMaker /> : <Login />} />
+          <Route path="/quiz/:slug" element={<QuizPlayer />} />
           <Route path="/:slug" element={<ShortLinkRedirect />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
