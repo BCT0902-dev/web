@@ -375,3 +375,59 @@
         gap: 1.5rem;
     }
 }
+
+/* Edit Modal specific styles */
+.edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    text-align: left;
+}
+
+.edit-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.edit-input-group label {
+    font-family: var(--font-tech);
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    text-transform: uppercase;
+}
+
+.edit-input-group input {
+    width: 100%;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1rem;
+    font-family: var(--font-mono);
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.edit-input-group input:focus {
+    border-color: var(--accent-main);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+}
+
+.edit-input-group small {
+    font-size: 0.75rem;
+    color: #ff4444;
+}
+
+.edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.edit-actions button {
+    padding: 0.8rem 1.5rem;
+    font-weight: bold;
+}

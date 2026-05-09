@@ -247,9 +247,30 @@ const LinkShortener = () => {
   };
 
   const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      alert('Đã sao chép liên kết!');
+    } else {
+      let textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+        alert('Đã sao chép liên kết!');
+      } catch (err) {
+        alert('Trình duyệt không hỗ trợ sao chép tự động.');
+      }
+      textArea.remove();
+    }
   };
 
   const downloadQRCode = (canvasId, slug) => {
@@ -468,11 +489,14 @@ const LinkShortener = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="modal-overlay"
+            onClick={() => setShowPopup(false)}
           >
             <motion.div 
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               className="info-popup glass-panel shadow-glow"
+              onClick={(e) => e.stopPropagation()}
+              style={{ width: '100%', maxWidth: '500px', padding: '2.5rem' }}
             >
               <button className="close-popup" onClick={() => setShowPopup(false)}><X size={20} /></button>
               <div className="popup-icon">
@@ -501,11 +525,16 @@ const LinkShortener = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="modal-overlay"
+            onClick={() => setEditingLink(null)}
           >
             <motion.div 
               className="edit-popup glass-panel shadow-glow"
+              onClick={(e) => e.stopPropagation()}
+              style={{ width: '100%', maxWidth: '450px', padding: '2.5rem' }}
             >
-              <h3><Edit3 size={20} /> CHỈNH SỬA LIÊN KẾT</h3>
+              <h3 style={{ fontFamily: 'var(--font-tech)', marginBottom: '1.5rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Edit3 size={20} /> CHỈNH SỬA LIÊN KẾT
+              </h3>
               <form onSubmit={handleUpdate} className="edit-form">
                  <div className="edit-input-group">
                     <label>ĐƯỜNG DẪN GỐC</label>
@@ -539,10 +568,12 @@ const LinkShortener = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="modal-overlay"
+            onClick={() => setQrModalLink(null)}
           >
             <motion.div 
               className="edit-popup glass-panel shadow-glow"
-              style={{ maxWidth: '400px', textAlign: 'center' }}
+              style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', textAlign: 'center' }}
+              onClick={(e) => e.stopPropagation()}
             >
               <button className="close-popup" onClick={() => setQrModalLink(null)}><X size={20} /></button>
               <h3 style={{ fontFamily: 'var(--font-tech)', marginBottom: '1.5rem', color: 'var(--accent-main)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
