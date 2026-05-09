@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Link2, Copy, Check, Scissors, RotateCcw, ExternalLink, Globe, Zap, 
-  ShieldCheck, Trash2, Edit3, Clock, Lock, Unlock, User, Info, X, Save
+  Link2, Copy, Check, RotateCcw, ExternalLink, Globe, Zap,
+  ShieldCheck, Trash2, Edit3, Clock, Lock, Unlock, User, Info, X, Save,
+  QrCode, Download
 } from 'lucide-react';
 import { db } from '../firebase';
 import { 
@@ -28,6 +29,7 @@ const LinkShortener = () => {
   const [loadingLinks, setLoadingLinks] = useState(true);
   const [editingLink, setEditingLink] = useState(null);
   const [editForm, setEditForm] = useState({ longUrl: '', slug: '' });
+  const [qrModalLink, setQrModalLink] = useState(null);
 
   // Initial Popup Logic
   useEffect(() => {
@@ -72,13 +74,29 @@ const LinkShortener = () => {
     return () => unsubscribe && unsubscribe();
   }, [currentUser, isAdmin]);
 
-  const generateRandomSlug = (length = 6) => {
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    for (let i = 0; i < length; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
+  const generateRandomSlug = async () => {
+    try {
+      const q = query(collection(db, 'short_links'));
+      const snapshot = await getDocs(q);
+      const count = snapshot.size + 1;
+      
+      // Pattern: vn + number padded to 3 digits, or alphanumeric if larger
+      let xxx = count.toString().padStart(3, '0');
+      if (count > 999) {
+        xxx = count.toString(36).toUpperCase();
+      }
+      
+      let slug = `vn${xxx}`;
+      
+      // Final collision check
+      const checkDoc = await getDoc(doc(db, 'short_links', slug));
+      if (checkDoc.exists()) {
+        return `vn${Math.random().toString(36).substring(2, 6)}`;
+      }
+      return slug;
+    } catch (err) {
+      return `vn${Math.random().toString(36).substring(2, 6)}`;
     }
-    return result;
   };
 
   const validateUrl = (url) => {
@@ -106,9 +124,8 @@ const LinkShortener = () => {
     }
 
     setLoading(true);
-
     try {
-      let slug = customSlug.trim() || generateRandomSlug();
+      let slug = customSlug.trim() || await generateRandomSlug();
       
       const docRef = doc(db, 'short_links', slug);
       const docSnap = await getDoc(docRef);
@@ -120,7 +137,7 @@ const LinkShortener = () => {
       }
 
       if (docSnap.exists()) {
-        slug = generateRandomSlug(7);
+        slug = await generateRandomSlug();
       }
 
       const expirationDate = currentUser ? null : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
@@ -207,18 +224,31 @@ const LinkShortener = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const downloadQRCode = () => {
-    const canvas = document.getElementById('qr-gen');
-    if (!canvas) return;
-    const pngUrl = canvas
-      .toDataURL("image/png")
-      .replace("image/png", "image/octet-stream");
-    let downloadLink = document.createElement("a");
-    downloadLink.href = pngUrl;
-    downloadLink.download = `bct_qr_${customSlug || 'short'}.png`;
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
+  const downloadQRCode = (canvasId, slug) => {
+    const originalCanvas = document.getElementById(canvasId);
+    if (!originalCanvas) return;
+    
+    const canvas = document.createElement('canvas');
+    const size = 2000; // Extra High resolution
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, size, size);
+    
+    const img = new Image();
+    img.src = originalCanvas.toDataURL("image/png");
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, size, size);
+      const pngUrl = canvas.toDataURL("image/png");
+      let downloadLink = document.createElement("a");
+      downloadLink.href = pngUrl;
+      downloadLink.download = `bct_qr_${slug || 'short'}.png`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    };
   };
 
   return (
@@ -237,9 +267,6 @@ const LinkShortener = () => {
             className="shortener-card glass-panel"
           >
             <div className="card-header">
-              <div className="icon-wrapper shadow-glow">
-                <Scissors size={28} className="text-glow" />
-              </div>
               <h1 className="text-gradient">BCT_LINK_SHORTENER</h1>
               <p className="subtitle">HỆ THỐNG RÚT GỌN LIÊN KẾT THÔNG MINH - IRIS ECOSYSTEM</p>
             </div>
@@ -263,7 +290,7 @@ const LinkShortener = () => {
                     <span className="domain-prefix">bct0902.top/</span>
                     <input 
                       type="text" 
-                      placeholder="ví dụ: facebook (tùy chọn)" 
+                      placeholder="ví dụ: vietnam (tùy chọn)" 
                       value={customSlug}
                       onChange={(e) => setCustomSlug(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ''))}
                       className="slug-input"
@@ -321,7 +348,7 @@ const LinkShortener = () => {
                           excavate: true,
                         }}
                       />
-                      <button onClick={downloadQRCode} className="qr-download-btn">
+                      <button onClick={() => downloadQRCode('qr-gen', customSlug || 'short')} className="qr-download-btn">
                         TẢI MÃ QR
                       </button>
                     </div>
@@ -344,19 +371,6 @@ const LinkShortener = () => {
                 </motion.div>
               )}
             </AnimatePresence>
-
-            {!currentUser && (
-              <div className="policy-info">
-                 <div className="policy-item">
-                    <Clock size={16} />
-                    <span>Mặc định (Khách): 30 ngày</span>
-                 </div>
-                 <div className="policy-item">
-                    <Lock size={16} />
-                    <span>Đăng nhập: Vĩnh viễn</span>
-                 </div>
-              </div>
-            )}
           </motion.div>
         </div>
 
@@ -408,9 +422,10 @@ const LinkShortener = () => {
                       </div>
                       
                       <div className="link-actions">
-                         <button onClick={() => startEdit(link)} className="action-icon edit"><Edit3 size={16} /></button>
-                         <button onClick={() => handleDelete(link.slug)} className="action-icon delete"><Trash2 size={16} /></button>
-                         <button onClick={() => copyToClipboard(`${window.location.origin.replace('www.', '')}/${link.slug}`)} className="action-icon copy"><Copy size={16} /></button>
+                         <button onClick={() => startEdit(link)} className="action-icon edit" title="Sửa"><Edit3 size={16} /></button>
+                         <button onClick={() => handleDelete(link.slug)} className="action-icon delete" title="Xóa"><Trash2 size={16} /></button>
+                         <button onClick={() => setQrModalLink(link)} className="action-icon qr" title="Xem QR"><QrCode size={16} /></button>
+                         <button onClick={() => copyToClipboard(`${window.location.origin.replace('www.', '')}/${link.slug}`)} className="action-icon copy" title="Sao chép"><Copy size={16} /></button>
                       </div>
                     </motion.div>
                   ))}
@@ -490,6 +505,58 @@ const LinkShortener = () => {
                     <button type="submit" className="btn-primary"><Save size={16} /> LƯU THAY ĐỔI</button>
                  </div>
               </form>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* QR MODAL */}
+        {qrModalLink && (
+           <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="modal-overlay"
+          >
+            <motion.div 
+              className="edit-popup glass-panel shadow-glow"
+              style={{ maxWidth: '400px', textAlign: 'center' }}
+            >
+              <button className="close-popup" onClick={() => setQrModalLink(null)}><X size={20} /></button>
+              <h3 style={{ fontFamily: 'var(--font-tech)', marginBottom: '1.5rem', color: 'var(--accent-main)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                <QrCode size={24} /> MÃ QR CHI TIẾT
+              </h3>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
+                <div style={{ background: '#fff', padding: '1rem', borderRadius: '12px' }}>
+                  <QRCodeCanvas
+                    id="qr-modal-gen"
+                    value={`${window.location.origin.replace('www.', '')}/${qrModalLink.slug}`}
+                    size={250}
+                    bgColor={"#FFFFFF"}
+                    fgColor={"#000000"}
+                    level={"H"}
+                    includeMargin={true}
+                    imageSettings={{
+                      src: "/logobct.png",
+                      height: 40,
+                      width: 40,
+                      excavate: true,
+                    }}
+                  />
+                </div>
+                
+                <div className="qr-link-info">
+                   <p style={{ color: 'var(--accent-main)', fontWeight: 'bold', fontSize: '1.2rem', marginBottom: '0.5rem' }}>/{qrModalLink.slug}</p>
+                   <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', maxWidth: '100%', wordBreak: 'break-all', opacity: 0.8 }}>{qrModalLink.longUrl}</p>
+                </div>
+
+                <button 
+                  onClick={() => downloadQRCode('qr-modal-gen', qrModalLink.slug)} 
+                  className="btn-primary"
+                  style={{ width: '100%', height: '50px', fontSize: '0.9rem' }}
+                >
+                  <Download size={18} style={{ marginRight: '0.5rem' }} /> TẢI QR CHẤT LƯỢNG CAO
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
