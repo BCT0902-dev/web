@@ -415,14 +415,16 @@ const LinkShortener = () => {
                 <div className="links-list">
                   {userLinks.map(link => (
                     <motion.div layout key={link.id} className="link-item">
-                      <div className="link-info">
-                        <div className="link-slug-row">
-                           <span className="link-slug">/{link.slug}</span>
-                           <span className="link-clicks">{link.clicks} clicks</span>
-                        </div>
-                        <div className="link-url-row" title={link.longUrl}>
-                           {link.longUrl}
-                        </div>
+                      <div className="link-slug-row">
+                         <span className="link-slug">/{link.slug}</span>
+                         <span className="link-clicks">{link.clicks} clicks</span>
+                      </div>
+                      
+                      <div className="link-url-row" title={link.longUrl}>
+                         {link.longUrl}
+                      </div>
+                      
+                      <div className="link-footer">
                         <div className="link-meta">
                            <div className="meta-row">
                              <span className="meta-label">Trạng thái:</span>
@@ -441,13 +443,13 @@ const LinkShortener = () => {
                              </div>
                            )}
                         </div>
-                      </div>
-                      
-                      <div className="link-actions">
-                         <button onClick={() => startEdit(link)} className="action-icon edit" title="Sửa"><Edit3 size={16} /></button>
-                         <button onClick={() => handleDelete(link.slug)} className="action-icon delete" title="Xóa"><Trash2 size={16} /></button>
-                         <button onClick={() => setQrModalLink(link)} className="action-icon qr" title="Xem QR"><QrCode size={16} /></button>
-                         <button onClick={() => copyToClipboard(`${window.location.origin.replace('www.', '')}/${link.slug}`)} className="action-icon copy" title="Sao chép"><Copy size={16} /></button>
+                        
+                        <div className="link-actions">
+                           <button onClick={() => startEdit(link)} className="action-icon edit" title="Sửa"><Edit3 size={16} /></button>
+                           <button onClick={() => handleDelete(link.slug)} className="action-icon delete" title="Xóa"><Trash2 size={16} /></button>
+                           <button onClick={() => setQrModalLink(link)} className="action-icon qr" title="Xem QR"><QrCode size={16} /></button>
+                           <button onClick={() => copyToClipboard(`${window.location.origin.replace('www.', '')}/${link.slug}`)} className="action-icon copy" title="Sao chép"><Copy size={16} /></button>
+                        </div>
                       </div>
                     </motion.div>
                   ))}
