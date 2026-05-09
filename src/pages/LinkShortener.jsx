@@ -49,10 +49,10 @@ const LinkShortener = () => {
       let q;
       if (isAdmin) {
         // Admins see everything
-        q = query(collection(db, 'short_links'), orderBy('createdAt', 'desc'));
+        q = query(collection(db, 'short_links'));
       } else if (currentUser) {
         // Users see their own links
-        q = query(collection(db, 'short_links'), where('createdBy', '==', currentUser.uid), orderBy('createdAt', 'desc'));
+        q = query(collection(db, 'short_links'), where('createdBy', '==', currentUser.uid));
       } else {
         // Guests see nothing (or maybe local storage links? user didn't ask for it, just said login to manage)
         setLoadingLinks(false);
@@ -62,6 +62,11 @@ const LinkShortener = () => {
 
       unsubscribe = onSnapshot(q, (snapshot) => {
         const links = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        links.sort((a, b) => {
+           const timeA = a.createdAt?.seconds || 0;
+           const timeB = b.createdAt?.seconds || 0;
+           return timeB - timeA;
+        });
         setUserLinks(links);
         setLoadingLinks(false);
       }, (err) => {
@@ -142,11 +147,27 @@ const LinkShortener = () => {
 
       const expirationDate = currentUser ? null : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
+      let creatorName = 'Khách';
+      if (currentUser) {
+          if (currentUser.displayName) {
+              creatorName = currentUser.displayName;
+          } else {
+              const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+              if (userDoc.exists() && userDoc.data().username) {
+                  creatorName = userDoc.data().username;
+              } else if (currentUser.email) {
+                  creatorName = currentUser.email.split('@')[0];
+              } else {
+                  creatorName = 'User';
+              }
+          }
+      }
+
       const linkData = {
         longUrl,
         slug,
         createdBy: currentUser?.uid || 'guest',
-        creatorName: currentUser?.displayName || 'Khách',
+        creatorName: creatorName,
         createdAt: new Date(),
         expiresAt: expirationDate,
         clicks: 0
