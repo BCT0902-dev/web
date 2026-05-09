@@ -353,58 +353,6 @@ const LinkShortener = () => {
                   <ShieldCheck size={16} /> {error}
                 </motion.div>
               )}
-
-              {shortUrl && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="result-box shadow-glow"
-                >
-                  <div className="result-header">
-                    <span>KẾT QUẢ RÚT GỌN</span>
-                    <button onClick={() => setShortUrl('')} className="reset-btn"><RotateCcw size={14} /> LÀM MỚI</button>
-                  </div>
-                  
-                  <div className="result-main">
-                    <div className="qr-container">
-                      <QRCodeCanvas
-                        id="qr-gen"
-                        value={shortUrl}
-                        size={1024} // Render very large for download quality
-                        style={{ width: '120px', height: '120px' }} // UI display size
-                        bgColor={"transparent"}
-                        fgColor={"#00f0ff"}
-                        level={"H"}
-                        includeMargin={true}
-                        imageSettings={{
-                          src: "/logobct.png",
-                          height: 128,
-                          width: 128,
-                          excavate: true,
-                        }}
-                      />
-                      <button onClick={() => downloadQRCode('qr-gen', customSlug || 'short')} className="qr-download-btn">
-                        TẢI MÃ QR
-                      </button>
-                    </div>
-
-                    <div className="url-display-wrapper">
-                      <div className="url-display">
-                        <span className="generated-url">{shortUrl}</span>
-                        <div className="action-buttons">
-                          <button onClick={() => copyToClipboard(shortUrl)} className={`action-btn copy-btn ${copied ? 'success' : ''}`}>
-                            {copied ? <Check size={18} /> : <Copy size={18} />}
-                            <span>{copied ? 'ĐÃ SAO CHÉP' : 'SAO CHÉP'}</span>
-                          </button>
-                          <a href={shortUrl} target="_blank" rel="noreferrer" className="action-btn open-btn">
-                            <ExternalLink size={18} />
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
             </AnimatePresence>
           </motion.div>
         </div>
@@ -483,6 +431,68 @@ const LinkShortener = () => {
 
       {/* POPUP MODAL */}
       <AnimatePresence>
+        {shortUrl && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="modal-overlay"
+            onClick={() => setShortUrl('')}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="edit-popup glass-panel shadow-glow"
+              onClick={(e) => e.stopPropagation()}
+              style={{ width: '100%', maxWidth: '600px', padding: '2.5rem' }}
+            >
+              <button className="close-popup" onClick={() => setShortUrl('')}><X size={20} /></button>
+              <h3 style={{ fontFamily: 'var(--font-tech)', marginBottom: '1.5rem', color: 'var(--accent-main)', textAlign: 'center' }}>
+                KẾT QUẢ RÚT GỌN
+              </h3>
+              
+              <div className="result-main" style={{ flexDirection: 'column', gap: '1.5rem', textAlign: 'center' }}>
+                <div style={{ background: '#fff', padding: '1rem', borderRadius: '12px', display: 'inline-block' }}>
+                  <QRCodeCanvas
+                    id="qr-gen"
+                    value={shortUrl}
+                    size={2048} 
+                    style={{ width: '200px', height: '200px' }} 
+                    bgColor={"#FFFFFF"}
+                    fgColor={"#000000"}
+                    level={"H"}
+                    includeMargin={true}
+                    imageSettings={{
+                      src: "/logobct.png",
+                      height: 256,
+                      width: 256,
+                      excavate: true,
+                    }}
+                  />
+                </div>
+
+                <div className="url-display-wrapper" style={{ width: '100%' }}>
+                  <div className="qr-link-info">
+                     <p style={{ color: 'var(--accent-main)', fontWeight: 'bold', fontSize: '1.4rem', marginBottom: '1rem' }}>{shortUrl}</p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                    <button onClick={() => copyToClipboard(shortUrl)} className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, justifyContent: 'center' }}>
+                      {copied ? <Check size={18} /> : <Copy size={18} />}
+                      <span>{copied ? 'ĐÃ SAO CHÉP' : 'SAO CHÉP LINK'}</span>
+                    </button>
+                    <button onClick={() => downloadQRCode('qr-gen', customSlug || 'short')} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, justifyContent: 'center' }}>
+                      <Download size={18} /> TẢI QR
+                    </button>
+                    <a href={`//${shortUrl}`} target="_blank" rel="noreferrer" className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: 'auto' }}>
+                      <ExternalLink size={18} />
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
         {showPopup && (
           <motion.div 
             initial={{ opacity: 0 }}
