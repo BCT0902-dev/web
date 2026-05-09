@@ -126,7 +126,7 @@
 .input-row {
     display: flex;
     gap: 1.5rem;
-    align-items: flex-end;
+    align-items: stretch;
 }
 
 .flex-2 {
@@ -139,9 +139,10 @@
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
-    padding: 0 1rem;
+    padding: 0 1.2rem;
     overflow: hidden;
     transition: all 0.3s ease;
+    height: 60px;
 }
 
 .slug-input-wrapper:focus-within {
@@ -175,13 +176,13 @@
 
 .shorten-btn {
     flex: 1;
+    min-width: 200px;
     height: 60px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.8rem;
-    font-size: 1rem;
-    margin-bottom: 0.2rem;
+    font-size: 0.95rem;
 }
 
 .spinning {
@@ -259,6 +260,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    padding-right: 1rem;
 }
 
 .action-buttons {

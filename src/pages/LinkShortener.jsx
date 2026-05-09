@@ -78,7 +78,7 @@ const LinkShortener = () => {
 
       await setDoc(doc(db, 'short_links', slug), linkData);
 
-      const domain = window.location.origin;
+      const domain = window.location.origin.replace('www.', '');
       setShortUrl(`${domain}/${slug}`);
     } catch (err) {
       console.error(err);
@@ -133,10 +133,10 @@ const LinkShortener = () => {
             />
           </div>
 
-          <div className="input-row">
-            <div className="input-group flex-2">
-              <label><Globe size={16} /> MÃ ĐỊNH DANH TÙY CHỈNH (SLUG)</label>
-              <div className="slug-input-wrapper">
+          <div className="input-group">
+            <label><Globe size={16} /> MÃ ĐỊNH DANH TÙY CHỈNH (SLUG)</label>
+            <div className="input-row">
+              <div className="slug-input-wrapper flex-2">
                 <span className="domain-prefix">bct0902.top/</span>
                 <input 
                   type="text" 
@@ -146,13 +146,13 @@ const LinkShortener = () => {
                   className="slug-input"
                 />
               </div>
-              <small className="hint">Để trống để hệ thống tự tạo mã ngẫu nhiên.</small>
+              
+              <button type="submit" className="btn-primary shorten-btn" disabled={loading}>
+                {loading ? <Zap className="spinning" size={20} /> : <Zap size={20} />}
+                <span>RÚT GỌN NGAY</span>
+              </button>
             </div>
-            
-            <button type="submit" className="btn-primary shorten-btn" disabled={loading}>
-              {loading ? <Zap className="spinning" size={20} /> : <Zap size={20} />}
-              <span>RÚT GỌN NGAY</span>
-            </button>
+            <small className="hint">Để trống để hệ thống tự tạo mã ngẫu nhiên.</small>
           </div>
         </form>
 
