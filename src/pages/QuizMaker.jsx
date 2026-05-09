@@ -35,38 +35,50 @@ const QuizMaker = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   // --- Parsing Logic ---
-  const parseAiken = (text) => {
-    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const parseHtmlDocx = (htmlString) => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlString, 'text/html');
+    // mammoth mostly outputs <p> but sometimes lists <li>
+    const elements = Array.from(doc.body.querySelectorAll('p, li, h1, h2, h3, h4, h5, h6'));
+    
     const parsedQuestions = [];
     let currentQuestion = null;
 
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
+    for (let i = 0; i < elements.length; i++) {
+        const el = elements[i];
+        const text = el.textContent.trim();
+        if (!text) continue;
         
         // 1. Match start of question (e.g. "Câu 1:", "Question 1:", "1.")
-        if (/^(Câu\s*\d+|Question\s*\d+|\d+)\s*[:.]/i.test(line)) {
+        if (/^(Câu\s*\d+|Question\s*\d+|\d+)\s*[:.]/i.test(text)) {
             if (currentQuestion && currentQuestion.text) {
                 parsedQuestions.push(currentQuestion);
             }
             currentQuestion = {
                 id: parsedQuestions.length + 1,
-                text: line.replace(/^(Câu\s*\d+|Question\s*\d+|\d+)\s*[:.]\s*/i, ''),
+                text: text.replace(/^(Câu\s*\d+|Question\s*\d+|\d+)\s*[:.]\s*/i, ''),
                 options: [],
                 correctAnswer: ''
             };
         } 
         // 2. Match options (A. B. C. D.)
-        else if (/^[A-Z]\s*[\.\)]\s*/i.test(line)) {
+        else if (/^[A-Z]\s*[\.\)]\s*/i.test(text)) {
             if (currentQuestion) {
-                const optText = line.replace(/^[A-Z]\s*[\.\)]\s*/i, '');
-                const optLetter = line.match(/^[A-Z]/i)[0].toUpperCase();
+                const optText = text.replace(/^[A-Z]\s*[\.\)]\s*/i, '');
+                const optLetter = text.match(/^[A-Z]/i)[0].toUpperCase();
                 currentQuestion.options.push({ letter: optLetter, text: optText });
+                
+                // Detect if option is bold (correct answer)
+                // mammoth wraps bold in <strong>
+                if (el.querySelector('strong') || el.querySelector('b')) {
+                    currentQuestion.correctAnswer = optLetter;
+                }
             }
         } 
-        // 3. Match answer (ANSWER: X or Đáp án: X)
-        else if (/^(ANSWER|ĐÁP ÁN|DAPAN|ĐÁP ÁN ĐÚNG)\s*[:\-]\s*[A-Z]/i.test(line)) {
+        // 3. Match answer (ANSWER: X or Đáp án: X) - Fallback for Aiken
+        else if (/^(ANSWER|ĐÁP ÁN|DAPAN|ĐÁP ÁN ĐÚNG)\s*[:\-]\s*[A-Z]/i.test(text)) {
             if (currentQuestion) {
-                const ansMatch = line.match(/[A-Z]$/i);
+                const ansMatch = text.match(/[A-Z]$/i);
                 if (ansMatch) {
                     currentQuestion.correctAnswer = ansMatch[0].toUpperCase();
                     parsedQuestions.push(currentQuestion);
@@ -78,12 +90,12 @@ const QuizMaker = () => {
         else {
             if (currentQuestion && currentQuestion.options.length === 0) {
                 // Still reading question text
-                currentQuestion.text += '\n' + line;
+                currentQuestion.text += '\n' + text;
             }
         }
     }
     
-    // In case the last question lacks an ANSWER tag but is complete
+    // Push the last question
     if (currentQuestion && currentQuestion.text && !parsedQuestions.includes(currentQuestion)) {
         parsedQuestions.push(currentQuestion);
     }
@@ -106,12 +118,13 @@ const QuizMaker = () => {
 
     try {
       const arrayBuffer = await file.arrayBuffer();
-      const result = await mammoth.extractRawText({ arrayBuffer });
-      const extractedText = result.value;
+      // Use convertToHtml to preserve <strong> and <b> tags for bold answers
+      const result = await mammoth.convertToHtml({ arrayBuffer });
+      const htmlText = result.value;
       
-      const parsed = parseAiken(extractedText);
+      const parsed = parseHtmlDocx(htmlText);
       if (parsed.length === 0) {
-        setError('Không tìm thấy câu hỏi nào hợp lệ. Vui lòng kiểm tra lại chuẩn định dạng Aiken.');
+        setError('Không tìm thấy câu hỏi nào hợp lệ. Vui lòng kiểm tra lại định dạng file Word.');
         setStep(1);
       } else {
         setQuestions(parsed);
@@ -233,20 +246,36 @@ const QuizMaker = () => {
                 <>
                   <UploadCloud size={64} className="upload-icon text-gradient" />
                   <h2>Bấm hoặc kéo thả file <code>.docx</code> vào đây</h2>
-                  <p>Hệ thống tự động đọc format Aiken (Câu 1:... A... B... ANSWER: C)</p>
+                  <p>Hệ thống tự động nhận diện AIKEN Format (ANSWER: A) hoặc Đáp án BÔI ĐẬM (Bold)</p>
                 </>
               )}
             </div>
 
             <div className="format-guide">
               <h3><CheckCircle size={18} /> ĐỊNH DẠNG CHUẨN ĐỂ NHẬN DIỆN</h3>
-              <pre>
-                Câu 1: Khái niệm về tuyên truyền miệng?{'\n'}
-                A. Tuyến truyền miệng là một hình thức...{'\n'}
-                B. Tuyến truyền miệng là một phương pháp...{'\n'}
-                C. Tất cả đều đúng{'\n'}
-                ANSWER: A
-              </pre>
+              <div style={{ display: 'flex', gap: '2rem', textAlign: 'left', marginTop: '1rem' }}>
+                 <div style={{ flex: 1, background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px' }}>
+                    <h4 style={{ color: 'var(--accent-main)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>CÁCH 1: BÔI ĐẬM ĐÁP ÁN (Khuyên dùng)</h4>
+                    <div style={{ fontSize: '0.9rem', color: '#fff', lineHeight: 1.6 }}>
+                      Câu 1: Khái niệm về tuyên truyền miệng?<br/>
+                      A. Tuyến truyền miệng là một hình thức...<br/>
+                      B. Tuyến truyền miệng là một phương pháp...<br/>
+                      <strong>C. Tất cả đều đúng (Câu đúng bôi đậm)</strong><br/>
+                      D. Không có đáp án nào
+                    </div>
+                 </div>
+                 <div style={{ flex: 1, background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px' }}>
+                    <h4 style={{ color: 'var(--accent-main)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>CÁCH 2: DÙNG TỪ KHÓA (AIKEN FORMAT)</h4>
+                    <div style={{ fontSize: '0.9rem', color: '#fff', lineHeight: 1.6 }}>
+                      Câu 2: Năm 2024 là năm con gì?<br/>
+                      A. Con Chuột<br/>
+                      B. Con Rồng<br/>
+                      C. Con Mèo<br/>
+                      D. Con Rắn<br/>
+                      ANSWER: B
+                    </div>
+                 </div>
+              </div>
             </div>
           </motion.div>
         )}
