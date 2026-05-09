@@ -303,16 +303,18 @@ const LinkShortener = () => {
               )}
             </AnimatePresence>
 
-            <div className="policy-info">
-               <div className="policy-item">
-                  <Clock size={16} />
-                  <span>Mặc định (Khách): 30 ngày</span>
-               </div>
-               <div className="policy-item">
-                  <Lock size={16} />
-                  <span>Đăng nhập: Vĩnh viễn</span>
-               </div>
-            </div>
+            {!currentUser && (
+              <div className="policy-info">
+                 <div className="policy-item">
+                    <Clock size={16} />
+                    <span>Mặc định (Khách): 30 ngày</span>
+                 </div>
+                 <div className="policy-item">
+                    <Lock size={16} />
+                    <span>Đăng nhập: Vĩnh viễn</span>
+                 </div>
+              </div>
+            )}
           </motion.div>
         </div>
 
