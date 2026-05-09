@@ -9,6 +9,7 @@ export const useConfig = () => useContext(ConfigContext);
 export const ConfigProvider = ({ children }) => {
     const defaultConfig = {
       appearance: {
+        theme: 'dark',
         logoUrl: '/logobct.png',
         primaryColor: '#ff9a3d',
         accentColor: '#ffb000',

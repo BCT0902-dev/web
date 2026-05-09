@@ -994,6 +994,17 @@ const AdminDashboard = () => {
                   <h3>THEME COLOR ENGINE</h3>
                   <div className="color-picker-grid">
                     <div className="input-group">
+                      <label>CHẾ ĐỘ SÁNG / TỐI</label>
+                      <select 
+                        value={localConfig.appearance.theme || 'dark'} 
+                        onChange={(e) => updateNested('appearance', 'theme', e.target.value)}
+                        style={{ padding: '0.8rem', background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', fontFamily: 'var(--font-mono)' }}
+                      >
+                         <option value="dark">Tối (Dark Mode)</option>
+                         <option value="light">Sáng (Light Mode)</option>
+                      </select>
+                    </div>
+                    <div className="input-group">
                       <label>MÀU CHỦ ĐẠO</label>
                       <div className="color-input-wrapper">
                         <input type="color" value={localConfig.appearance.primaryColor} onChange={(e) => updateNested('appearance', 'primaryColor', e.target.value)} />

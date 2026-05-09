@@ -1,14 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
+import { useConfig } from '../context/ConfigContext';
 
 export function useTheme() {
-  const [theme, setTheme] = useState(() => {
-    // Check local storage or system preference
-    const savedTheme = localStorage.getItem('bct0902_theme');
-    if (savedTheme) {
-      return savedTheme;
-    }
-    return 'dark'; // Ưu tiên giao diện tối mặc định
-  });
+  const { config } = useConfig();
+  const theme = config?.appearance?.theme || 'dark';
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -17,12 +12,8 @@ export function useTheme() {
     } else {
       root.setAttribute('data-theme', 'light');
     }
-    localStorage.setItem('bct0902_theme', theme);
   }, [theme]);
 
-  const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-  };
-
-  return { theme, toggleTheme };
+  return { theme };
 }
+

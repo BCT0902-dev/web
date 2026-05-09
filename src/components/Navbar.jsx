@@ -15,7 +15,7 @@ const Navbar = () => {
   const { currentUser, isAdmin, logout } = useAuth();
   const logoUrl = config?.appearance?.logoUrl || '/logobct.png';
   const { t, i18n } = useTranslation();
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   
   // UI States
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -180,10 +180,6 @@ const Navbar = () => {
           <button onClick={toggleLanguage} style={{ color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.25rem', flexShrink: 0 }}>
             <Globe size={20} />
             <span style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>{i18n.language.toUpperCase()}</span>
-          </button>
-          
-          <button onClick={toggleTheme} style={{ color: 'var(--text-primary)', flexShrink: 0 }}>
-            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
           </button>
 
           <div style={{ width: '1px', height: '20px', background: 'var(--bg-glass-border)', flexShrink: 0 }} />
