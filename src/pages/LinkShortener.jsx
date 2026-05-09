@@ -396,14 +396,22 @@ const LinkShortener = () => {
                            {link.longUrl}
                         </div>
                         <div className="link-meta">
-                           <span className="expiry">
-                              {link.expiresAt ? (
-                                <>Hết hạn: {new Date(link.expiresAt.seconds * 1000).toLocaleDateString('vi-VN')}</>
-                              ) : (
-                                <><Unlock size={12} /> Vĩnh viễn</>
-                              )}
-                           </span>
-                           {isAdmin && <span className="owner">@{link.creatorName}</span>}
+                           <div className="meta-row">
+                             <span className="meta-label">Trạng thái:</span>
+                             <span className={`meta-value ${link.expiresAt ? 'status-expiry' : 'status-perm'}`}>
+                                {link.expiresAt ? (
+                                  <>Có hạn (đến {new Date(link.expiresAt.seconds * 1000).toLocaleDateString('vi-VN')})</>
+                                ) : (
+                                  <><Unlock size={12} /> Vĩnh viễn</>
+                                )}
+                             </span>
+                           </div>
+                           {(isAdmin || (currentUser && link.createdBy !== currentUser.uid)) && (
+                             <div className="meta-row">
+                               <span className="meta-label">Người tạo:</span>
+                               <span className="meta-value owner">@{link.creatorName}</span>
+                             </div>
+                           )}
                         </div>
                       </div>
                       
