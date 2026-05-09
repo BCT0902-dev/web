@@ -24,6 +24,7 @@ const QuizPlayer = () => {
     const [userName, setUserName] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [finalResult, setFinalResult] = useState(null);
+    const [attempts, setAttempts] = useState(0);
 
     useEffect(() => {
         const fetchQuiz = async () => {
@@ -35,6 +36,10 @@ const QuizPlayer = () => {
                 } else {
                     const data = snapshot.docs[0].data();
                     setQuiz(data);
+                    
+                    // Check Attempts in localStorage
+                    const savedAttempts = parseInt(localStorage.getItem(`quiz_attempts_${slug}`)) || 0;
+                    setAttempts(savedAttempts);
                     
                     // Check Deadline
                     if (data.config.expiryDate) {
@@ -82,6 +87,10 @@ const QuizPlayer = () => {
         const all = [...quiz.questions];
         const shuffled = all.sort(() => 0.5 - Math.random()).slice(0, quiz.config.questionsCount);
         
+        const newAttemptCount = attempts + 1;
+        setAttempts(newAttemptCount);
+        localStorage.setItem(`quiz_attempts_${slug}`, newAttemptCount.toString());
+
         setGameQuestions(shuffled);
         setTimeLeft(quiz.config.timeLimit * 60);
         setGameState('playing');
@@ -199,10 +208,24 @@ const QuizPlayer = () => {
                                 <div className="expiry-notice">
                                     <AlertCircle size={18} /> Bài thi này đã đóng!
                                 </div>
+                            ) : quiz.config.allowRetry === false && attempts >= 1 ? (
+                                <div className="expiry-notice">
+                                    <AlertCircle size={18} /> Bạn đã hết lượt làm bài thi này!
+                                </div>
+                            ) : quiz.config.allowRetry && attempts > quiz.config.retryLimit ? (
+                                <div className="expiry-notice">
+                                    <AlertCircle size={18} /> Bạn đã vượt quá {quiz.config.retryLimit} lần làm lại cho phép!
+                                </div>
                             ) : (
                                 <button onClick={handleStart} className="btn-start shadow-glow">
                                     BẮT ĐẦU LÀM BÀI
                                 </button>
+                            )}
+                            
+                            {attempts > 0 && !isSubmitting && gameState === 'lobby' && (
+                                <p style={{ marginTop: '1rem', color: 'var(--accent-secondary)', fontSize: '0.85rem' }}>
+                                    Số lần đã làm: {attempts} {quiz.config.allowRetry ? `/ Lượt tối đa: ${quiz.config.retryLimit + 1}` : ''}
+                                </p>
                             )}
                         </div>
                     </motion.div>
@@ -330,7 +353,11 @@ const QuizPlayer = () => {
                         </p>
 
                         <div className="result-actions">
-                            <button onClick={() => window.location.reload()} className="btn-secondary">Làm lại bài</button>
+                            {(quiz.config.allowRetry && attempts <= quiz.config.retryLimit) ? (
+                                <button onClick={() => window.location.reload()} className="btn-secondary">Làm lại bài ({quiz.config.retryLimit - attempts + 1} lượt còn lại)</button>
+                            ) : (
+                                <span className="no-retry-badge">Hết lượt làm lại</span>
+                            )}
                             <button onClick={() => navigate('/')} className="btn-primary">Quay lại trang chủ</button>
                         </div>
                     </motion.div>
@@ -438,8 +465,8 @@ const QuizPlayer = () => {
                 .btn-start:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0, 240, 255, 0.3); }
                 
                 .quiz-play-area {
-                    width: 100%;
-                    max-width: 1200px;
+                    width: 98%;
+                    max-width: 100%;
                     display: flex;
                     flex-direction: column;
                     gap: 1.5rem;
@@ -601,7 +628,24 @@ const QuizPlayer = () => {
                     margin: 2rem 0;
                 }
                 .res-stat { display: flex; align-items: center; gap: 0.5rem; }
-                .result-actions { display: flex; gap: 1rem; margin-top: 2.5rem; }
+                .result-actions { display: flex; gap: 1rem; margin-top: 2.5rem; justify-content: center; }
+                .no-retry-badge {
+                    padding: 0.8rem 1.5rem;
+                    background: rgba(255,255,255,0.05);
+                    border: 1px solid rgba(255,255,255,0.1);
+                    color: var(--text-muted);
+                    border-radius: 8px;
+                    font-size: 0.9rem;
+                }
+                .expiry-notice {
+                    color: #ef4444;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 0.5rem;
+                    font-weight: bold;
+                    margin-bottom: 1rem;
+                }
             `}</style>
         </div>
     );

@@ -36,6 +36,8 @@ const QuizMaker = () => {
     questionsCount: 40,
     isScored: true,
     hasLeaderboard: true,
+    allowRetry: true, // New: Allow retake
+    retryLimit: 1,    // New: Number of retakes
     expiryDate: '' // New: Deadline
   });
 
@@ -106,6 +108,8 @@ const QuizMaker = () => {
       questionsCount: 40,
       isScored: true,
       hasLeaderboard: true,
+      allowRetry: true,
+      retryLimit: 1,
       expiryDate: ''
     });
     setStep(1);
@@ -653,6 +657,23 @@ const QuizMaker = () => {
                     </div>
                     <input type="checkbox" checked={config.hasLeaderboard} onChange={e => setConfig({...config, hasLeaderboard: e.target.checked})} />
                   </label>
+
+                  <div className="form-row" style={{ marginTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.5rem' }}>
+                    <label className="switch-wrapper" style={{ flex: 1 }}>
+                      <div className="switch-info">
+                        <strong className="contrast-label">Cho phép làm lại</strong>
+                        <span>Thí sinh có thể thi lại sau khi hoàn thành</span>
+                      </div>
+                      <input type="checkbox" checked={config.allowRetry} onChange={e => setConfig({...config, allowRetry: e.target.checked})} />
+                    </label>
+                    
+                    {config.allowRetry && (
+                      <div className="form-group" style={{ flex: 1 }}>
+                        <label className="contrast-label">SỐ LẦN LÀM LẠI TỐI ĐA</label>
+                        <input type="number" min="1" max="100" value={config.retryLimit} onChange={e => setConfig({...config, retryLimit: parseInt(e.target.value)})} />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
