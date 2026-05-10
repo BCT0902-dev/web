@@ -206,6 +206,8 @@ const QuizPlayer = () => {
             correctCount,
             totalCount: gameQuestions.length,
             timeSpent: (quiz?.config?.timeLimit || 0) * 60 - timeLeft,
+            userAnswers: userAnswers,
+            questions: gameQuestions, // Store the specific shuffled questions for this attempt
             submittedAt: serverTimestamp()
         };
 

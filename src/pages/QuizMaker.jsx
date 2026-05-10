@@ -54,6 +54,8 @@ const QuizMaker = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [quizToShare, setQuizToShare] = useState(null);
   const [userSearchTerm, setUserSearchTerm] = useState('');
+  const [showAdminReview, setShowAdminReview] = useState(false);
+  const [selectedResult, setSelectedResult] = useState(null);
 
   // --- Dashboard Logic ---
   useEffect(() => {
@@ -878,45 +880,83 @@ const QuizMaker = () => {
                   </div>
 
                   {/* CUSTOM PARTICIPANT FIELDS */}
-                  <div className="config-card glass-panel" style={{ marginTop: '1.5rem' }}>
-                    <h3><User size={20} color="var(--accent-main)" /> Thông tin thí sinh (Phiếu đăng ký)</h3>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>Cấu hình các trường dữ liệu mà thí sinh cần điền trước khi vào thi.</p>
-                    
-                    <div className="participant-fields-list">
-                        {(config.participantFields || []).map((f, i) => (
-                          <div key={i} className="field-edit-row">
-                             <input 
-                               type="text" 
-                               value={f.label} 
-                               onChange={e => {
-                                 const next = [...config.participantFields];
-                                 next[i].label = e.target.value;
-                                 setConfig({...config, participantFields: next});
-                               }}
-                               placeholder="Tên trường (VD: Năm sinh)"
-                             />
-                             <label className="req-toggle">
-                               <input 
-                                 type="checkbox" 
-                                 checked={f.required} 
-                                 onChange={e => {
-                                   const next = [...config.participantFields];
-                                   next[i].required = e.target.checked;
-                                   setConfig({...config, participantFields: next});
-                                 }}
-                               /> Bắt buộc
-                             </label>
-                             <button onClick={() => {
-                               const next = config.participantFields.filter((_, idx) => idx !== i);
-                               setConfig({...config, participantFields: next});
-                             }} className="btn-icon delete"><X size={14} /></button>
-                          </div>
-                        ))}
-                        <button onClick={() => {
-                          const newField = { label: 'Trường mới', key: `field_${Date.now()}`, required: true };
-                          setConfig({...config, participantFields: [...(config.participantFields || []), newField]});
-                        }} className="btn-secondary" style={{ width: '100%', marginTop: '0.5rem', borderStyle: 'dashed' }}>+ THÊM TRƯỜNG THÔNG TIN</button>
+                  <div className="setup-section-light" style={{ background: 'rgba(255,255,255,0.03)', padding: '2rem', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.08)', marginTop: '2rem' }}>
+                    <div className="section-header-compact" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <div className="header-icon-box" style={{ width: '45px', height: '45px', background: 'rgba(251, 191, 36, 0.15)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <User size={24} color="#fbbf24" />
+                      </div>
+                      <div>
+                        <h4 style={{ margin: 0, fontSize: '1.2rem' }}>Thông tin thí sinh (Phiếu đăng ký)</h4>
+                        <p style={{ margin: 0, opacity: 0.6, fontSize: '0.85rem' }}>Cấu hình các trường dữ liệu thí sinh cần khai báo trước khi thi.</p>
+                      </div>
                     </div>
+
+                    <div className="participant-fields-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                      {(config.participantFields || []).map((field, idx) => (
+                        <motion.div 
+                          layout
+                          key={field.key} 
+                          className="field-config-card" 
+                          style={{ background: 'rgba(255,255,255,0.05)', padding: '1.2rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', gap: '1.5rem' }}
+                        >
+                          <div className="field-index" style={{ width: '30px', height: '30px', background: 'rgba(255,255,255,0.1)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 'bold', opacity: 0.5 }}>
+                            {idx + 1}
+                          </div>
+                          
+                          <div className="field-input-group" style={{ flex: 1 }}>
+                            <input 
+                              type="text" 
+                              value={field.label}
+                              placeholder="Tên trường (VD: Họ và tên, Đơn vị...)"
+                              onChange={(e) => {
+                                const newFields = [...config.participantFields];
+                                newFields[idx].label = e.target.value;
+                                setConfig({ ...config, participantFields: newFields });
+                              }}
+                              style={{ width: '100%', background: 'transparent', border: 'none', borderBottom: '2px solid rgba(255,255,255,0.1)', padding: '0.5rem 0', color: '#fff', fontSize: '1rem', outline: 'none', transition: 'border-color 0.3s' }}
+                              onFocus={(e) => e.target.style.borderColor = 'var(--accent-main)'}
+                              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+                            />
+                          </div>
+
+                          <div className="field-options" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <label className="toggle-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem' }}>
+                              <input 
+                                type="checkbox" 
+                                checked={field.required}
+                                onChange={(e) => {
+                                  const newFields = [...config.participantFields];
+                                  newFields[idx].required = e.target.checked;
+                                  setConfig({ ...config, participantFields: newFields });
+                                }}
+                              />
+                              <span>Bắt buộc</span>
+                            </label>
+                            <button 
+                              onClick={() => {
+                                const newFields = config.participantFields.filter((_, i) => i !== idx);
+                                setConfig({ ...config, participantFields: newFields });
+                              }} 
+                              className="btn-icon delete-small"
+                              style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer' }}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+
+                    <button 
+                      onClick={() => {
+                        const newFields = [...(config.participantFields || []), { label: '', required: true, key: `field_${Date.now()}` }];
+                        setConfig({ ...config, participantFields: newFields });
+                      }} 
+                      className="btn-outline-glow full-width"
+                      style={{ width: '100%', border: '2px dashed rgba(255,255,255,0.1)', background: 'transparent', padding: '1rem', borderRadius: '16px', color: 'var(--accent-main)', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer' }}
+                    >
+                      + THÊM TRƯỜNG THÔNG TIN
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1022,15 +1062,29 @@ const QuizMaker = () => {
                               <td>{res.correctCount} / {res.totalCount}</td>
                               <td>{Math.floor(res.timeSpent / 60)}p {res.timeSpent % 60}s</td>
                               <td>
-                                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                 <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', justifyContent: 'flex-end' }}>
                                     {res.submittedAt?.toDate().toLocaleString('vi-VN')}
+                                    
+                                    <div className="action-divider" style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)', margin: '0 5px' }}></div>
+
+                                    {res.userAnswers && (
+                                      <button 
+                                        onClick={() => { setSelectedResult(res); setShowAdminReview(true); }}
+                                        className="btn-icon view-details" 
+                                        title="Xem chi tiết bài làm"
+                                        style={{ padding: '6px', background: 'rgba(37, 99, 235, 0.2)', color: '#3b82f6', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                                      >
+                                         <FileText size={16} />
+                                      </button>
+                                    )}
+
                                     <button 
                                       onClick={() => handleResetAttempt(activeQuizSlug, res.userName, res.participantData)} 
                                       className="btn-icon reset" 
                                       title="Reset lượt thi"
-                                      style={{ padding: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px' }}
+                                      style={{ padding: '6px', background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
                                     >
-                                       <RotateCcw size={14} />
+                                       <RotateCcw size={16} />
                                     </button>
                                  </div>
                               </td>
@@ -1149,6 +1203,88 @@ const QuizMaker = () => {
                         </div>
                       ))}
                   </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {showAdminReview && selectedResult && (
+            <div className="modal-overlay" style={{ zIndex: 12000 }}>
+              <motion.div 
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="review-modal glass-panel"
+                style={{ maxWidth: '900px', width: '95%', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
+              >
+                <div className="modal-header" style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.02)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ width: '45px', height: '45px', background: 'var(--accent-main)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontWeight: '900', fontSize: '1.2rem' }}>
+                      {selectedResult.userName[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: '1.3rem' }}>CHI TIẾT: {selectedResult.userName}</h3>
+                      <p style={{ margin: 0, opacity: 0.6, fontSize: '0.85rem' }}>
+                        Điểm: <span style={{ color: 'var(--accent-main)', fontWeight: 'bold' }}>{selectedResult.score}</span> | Đúng: {selectedResult.correctCount}/{selectedResult.totalCount}
+                      </p>
+                    </div>
+                  </div>
+                  <button onClick={() => setShowAdminReview(false)} className="close-btn"><X size={24} /></button>
+                </div>
+                <div className="modal-body" style={{ flex: 1, overflowY: 'auto', padding: '2rem', background: 'rgba(0,0,0,0.3)' }}>
+                  {selectedResult.questions ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                      {selectedResult.questions.map((q, idx) => {
+                        const userAns = selectedResult.userAnswers[q.id];
+                        const isCorrect = userAns === q.correctAnswer;
+                        return (
+                          <div key={idx} style={{ background: 'rgba(255,255,255,0.03)', padding: '1.8rem', borderRadius: '20px', border: '1px solid', borderColor: isCorrect ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.2rem', alignItems: 'center' }}>
+                              <strong style={{ opacity: 0.6, fontSize: '0.9rem', letterSpacing: '1px' }}>CÂU HỎI {idx + 1}</strong>
+                              <span style={{ fontSize: '0.75rem', padding: '0.3rem 0.8rem', borderRadius: '20px', background: isCorrect ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: isCorrect ? '#10b981' : '#ef4444', fontWeight: '900' }}>
+                                {isCorrect ? 'ĐÚNG' : 'SAI'}
+                              </span>
+                            </div>
+                            <p style={{ fontSize: '1.2rem', fontWeight: '600', marginBottom: '1.5rem', lineHeight: '1.4' }}>{q.text}</p>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                              {q.options.map((opt, oIdx) => (
+                                <div 
+                                  key={oIdx} 
+                                  style={{ 
+                                    padding: '1rem', 
+                                    borderRadius: '12px', 
+                                    background: 'rgba(255,255,255,0.04)', 
+                                    border: '1px solid',
+                                    borderColor: opt.letter === q.correctAnswer ? '#10b981' : (opt.letter === userAns ? '#ef4444' : 'rgba(255,255,255,0.05)'),
+                                    display: 'flex',
+                                    gap: '1rem',
+                                    opacity: (opt.letter === q.correctAnswer || opt.letter === userAns) ? 1 : 0.4,
+                                    transition: 'all 0.3s'
+                                  }}
+                                >
+                                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: opt.letter === q.correctAnswer ? '#10b981' : (opt.letter === userAns ? '#ef4444' : 'rgba(255,255,255,0.1)'), display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.9rem', color: (opt.letter === q.correctAnswer || opt.letter === userAns) ? '#000' : '#fff' }}>
+                                    {opt.letter}
+                                  </div>
+                                  <span style={{ flex: 1 }}>{opt.text}</span>
+                                  {opt.letter === q.correctAnswer && <Check size={18} style={{ color: '#10b981' }} />}
+                                  {opt.letter === userAns && !isCorrect && <X size={18} style={{ color: '#ef4444' }} />}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div style={{ textAlign: 'center', padding: '5rem 2rem', opacity: 0.5 }}>
+                      <AlertCircle size={64} style={{ marginBottom: '1.5rem', opacity: 0.3 }} />
+                      <h3 style={{ margin: 0 }}>Không có dữ liệu chi tiết</h3>
+                      <p>Bài thi này được thực hiện trước khi tính năng Review được kích hoạt.</p>
+                    </div>
+                  )}
+                </div>
+                <div className="modal-footer" style={{ padding: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'center' }}>
+                    <button onClick={() => setShowAdminReview(false)} className="btn-primary" style={{ minWidth: '150px' }}>ĐÓNG</button>
                 </div>
               </motion.div>
             </div>
