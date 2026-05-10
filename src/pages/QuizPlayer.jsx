@@ -106,7 +106,7 @@ const QuizPlayer = () => {
     }, [gameState, timeLeft]);
 
     const handleStart = () => {
-        if (quiz.config.hasLeaderboard) {
+        if (quiz?.config?.hasLeaderboard) {
             const fields = quiz.config.participantFields || [];
             const missing = fields.find(f => f.required && !participantData[f.key]?.trim());
             if (missing) {
@@ -151,13 +151,13 @@ const QuizPlayer = () => {
         const score = ((correctCount / (gameQuestions.length || 1)) * 10).toFixed(2);
         const resultData = {
             quizSlug: slug,
-            quizTitle: quiz.config.title,
+            quizTitle: quiz?.config?.title || 'Bài thi',
             userName: participantData.userName || (participantData[Object.keys(participantData)[0]]) || 'Thí sinh',
             participantData: participantData,
             score: parseFloat(score),
             correctCount,
             totalCount: gameQuestions.length,
-            timeSpent: quiz.config.timeLimit * 60 - timeLeft,
+            timeSpent: (quiz?.config?.timeLimit || 0) * 60 - timeLeft,
             submittedAt: serverTimestamp()
         };
 
@@ -182,7 +182,7 @@ const QuizPlayer = () => {
         return `${m}:${s < 10 ? '0' : ''}${s}`;
     };
 
-    const isOutOfAttempts = attempts >= (quiz.config.retryLimit || 1);
+    const isOutOfAttempts = quiz ? (attempts >= (quiz?.config?.retryLimit || 1)) : false;
     const isExpiredLocally = isExpired;
 
     return (
