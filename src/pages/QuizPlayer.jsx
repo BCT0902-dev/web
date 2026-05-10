@@ -464,7 +464,7 @@ const QuizPlayer = () => {
                             </div>
                             <div className="review-body-light">
                                 {gameQuestions.map((q, idx) => {
-                                    const userAns = answers[q.id];
+                                    const userAns = userAnswers[q.id];
                                     const isCorrect = userAns === q.correctAnswer;
                                     return (
                                         <div key={idx} className={`review-card-light ${isCorrect ? 'correct' : 'wrong'}`}>
