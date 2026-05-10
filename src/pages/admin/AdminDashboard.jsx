@@ -15,6 +15,7 @@ import {
   query, where, deleteDoc, setDoc, orderBy, limit 
 } from 'firebase/firestore';
 import { useConfig } from '../../context/ConfigContext';
+import { useAuth } from '../../context/AuthContext';
 import './AdminDashboard.css';
 
 // --- SUB-COMPONENTS ---
@@ -179,6 +180,7 @@ const BlogTab = ({ posts, onDelete }) => {
 
 const AdminDashboard = () => {
   const { config, updateConfig } = useConfig();
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('analytics');
   const [localConfig, setLocalConfig] = useState(null);
@@ -289,7 +291,11 @@ const AdminDashboard = () => {
     <div className="admin-dashboard">
       <aside className="admin-sidebar">
         <div className="sidebar-header" style={{ padding: '0 2rem', marginBottom: '2rem' }}>
-           <img src="/logobct.png" alt="logo" style={{ width: '40px', marginBottom: '1rem' }} />
+           {currentUser?.photoURL ? (
+             <img src={currentUser.photoURL} alt="avatar" style={{ width: '45px', height: '45px', borderRadius: '50%', marginBottom: '1rem', border: '2px solid var(--accent-main)' }} />
+           ) : (
+             <img src="/logobct.png" alt="logo" style={{ width: '40px', marginBottom: '1rem' }} />
+           )}
            <div style={{ color: 'var(--accent-main)', fontWeight: 'bold', fontSize: '0.8rem' }}>BCT SYSTEM V1.0</div>
         </div>
 
