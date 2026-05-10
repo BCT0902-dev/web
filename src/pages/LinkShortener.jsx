@@ -288,7 +288,7 @@ const LinkShortener = () => {
   };
 
   return (
-    <div className="shortener-page-wrapper">
+    <div className="shortener-page-wrapper" style={{ fontFamily: 'var(--font-tech)' }}>
       <div className="background-decor">
          <div className="glow-sphere sphere-1"></div>
          <div className="glow-sphere sphere-2"></div>

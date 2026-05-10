@@ -521,7 +521,7 @@ const QuizMaker = () => {
   };
 
   return (
-    <div className="quiz-maker-wrapper">
+    <div className="quiz-maker-wrapper" style={{ fontFamily: 'var(--font-tech)' }}>
       <div className="container">
         
         <div className="maker-header">

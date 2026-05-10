@@ -237,7 +237,8 @@ const QuizPlayer = () => {
 
     return (
         <div className="quiz-player-container light-mode" style={{ 
-            backgroundImage: (quiz && quiz.config.backgroundUrl) ? `url(${quiz.config.backgroundUrl})` : 'none' 
+            backgroundImage: (quiz && quiz.config.backgroundUrl) ? `url(${quiz.config.backgroundUrl})` : 'none',
+            fontFamily: 'var(--font-tech)'
         }}>
             <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet" />
             <div className="quiz-overlay-light"></div>
