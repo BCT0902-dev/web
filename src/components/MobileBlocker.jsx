@@ -11,20 +11,24 @@ const MobileBlocker = () => {
   const { config } = useConfig();
   const [isMobile, setIsMobile] = useState(false);
 
-  // Default allowed paths (always accessible on mobile)
-  const alwaysAllowed = ['/quiz', '/quiz-maker', '/shortener', '/login'];
-  
-  // Logic to determine if blocked
+  // Logic to determine if blocked (Whitelist Mode)
   const isBlocked = () => {
-      // If it's in alwaysAllowed, it's never blocked by the global blocker
-      if (alwaysAllowed.some(path => location.pathname.startsWith(path))) return false;
+      // Default allowed paths (always accessible on mobile for system stability)
+      const defaultAllowed = ['/admin', '/quiz', '/auth-success']; 
       
-      // Check against dynamic blocked list from admin
-      const blockedPaths = config?.maintenance?.mobileBlockedPaths || [];
-      return blockedPaths.some(path => {
+      // If it's in defaultAllowed, it's NEVER blocked
+      if (defaultAllowed.some(path => location.pathname.startsWith(path))) return false;
+      
+      // Dynamic allowed list from admin (previously blockedPaths, now used as allowedPaths)
+      const allowedPaths = config?.maintenance?.mobileBlockedPaths || [];
+      
+      const isExplicitlyAllowed = allowedPaths.some(path => {
           if (path === '/') return location.pathname === '/';
           return location.pathname.startsWith(path);
       });
+
+      // If NOT explicitly allowed, then it is BLOCKED
+      return !isExplicitlyAllowed;
   };
 
   useEffect(() => {

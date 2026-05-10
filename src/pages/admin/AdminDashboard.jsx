@@ -1487,16 +1487,17 @@ const AdminDashboard = () => {
 
                   <div className="manager-header" style={{ marginBottom: '1.5rem' }}>
                     <div style={{ display: 'flex', gap: '0.8rem', color: 'var(--accent-main)', alignItems: 'center' }}>
-                      <Smartphone size={24} /> <h3>KHÓA TRUY CẬP ĐIỆN THOẠI (MOBILE ACCESS CONTROL)</h3>
+                      <Smartphone size={24} /> <h3>CẤP QUYỀN TRUY CẬP ĐIỆN THOẠI (MOBILE WHITELIST)</h3>
                     </div>
                   </div>
 
                   <div className="glass-panel" style={{ padding: '2rem', borderRadius: '24px', background: 'rgba(10,10,10,0.2)' }}>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '2rem' }}>
-                      Chọn nhanh các trang muốn chặn trên Mobile hoặc nhập đường dẫn tùy chỉnh ở phía dưới.
+                      Mặc định mọi trang sẽ bị <strong>KHÓA</strong> trên điện thoại. 
+                      Chọn các trang dưới đây để <strong>CẤP QUYỀN</strong> cho phép truy cập.
                     </p>
 
-                    {/* GUI QUICK TOGGLE */}
+                    {/* GUI QUICK TOGGLE (WHITELIST) */}
                     <div style={{ 
                       display: 'grid', 
                       gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', 
@@ -1504,24 +1505,40 @@ const AdminDashboard = () => {
                       marginBottom: '3rem'
                     }}>
                       {[
+                        { label: 'TRANG CHỦ', path: '/', icon: <Home size={16} /> },
                         { label: 'BLOG SYSTEM', path: '/blog', icon: <FileText size={16} /> },
                         { label: 'CHRONICLES', path: '/chronicles', icon: <Activity size={16} /> },
                         { label: 'ABOUT ME', path: '/about', icon: <Home size={16} /> },
                         { label: 'SKILLS & TECH', path: '/skills', icon: <Zap size={16} /> },
                         { label: 'MEMORIES', path: '/memories', icon: <ImageIcon size={16} /> },
                         { label: 'CONTACT', path: '/contact', icon: <Mail size={16} /> },
+                        { label: 'RÚT GỌN LINK', path: '/shorten', icon: <Zap size={16} /> },
+                        { label: 'ĐĂNG NHẬP', path: '/login', icon: <Lock size={16} /> },
+                        { label: 'ĐĂNG KÝ', path: '/register', icon: <Lock size={16} /> },
                       ].map(item => {
-                        const isBlocked = (localConfig.maintenance?.mobileBlockedPaths || []).includes(item.path);
+                        const isAllowed = (localConfig.maintenance?.mobileBlockedPaths || []).includes(item.path);
                         return (
                           <button
                             key={item.path}
                             onClick={() => {
-                              const current = localConfig.maintenance?.mobileBlockedPaths || [];
-                              if (isBlocked) {
-                                updateNested('maintenance', 'mobileBlockedPaths', current.filter(p => p !== item.path));
+                              let current = localConfig.maintenance?.mobileBlockedPaths || [];
+                              let nextPaths = [];
+                              
+                              if (isAllowed) {
+                                // Remove path
+                                nextPaths = current.filter(p => p !== item.path);
                               } else {
-                                updateNested('maintenance', 'mobileBlockedPaths', [...current, item.path]);
+                                // Add path
+                                nextPaths = [...current, item.path];
+                                
+                                // SMART LOGIC: If shortening is enabled, also enable login/register
+                                if (item.path === '/shorten') {
+                                    if (!nextPaths.includes('/login')) nextPaths.push('/login');
+                                    if (!nextPaths.includes('/register')) nextPaths.push('/register');
+                                }
                               }
+                              
+                              updateNested('maintenance', 'mobileBlockedPaths', nextPaths);
                             }}
                             style={{
                               display: 'flex',
@@ -1530,9 +1547,9 @@ const AdminDashboard = () => {
                               gap: '0.8rem',
                               padding: '1rem',
                               borderRadius: '12px',
-                              background: isBlocked ? 'rgba(255, 77, 77, 0.15)' : 'rgba(255,255,255,0.03)',
-                              color: isBlocked ? '#ff4d4d' : 'var(--text-muted)',
-                              border: `1px solid ${isBlocked ? 'rgba(255, 77, 77, 0.3)' : 'rgba(255,255,255,0.08)'}`,
+                              background: isAllowed ? 'rgba(0, 255, 204, 0.1)' : 'rgba(255,255,255,0.03)',
+                              color: isAllowed ? 'var(--accent-main)' : 'rgba(255,255,255,0.3)',
+                              border: `1px solid ${isAllowed ? 'rgba(0, 255, 204, 0.3)' : 'rgba(255,255,255,0.08)'}`,
                               fontSize: '0.75rem',
                               fontWeight: '700',
                               cursor: 'pointer',
@@ -1547,13 +1564,13 @@ const AdminDashboard = () => {
                     </div>
 
                     <div className="admin-divider" style={{ margin: '2rem 0', opacity: 0.1 }}></div>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--accent-main)', marginBottom: '1rem', display: 'block' }}>NHẬP ĐƯỜNG DẪN TÙY CHỈNH (ADVANCED)</label>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--accent-main)', marginBottom: '1rem', display: 'block' }}>CẤP QUYỀN ĐƯỜNG DẪN TÙY CHỈNH (WHITELIST ADVANCED)</label>
 
                     <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
                        <input 
                          type="text" 
                          id="new-mobile-path"
-                         placeholder="VD: /secret-page ..." 
+                         placeholder="VD: /private-gallery ..." 
                          style={{ flex: 1, padding: '1rem', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}
                          onKeyDown={(e) => {
                            if (e.key === 'Enter') {
@@ -1578,13 +1595,13 @@ const AdminDashboard = () => {
                             }
                             input.value = '';
                           }
-                       }}>THÊM VÀO DANH SÁCH</button>
+                       }}>CẤP QUYỀN</button>
                     </div>
 
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
                       {(localConfig.maintenance?.mobileBlockedPaths || []).map(path => (
-                        <div key={path} style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', background: 'rgba(255, 77, 77, 0.1)', color: '#ff4d4d', padding: '0.8rem 1.2rem', borderRadius: '12px', border: '1px solid rgba(255, 77, 77, 0.2)' }}>
-                          <Lock size={14} />
+                        <div key={path} style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', background: 'rgba(0, 255, 204, 0.1)', color: 'var(--accent-main)', padding: '0.8rem 1.2rem', borderRadius: '12px', border: '1px solid rgba(0, 255, 204, 0.2)' }}>
+                          <CheckCircle size={14} />
                           <span style={{ fontWeight: 600 }}>{path}</span>
                           <X size={16} style={{ cursor: 'pointer', opacity: 0.6 }} onClick={() => {
                             const current = localConfig.maintenance.mobileBlockedPaths.filter(p => p !== path);
@@ -1593,7 +1610,7 @@ const AdminDashboard = () => {
                         </div>
                       ))}
                       {(localConfig.maintenance?.mobileBlockedPaths || []).length === 0 && (
-                        <div style={{ opacity: 0.4, fontStyle: 'italic', padding: '1rem' }}>Chưa có đường dẫn nào bị chặn. Điện thoại có thể truy cập toàn bộ trang web.</div>
+                        <div style={{ opacity: 0.4, fontStyle: 'italic', padding: '1rem' }}>Hiện tại chưa có đường dẫn nào được phép truy cập. Mọi truy cập từ điện thoại sẽ bị chặn.</div>
                       )}
                     </div>
                   </div>
