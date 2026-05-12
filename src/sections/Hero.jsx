@@ -8,20 +8,25 @@ import { useConfig } from '../context/ConfigContext';
 import SocialIcon from '../components/SocialIcon';
 
 const RandomCounter = () => {
-  const [count, setCount] = useState("10.977.000");
+  const [count, setCount] = useState(10977846);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      // Create a more dynamic "jumping" effect by randomizing the last few digits
-      const base = 10977000;
-      const randomOffset = Math.floor(Math.random() * 999);
-      const finalNum = base + randomOffset;
-      setCount(finalNum.toLocaleString('de-DE'));
-    }, 150);
-    return () => clearInterval(interval);
+    // Smooth counter: tăng 1-3 mỗi 2-4 giây, giống counter thực
+    const schedule = () => {
+      const delay = 2000 + Math.random() * 2000; // 2-4 giây
+      return setTimeout(() => {
+        setCount(prev => prev + Math.floor(Math.random() * 3) + 1);
+        schedule();
+      }, delay);
+    };
+    const timer = schedule();
+    return () => clearTimeout(timer);
   }, []);
 
-  return <span>{count}+</span>;
+  // Format số theo kiểu Việt Nam: 10.977.846
+  const formatted = count.toLocaleString('de-DE');
+
+  return <span>{formatted}+</span>;
 };
 
 const Hero = () => {
