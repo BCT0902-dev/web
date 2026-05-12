@@ -1,12 +1,13 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Layout, ClipboardList, GraduationCap, Users, HelpCircle, Link2 } from 'lucide-react';
+import { Home, ClipboardList, Users, HelpCircle, Link2 } from 'lucide-react';
 
 
 /**
  * MobileBottomNav - Bottom navigation bar for mobile pages
- * Shared across: LinkShortener, QuizMaker, Chronicles
+ * Shared across: Home, LinkShortener, QuizMaker, Chronicles
  * Uses useLocation() to auto-highlight the current page
+ * NOTE: "Giới thiệu" và "Kỹ năng" bị bỏ vì đã nằm trên trang chủ
  */
 const MobileBottomNav = () => {
   const location = useLocation();
@@ -19,9 +20,7 @@ const MobileBottomNav = () => {
 
   const navItems = [
     { to: '/',           icon: <Home size={20} />,          label: 'TRANG CHỦ',  isLink: true },
-    { to: '/#about',     icon: <Layout size={20} />,         label: 'GIỚI THIỆU', isLink: false },
     { to: '/chronicles', icon: <ClipboardList size={20} />,  label: 'HÀNH TRÌNH', isLink: true },
-    { to: '/#skills',    icon: <GraduationCap size={20} />,  label: 'KỸ NĂNG',    isLink: false },
     { to: '/blog',       icon: <Users size={20} />,          label: 'BÀI VIẾT',   isLink: true },
     { to: '/shortener',  icon: <Link2 size={20} />,          label: 'RÚT GỌN',    isLink: true },
     { to: '/quiz-maker', icon: <HelpCircle size={20} />,     label: 'QUIZ',       isLink: true },
