@@ -311,7 +311,7 @@ const LinkShortener = () => {
 
       <div className="background-decor"></div>
       
-      <div className="shortener-container">
+      <div className="shortener-layout container">
         {/* LEFT COLUMN: SHORTEN FORM */}
         <div className="shortener-main-col">
           <motion.div 
@@ -327,7 +327,7 @@ const LinkShortener = () => {
               <p className="subtitle mobile-subtitle">HỆ THỐNG RÚT GỌN LIÊN KẾT THÔNG MINH - IRIS ECOSYSTEM</p>
             </div>
 
-            <form onSubmit={handleShorten} className="shorten-form">
+            <form onSubmit={handleShorten} className="shortener-form">
               <div className="input-section">
                 <div className="input-group">
                   <label className="desktop-label">ĐƯỜNG DẪN GỐC (LONG URL)</label>
