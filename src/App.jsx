@@ -115,9 +115,7 @@ function AppRoutes() {
           <Route path="/:slug" element={<ShortLinkRedirect />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
-        {!isLoginPage && !isAdminPage && !isRedirectPage && !isShortenerPage && <Footer />}
-        {isShortenerPage && <Footer technicalFont={true} />}
-        {(isBlogPage || isChroniclesPage || isQuizMakerPage) && <Footer />}
+        {!isLoginPage && !isAdminPage && !isRedirectPage && <Footer technicalFont={isShortenerPage} />}
       </div>
     </>
   );
