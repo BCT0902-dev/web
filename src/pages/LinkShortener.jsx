@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Link2, Copy, Check, RotateCcw, ExternalLink, Globe, Zap,
   ShieldCheck, Trash2, Edit3, Clock, Lock, Unlock, User, Info, X, Save,
-  QrCode, Download, Menu, Globe, Home, Layout, ClipboardList, GraduationCap, Users, HelpCircle
+  QrCode, Download, Menu, Home, Layout, ClipboardList, GraduationCap, Users, HelpCircle
 } from 'lucide-react';
 import { db } from '../firebase';
 import { 
@@ -273,17 +273,20 @@ const LinkShortener = () => {
     }
   };
 
-  const downloadQRCode = (canvasId, slug) => {
-    const originalCanvas = document.getElementById(canvasId);
-    if (!originalCanvas) return;
-    
-    // To ensure high quality, we'll try to get the highest possible quality
-    const pngUrl = originalCanvas.toDataURL("image/png", 1.0);
+  const downloadQRCode = (id, slug) => {
+    const canvas = document.getElementById(id);
+    const pngUrl = canvas
+      .toDataURL("image/png")
+      .replace("image/png", "image/octet-stream");
     let downloadLink = document.createElement("a");
     downloadLink.href = pngUrl;
     downloadLink.download = `bct_qr_${slug || 'short'}.png`;
-    
-    return (
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+  };
+
+  return (
     <div className="shortener-page-wrapper" style={{ fontFamily: 'var(--font-tech)' }}>
       {/* MOBILE TOP HEADER - ONLY VISIBLE ON < 768px */}
       <div className="iris-mobile-header">
