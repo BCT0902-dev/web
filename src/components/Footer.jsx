@@ -316,7 +316,7 @@ const Footer = ({ technicalFont }) => {
           {t('footer.scroll_up')}
         </p>
         <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
-           <span style={{ fontSize: '0.75rem', opacity: 0.6, color: 'var(--text-muted)' }}>
+           <span className="footer-copyright-text" style={{ fontSize: '0.75rem', opacity: 0.6, color: 'var(--text-muted)' }}>
              &copy; {new Date().getFullYear()} BCT0902. {t('footer.rights')}
            </span>
            <span style={{ fontSize: '0.65rem', opacity: 0.4, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>

@@ -259,4 +259,11 @@ button {
     #chronicles {
         padding-bottom: 90px !important;
     }
+
+    /* Footer copyright text - fix rớt dòng */
+    .footer-copyright-text {
+        font-size: 0.6rem !important;
+        white-space: nowrap !important;
+        text-align: center !important;
+    }
 }

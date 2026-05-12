@@ -146,12 +146,14 @@
    ========================================== */
 
 /* Hide all mobile-specific elements on desktop by default */
-.iris-mobile-header,
-.iris-mobile-nav,
-.mobile-title,
-.mobile-subtitle,
-.mobile-label {
-    display: none !important;
+@media (min-width: 769px) {
+    .iris-mobile-header,
+    .iris-mobile-nav,
+    .mobile-title,
+    .mobile-subtitle,
+    .mobile-label {
+        display: none !important;
+    }
 }
 
 /* Ensure desktop elements are visible */
