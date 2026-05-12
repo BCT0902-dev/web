@@ -3,7 +3,9 @@ import { motion, useScroll, useSpring, useTransform } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { GraduationCap, Briefcase, School, BookOpen, Star, Rocket } from 'lucide-react';
 import { useConfig } from '../context/ConfigContext';
+import MobileBottomNav from '../components/MobileBottomNav';
 import './PersonalChronicles.css';
+
 
 const Milestone = ({ milestone, index, isLast, image }) => {
   const { t } = useTranslation();
@@ -297,6 +299,7 @@ const PersonalChronicles = () => {
         </div>
       </div>
     </section>
+    <MobileBottomNav />
   );
 };
 

@@ -202,3 +202,61 @@ button {
   border-radius: 50%;
   animation: logo-glow 3s infinite ease-in-out;
 }
+
+/* ============================================================
+   SHARED MOBILE BOTTOM NAV - iris-mobile-nav
+   Dùng chung cho: LinkShortener, QuizMaker, Chronicles
+   Ẩn trên Desktop, hiện trên Mobile
+   ============================================================ */
+.iris-mobile-nav {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .iris-mobile-nav {
+        display: flex !important;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 70px;
+        background: #0a0a0c;
+        border-top: 1px solid rgba(255, 176, 0, 0.15);
+        z-index: 2500;
+        justify-content: space-around;
+        align-items: center;
+        padding-bottom: env(safe-area-inset-bottom, 10px); /* iPhone notch support */
+    }
+
+    .m-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        color: #555;
+        gap: 0.3rem;
+        flex: 1;
+        text-decoration: none !important;
+        transition: color 0.2s ease;
+        padding: 0.4rem 0;
+    }
+
+    .m-nav-item.active {
+        color: #ff9a3d;
+    }
+
+    .m-nav-item span {
+        font-size: 0.5rem;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+
+    /* Đảm bảo content không bị nav che khuất */
+    .quiz-maker-wrapper {
+        padding-bottom: 90px !important;
+    }
+
+    #chronicles {
+        padding-bottom: 90px !important;
+    }
+}

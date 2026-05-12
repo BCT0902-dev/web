@@ -13,7 +13,9 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Link } from 'react-router-dom';
+import MobileBottomNav from '../components/MobileBottomNav';
 import './LinkShortener.css';
+
 
 const LinkShortener = () => {
   const { currentUser, isAdmin } = useAuth();
@@ -669,33 +671,8 @@ const LinkShortener = () => {
           </motion.div>
         )}
       </AnimatePresence>
-      {/* MOBILE BOTTOM NAVIGATION - FUNCTIONAL LINKS */}
-      <div className="iris-mobile-nav">
-        <Link to="/" className="m-nav-item active">
-          <Home size={22} />
-          <span>TRANG CHỦ</span>
-        </Link>
-        <a href="/#about" className="m-nav-item">
-          <Layout size={22} />
-          <span>GIỚI THIỆU</span>
-        </a>
-        <Link to="/chronicles" className="m-nav-item">
-          <ClipboardList size={22} />
-          <span>HÀNH TRÌNH</span>
-        </Link>
-        <a href="/#skills" className="m-nav-item">
-          <GraduationCap size={22} />
-          <span>KỸ NĂNG</span>
-        </a>
-        <Link to="/blog" className="m-nav-item">
-          <Users size={22} />
-          <span>BÀI VIẾT</span>
-        </Link>
-        <Link to="/quiz-maker" className="m-nav-item">
-          <HelpCircle size={22} />
-          <span>QUIZ</span>
-        </Link>
-      </div>
+      <MobileBottomNav />
+
     </div>
   );
 };

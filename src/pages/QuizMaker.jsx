@@ -7,7 +7,9 @@ import { collection, addDoc, serverTimestamp, query, where, getDocs, deleteDoc, 
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
+import MobileBottomNav from '../components/MobileBottomNav';
 import './QuizMaker.css';
+
 
 const QuizMaker = () => {
   const { currentUser, isAdmin } = useAuth();
@@ -1292,6 +1294,7 @@ const QuizMaker = () => {
           )}
         </AnimatePresence>
       </div>
+      <MobileBottomNav />
     </div>
   );
 };
