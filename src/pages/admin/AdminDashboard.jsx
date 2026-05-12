@@ -1368,8 +1368,8 @@ const AdminDashboard = () => {
 
       {projectModal.isOpen && (
         <div className="admin-modal-overlay">
-           <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="admin-modal-card" style={{ maxWidth: '850px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+           <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="admin-modal-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h2 style={{ margin: 0, fontFamily: 'var(--font-tech)', color: 'var(--admin-accent)' }}>
                   {projectModal.mode === 'add' ? 'KHỞI TẠO' : 'HIỆU CHỈNH'} DỰ ÁN
                 </h2>
@@ -1377,7 +1377,7 @@ const AdminDashboard = () => {
               </div>
 
               <form onSubmit={saveProject}>
-                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
                     <div className="form-group">
                        <label>TÊN DỰ ÁN</label>
                        <input type="text" className="admin-input" value={projectModal.data.title || ''} onChange={(e) => setProjectModal({ ...projectModal, data: { ...projectModal.data, title: e.target.value } })} required />
@@ -1388,23 +1388,23 @@ const AdminDashboard = () => {
                     </div>
                  </div>
 
-                 <div className="form-group">
+                 <div className="form-group" style={{ marginBottom: '1rem' }}>
                     <label>MÔ TẢ NGẮN</label>
                     <input type="text" className="admin-input" value={projectModal.data.description || ''} onChange={(e) => setProjectModal({ ...projectModal, data: { ...projectModal.data, description: e.target.value } })} required />
                  </div>
 
-                 <div className="form-group">
+                 <div className="form-group" style={{ marginBottom: '1rem' }}>
                     <label>NỘI DUNG CHI TIẾT (MARKDOWN)</label>
                     <textarea 
                       className="admin-textarea"
-                      rows={6}
+                      rows={4}
                       value={projectModal.data.longDescription || ''} 
                       onChange={(e) => setProjectModal({ ...projectModal, data: { ...projectModal.data, longDescription: e.target.value } })} 
                       placeholder="Hướng dẫn sử dụng, tính năng..."
                     />
                  </div>
 
-                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
                     <div className="form-group">
                        <label>LINK DOWNLOAD</label>
                        <input type="text" className="admin-input" value={projectModal.data.downloadUrl || ''} onChange={(e) => setProjectModal({ ...projectModal, data: { ...projectModal.data, downloadUrl: e.target.value } })} required />
@@ -1415,7 +1415,7 @@ const AdminDashboard = () => {
                     </div>
                  </div>
 
-                 <div className="form-group">
+                 <div className="form-group" style={{ marginBottom: '1rem' }}>
                     <label>URL HÌNH ẢNH (THUMBNAIL)</label>
                     <div className="admin-input-row">
                        <input type="text" className="admin-input" value={projectModal.data.thumbnail || ''} onChange={(e) => setProjectModal({ ...projectModal, data: { ...projectModal.data, thumbnail: e.target.value } })} />
