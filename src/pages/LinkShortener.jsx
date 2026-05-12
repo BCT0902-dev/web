@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 import { QRCodeCanvas } from 'qrcode.react';
+import { Link } from 'react-router-dom';
 import './LinkShortener.css';
 
 const LinkShortener = () => {
@@ -321,10 +322,10 @@ const LinkShortener = () => {
           >
             <div className="card-header">
               <h1 className="desktop-title" style={{ fontFamily: 'var(--font-tech)', fontWeight: 800 }}>RÚT GỌN LIÊN KẾT</h1>
-              <h1 className="mobile-title" style={{ fontFamily: 'var(--font-tech)', fontWeight: 800 }}>BCT_LINK_SHORTENER</h1>
+              <h1 className="mobile-title" style={{ fontFamily: 'var(--font-tech)', fontWeight: 800, fontSize: '1.4rem', textAlign: 'center', width: '100%' }}>BCT_LINK_SHORTENER</h1>
               
               <p className="subtitle desktop-subtitle">Hệ thống rút gọn link thông minh cho Iris Ecosystem</p>
-              <p className="subtitle mobile-subtitle">HỆ THỐNG RÚT GỌN LIÊN KẾT THÔNG MINH - IRIS ECOSYSTEM</p>
+              <p className="subtitle mobile-subtitle" style={{ fontSize: '0.7rem', opacity: 0.6 }}>HỆ THỐNG RÚT GỌN LIÊN KẾT THÔNG MINH - IRIS ECOSYSTEM</p>
             </div>
 
             <form onSubmit={handleShorten} className="shortener-form">
@@ -354,6 +355,7 @@ const LinkShortener = () => {
                       placeholder="ví dụ: vietnam (tùy chọn)" 
                       value={customSlug}
                       onChange={(e) => setCustomSlug(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ''))}
+                      className="slug-input"
                     />
                   </div>
                 </div>
@@ -654,32 +656,32 @@ const LinkShortener = () => {
           </motion.div>
         )}
       </AnimatePresence>
-      {/* MOBILE BOTTOM NAVIGATION - ONLY VISIBLE ON < 768px */}
+      {/* MOBILE BOTTOM NAVIGATION - FUNCTIONAL LINKS */}
       <div className="iris-mobile-nav">
-        <div className="m-nav-item active">
+        <Link to="/" className="m-nav-item active">
           <Home size={22} />
           <span>TRANG CHỦ</span>
-        </div>
-        <div className="m-nav-item">
+        </Link>
+        <a href="/#about" className="m-nav-item">
           <Layout size={22} />
           <span>GIỚI THIỆU</span>
-        </div>
-        <div className="m-nav-item">
+        </a>
+        <Link to="/chronicles" className="m-nav-item">
           <ClipboardList size={22} />
           <span>HÀNH TRÌNH</span>
-        </div>
-        <div className="m-nav-item">
+        </Link>
+        <a href="/#skills" className="m-nav-item">
           <GraduationCap size={22} />
           <span>KỸ NĂNG</span>
-        </div>
-        <div className="m-nav-item">
+        </a>
+        <Link to="/blog" className="m-nav-item">
           <Users size={22} />
           <span>BÀI VIẾT</span>
-        </div>
-        <div className="m-nav-item">
+        </Link>
+        <Link to="/quiz-maker" className="m-nav-item">
           <HelpCircle size={22} />
           <span>QUIZ</span>
-        </div>
+        </Link>
       </div>
     </div>
   );

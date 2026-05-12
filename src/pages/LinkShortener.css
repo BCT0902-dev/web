@@ -204,19 +204,25 @@
     /* Refined Mobile Styling */
     .shortener-page-wrapper {
         background: #050507 !important;
-        padding-top: 90px !important;
-        padding-bottom: 100px !important;
+        padding-top: 80px !important;
+        padding-bottom: 120px !important;
         min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
 
     .shortener-layout {
         padding: 0 1rem !important;
         display: flex !important;
         flex-direction: column !important;
+        align-items: center !important;
+        width: 100% !important;
     }
 
     .shortener-main-col, .shortener-side-col {
         width: 100% !important;
+        max-width: 500px !important; /* Limit width for better balance */
     }
 
     .shortener-card, .management-panel {
@@ -224,77 +230,98 @@
         background: #121217 !important;
         border: 1px solid rgba(255, 255, 255, 0.03) !important;
         border-radius: 28px !important;
-        padding: 2.5rem 1.5rem !important;
-        margin-bottom: 1.5rem !important;
+        padding: 2rem 1.5rem !important;
+        margin-bottom: 2rem !important;
         height: auto !important;
     }
 
     .mobile-title {
-        font-size: 2.2rem !important;
+        font-size: 1.5rem !important;
         color: #ff9a3d !important;
-        justify-content: center;
-        margin-bottom: 0.5rem;
+        text-align: center;
+        width: 100% !important;
+        margin-bottom: 0.8rem;
     }
 
     .mobile-subtitle {
         text-align: center;
         opacity: 0.5;
         letter-spacing: 1px;
-        margin-bottom: 2.5rem;
-        font-size: 0.75rem !important;
+        margin-bottom: 2rem;
+        font-size: 0.7rem !important;
         display: block !important;
     }
 
     .input-group label.mobile-label {
         align-items: center;
         gap: 0.8rem;
-        font-size: 0.85rem !important;
+        font-size: 0.8rem !important;
         color: #fff !important;
         margin-bottom: 1rem !important;
+        text-transform: uppercase;
+        font-weight: 700;
     }
 
     .main-input, .slug-input-wrapper {
         background: #1a1a21 !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        height: 60px !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        height: 55px !important;
         border-radius: 12px !important;
+    }
+
+    .main-input, .slug-input {
+        background: transparent !important;
+        border: none !important;
+        color: #fff !important;
+        font-size: 0.9rem !important;
+        width: 100%;
+        outline: none !important;
+    }
+
+    .slug-input-wrapper span {
+        color: rgba(255, 255, 255, 0.4);
+        font-size: 0.85rem;
+        margin-right: 5px;
+        font-weight: 700;
     }
 
     .shorten-btn {
         background: #ff9a3d !important;
-        height: 65px !important;
-        border-radius: 16px !important;
-        font-size: 1.2rem !important;
-        font-weight: 700 !important;
+        height: 60px !important;
+        border-radius: 14px !important;
+        font-size: 1.1rem !important;
+        font-weight: 800 !important;
         color: #000 !important;
         width: 100% !important;
+        margin-top: 1rem;
+        box-shadow: 0 10px 20px rgba(255, 154, 61, 0.2) !important;
     }
 
     .m-logo {
         color: #ff9a3d;
         font-weight: 800;
         letter-spacing: 2px;
-        font-size: 1.3rem;
+        font-size: 1.2rem;
     }
 
     .m-admin-pill {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        background: rgba(255, 176, 0, 0.05);
+        gap: 0.4rem;
+        background: rgba(255, 176, 0, 0.08);
         border: 1px solid rgba(255, 176, 0, 0.2);
-        padding: 4px 10px 4px 4px;
+        padding: 3px 8px 3px 3px;
         border-radius: 50px;
     }
 
     .m-admin-pill img {
-        width: 24px;
-        height: 24px;
+        width: 22px;
+        height: 22px;
         border-radius: 50%;
     }
 
     .m-admin-pill span {
-        font-size: 0.65rem;
+        font-size: 0.6rem;
         color: #ff9a3d;
         font-weight: 700;
     }
@@ -303,9 +330,10 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        color: #666;
+        color: #555;
         gap: 0.4rem;
         flex: 1;
+        text-decoration: none !important;
     }
 
     .m-nav-item.active {
@@ -313,16 +341,17 @@
     }
 
     .m-nav-item span {
-        font-size: 0.6rem;
-        font-weight: 700;
+        font-size: 0.55rem;
+        font-weight: 800;
+        letter-spacing: 0.5px;
     }
 
     .m-lang {
         display: flex;
         align-items: center;
-        gap: 0.3rem;
-        color: #888;
-        font-size: 0.7rem;
+        gap: 0.2rem;
+        color: #666;
+        font-size: 0.65rem;
         margin-right: 0.5rem;
     }
 
